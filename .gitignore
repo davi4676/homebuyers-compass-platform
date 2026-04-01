@@ -1,0 +1,17 @@
+# Dependencies & build
+node_modules
+.next
+*.tsbuildinfo
+
+# Auth / local data
+.data
+
+# Env
+.env
+.env.local
+.env*.local
+
+# IDE / OS
+.idea
+.DS_Store
+*.log

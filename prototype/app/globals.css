@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Omio-style palette: navy, light blue, white, coral accent */
+:root {
+  --navy: 15, 23, 42;
+  --navy-dark: 30, 58, 95;
+  --sky-light: 240, 249, 255;
+  --sky-mid: 224, 242, 254;
+  --coral: 225, 29, 72;
+  --coral-hover: 244, 63, 94;
+  --foreground-rgb: 248, 250, 252;
+  --background-rgb: 15, 23, 42;
+  --card-bg: 30, 41, 59;
+  --muted-bg: 51, 65, 85;
+  --border: 71, 85, 105;
+  --accent: 34, 211, 238;
+  --accent-foreground: 15, 23, 42;
+  --text-dark: 15, 23, 42;
+  --text-muted: 100, 116, 139;
+  /* Omio-style type scale — bumped for readability across the app */
+  --text-nav: 1.0625rem;   /* ~17px - nav links */
+  --text-nav-weight: 500;
+  --text-logo: 1.4375rem;  /* ~23px base */
+  --text-logo-md: 1.6875rem; /* ~27px on md+ */
+  --text-body: 1.125rem;   /* 18px base */
+  --text-body-lg: 1.25rem;
+  --text-hero: clamp(2.5rem, 5vw, 4.25rem);
+  --text-hero-sub: clamp(1.25rem, 2vw, 1.625rem);
+}
+
+html {
+  font-size: 19px; /* larger base font size for better readability app-wide */
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .bg-theme-card { background-color: rgb(var(--card-bg)); }
+  .bg-theme-muted { background-color: rgb(var(--muted-bg)); }
+  .border-theme { border-color: rgb(var(--border)); }
+  /* Skip link: hidden until focused for accessibility */
+  .skip-link {
+    @apply absolute opacity-0 w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+  }
+  .skip-link:focus {
+    @apply fixed top-4 left-4 opacity-100 w-auto h-auto m-0 overflow-visible whitespace-normal p-3 z-[100] rounded-lg bg-cyan-600 text-white font-medium;
+  }
+}
+

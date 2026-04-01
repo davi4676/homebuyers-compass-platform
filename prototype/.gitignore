@@ -1,0 +1,16 @@
+# Dependencies
+node_modules
+.next
+
+# Auth data (file-based user store - do not commit)
+.data
+
+# Env
+.env
+.env.local
+.env*.local
+
+# IDE / OS
+.idea
+.DS_Store
+*.log

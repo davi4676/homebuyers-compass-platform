@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Homebuyer's Compass",
+    "slug": "homebuyers-compass",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "homebuyerscompass",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0f172a",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.homebuyerscompass.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.homebuyerscompass.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
