@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light mode default — brand cream/forest; dark: class overrides below */
 /* Omio-style palette: navy, light blue, white, coral accent */
 :root {
   --navy: 15, 23, 42;
@@ -10,8 +11,8 @@
   --sky-mid: 224, 242, 254;
   --coral: 225, 29, 72;
   --coral-hover: 244, 63, 94;
-  --foreground-rgb: 248, 250, 252;
-  --background-rgb: 15, 23, 42;
+  --foreground-rgb: 45, 45, 45;
+  --background-rgb: 250, 247, 242;
   --card-bg: 30, 41, 59;
   --muted-bg: 51, 65, 85;
   --border: 71, 85, 105;
@@ -38,6 +39,14 @@ html,
 body {
   min-height: 100%;
   margin: 0;
+}
+
+.dark {
+  --foreground-rgb: 248, 250, 252;
+  --background-rgb: 10, 10, 10;
+  --card-bg: 23, 23, 23;
+  --muted-bg: 38, 38, 38;
+  --border: 64, 64, 64;
 }
 
 body {

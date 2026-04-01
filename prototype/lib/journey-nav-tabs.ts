@@ -8,12 +8,14 @@ export type JourneyTab =
   | 'library'
   | 'inbox'
   | 'upgrades'
+  | 'assistance'
 
 export const JOURNEY_TAB_IDS: JourneyTab[] = [
   'overview',
   'phase',
   'budget',
   'learn',
+  'assistance',
   'library',
   'inbox',
   'upgrades',
@@ -25,12 +27,18 @@ export const JOURNEY_TAB_TOOLTIPS: Record<JourneyTab, string> = {
   phase: 'Your current step in the 7‑phase journey.',
   budget: 'Stress‑test your monthly payment — every line is editable.',
   learn: 'Bite‑sized concepts that build confidence.',
+  assistance: 'Down payment & closing cost programs matched to you.',
   library: 'Scripts, guides, and checklists.',
   inbox: 'Your alerts, tasks, and messages.',
   upgrades: 'Choose the support level that fits your journey.',
 }
 
-const LEGACY_TAB_MAP: Record<string, JourneyTab> = {}
+/** Deep-link aliases for `?tab=` (e.g. marketing links). */
+const LEGACY_TAB_MAP: Record<string, JourneyTab> = {
+  timeline: 'phase',
+  checklist: 'library',
+  action: 'inbox',
+}
 
 export function isJourneyTab(v: string): v is JourneyTab {
   return (JOURNEY_TAB_IDS as string[]).includes(v)

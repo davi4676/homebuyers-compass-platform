@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -16,6 +17,21 @@ module.exports = {
         'logo-md': ['1.5rem', { lineHeight: '1.75rem', fontWeight: '700' }],
       },
       colors: {
+        brand: {
+          cream: '#FAF7F2',
+          forest: '#1B4332',
+          sage: '#52796F',
+          terracotta: '#C1440E',
+          gold: '#D4A017',
+          charcoal: '#2D2D2D',
+          mist: '#EAF0EC',
+        },
+        /** Dark theme accent (legacy crypto/teal) — use with dark: */
+        darkaccent: {
+          teal: '#06b6d4',
+          bg: '#0a0a0a',
+          surface: '#171717',
+        },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',

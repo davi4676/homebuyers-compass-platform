@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { Menu, X, ChevronDown } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
+import ThemeToggle from '@/components/ThemeToggle'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { UserMenu } from '@/components/auth/UserMenu'
@@ -18,36 +19,11 @@ import { getUserTier } from '@/lib/user-tracking'
 import type { UserTier } from '@/lib/tiers'
 import { TIER_DEFINITIONS } from '@/lib/tiers'
 
-const navLinks = [
-  { label: 'Home', href: '/' },
-  {
-    label: 'App',
-    href: '#',
-    children: [
-      { label: 'Overview & snapshot', href: '/customized-journey?tab=overview' },
-      { label: 'Inbox', href: '/customized-journey?tab=inbox' },
-      { label: 'Your journey', href: '/customized-journey?tab=phase' },
-      { label: 'Learn', href: '/customized-journey?tab=learn' },
-      { label: 'Library', href: '/customized-journey?tab=library' },
-    ],
-  },
-  { label: 'Pricing', href: '/upgrade' },
-  {
-    label: 'Resources',
-    href: '#',
-    children: [
-      { label: 'Profile', href: '/profile' },
-      { label: 'Privacy', href: '/privacy' },
-    ],
-  },
-]
-
 export default function TopNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { isAuthenticated } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [journeyHeaderTier, setJourneyHeaderTier] = useState<UserTier>('foundations')
   const { chrome, resetJourneyNavChrome } = useJourneyNavChrome()
 
@@ -80,9 +56,9 @@ export default function TopNav() {
         <div className="flex h-14 items-center justify-between gap-2 md:h-16">
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-2 text-teal-700 transition-colors hover:text-teal-800"
+            className="flex shrink-0 items-center gap-2 text-brand-forest transition-colors hover:text-brand-sage dark:text-cyan-400 dark:hover:text-cyan-300"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600 text-white md:h-10 md:w-10">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-forest text-white md:h-10 md:w-10 dark:bg-cyan-600">
               <svg
                 className="h-5 w-5 md:h-6 md:w-6"
                 viewBox="0 0 24 24"
@@ -99,7 +75,7 @@ export default function TopNav() {
                 <path d="M12 8l-2 4 2 1 2-1-2-4z" />
               </svg>
             </span>
-            <span className="hidden text-base font-semibold tracking-tight text-teal-700 sm:inline md:text-lg">
+            <span className="hidden text-base font-semibold tracking-tight text-brand-forest sm:inline md:text-lg dark:text-cyan-400">
               NestQuest
             </span>
           </Link>
@@ -114,67 +90,79 @@ export default function TopNav() {
                 mindset={TIER_DEFINITIONS[journeyHeaderTier].mindset}
               />
             </div>
+          ) : isAuthenticated ? (
+            <div className="hidden md:flex md:flex-1 md:items-center md:justify-center md:gap-6 lg:gap-8">
+              <Link
+                href="/dashboard"
+                className={`text-nav font-medium transition-colors ${
+                  pathname === '/dashboard' ? 'text-brand-forest dark:text-white' : 'text-slate-600 hover:text-brand-forest dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/customized-journey"
+                className={`text-nav font-medium transition-colors ${
+                  pathname === '/customized-journey'
+                    ? 'text-brand-forest dark:text-white'
+                    : 'text-slate-600 hover:text-brand-forest dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                My Journey
+              </Link>
+              <Link
+                href="/down-payment-optimizer"
+                className={`text-nav font-medium transition-colors ${
+                  pathname === '/down-payment-optimizer'
+                    ? 'text-brand-forest dark:text-white'
+                    : 'text-slate-600 hover:text-brand-forest dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                Find Funds
+              </Link>
+              <Link
+                href="/marketplace"
+                className={`text-nav font-medium transition-colors ${
+                  pathname === '/marketplace'
+                    ? 'text-brand-forest dark:text-white'
+                    : 'text-slate-600 hover:text-brand-forest dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                Marketplace
+              </Link>
+              <Link
+                href="/inbox"
+                className={`text-nav font-medium transition-colors ${
+                  pathname === '/inbox'
+                    ? 'text-brand-forest dark:text-white'
+                    : 'text-slate-600 hover:text-brand-forest dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                Inbox
+              </Link>
+            </div>
           ) : (
             <div className="hidden md:flex md:flex-1 md:items-center md:justify-center md:gap-8">
-              {navLinks.map((item) =>
-                item.children ? (
-                  <div
-                    key={item.label}
-                    className="relative"
-                    onMouseEnter={() => setOpenDropdown(item.label)}
-                    onMouseLeave={() => setOpenDropdown(null)}
-                  >
-                    <button
-                      className="flex items-center gap-1 text-lg font-medium text-gray-600 transition-colors hover:text-gray-900"
-                      aria-expanded={openDropdown === item.label}
-                      aria-haspopup="true"
-                    >
-                      {item.label}
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                    <AnimatePresence>
-                      {openDropdown === item.label && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -4 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute left-1/2 top-full -translate-x-1/2 pt-2"
-                        >
-                          <div className="min-w-[180px] rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
-                            {item.children.map((child) => (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                className="block px-4 py-2 text-base text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                              >
-                                {child.label}
-                              </Link>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`text-lg font-medium transition-colors ${
-                      pathname === item.href ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                )
-              )}
+              <Link
+                href="/#how-it-works"
+                className="text-nav font-medium text-slate-600 transition-colors hover:text-brand-forest dark:text-slate-300 dark:hover:text-white"
+              >
+                How It Works
+              </Link>
+              <Link
+                href="/quiz"
+                className="rounded-lg bg-brand-forest px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-sage dark:bg-cyan-600 dark:hover:bg-cyan-500"
+              >
+                Find My Savings
+              </Link>
             </div>
           )}
 
           <div className="flex shrink-0 items-center gap-2 md:gap-3">
             {isJourneyPage ? (
-              <span className="text-xs font-semibold text-teal-700 md:hidden">Journey</span>
+              <span className="text-xs font-semibold text-brand-forest md:hidden dark:text-cyan-400">Journey</span>
             ) : null}
+            <ThemeToggle className="hidden sm:inline-flex" />
             {isAuthenticated ? (
               <ErrorBoundary fallback={null}>
                 <UserMenu className="hidden md:block" />
@@ -183,15 +171,9 @@ export default function TopNav() {
               <>
                 <Link
                   href="/login"
-                  className="hidden md:inline-flex items-center justify-center rounded-lg border border-teal-600 bg-white px-4 py-2.5 text-sm font-medium text-teal-700 transition-colors hover:bg-teal-50"
+                  className="hidden md:inline-flex items-center justify-center rounded-lg border border-brand-sage/40 bg-white px-4 py-2.5 text-sm font-medium text-brand-forest transition-colors hover:bg-brand-mist dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
-                  Log in
-                </Link>
-                <Link
-                  href="/auth?transactionType=first-time"
-                  className="hidden md:inline-flex items-center justify-center rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700"
-                >
-                  Sign up
+                  Sign In
                 </Link>
               </>
             )}
@@ -299,6 +281,51 @@ export default function TopNav() {
                       All resources (site)
                     </Link>
                   </>
+                ) : isAuthenticated ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/customized-journey"
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      My Journey
+                    </Link>
+                    <Link
+                      href="/down-payment-optimizer"
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Find Funds
+                    </Link>
+                    <Link
+                      href="/marketplace"
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Marketplace
+                    </Link>
+                    <Link
+                      href="/inbox"
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Inbox
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Profile
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <Link
@@ -309,72 +336,37 @@ export default function TopNav() {
                       Home
                     </Link>
                     <Link
-                      href="/customized-journey?tab=phase"
+                      href="/#how-it-works"
                       onClick={() => setMobileOpen(false)}
                       className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
                     >
-                      Customized journey
+                      How It Works
                     </Link>
                     <Link
-                      href="/customized-journey?tab=overview"
+                      href="/quiz"
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
+                      className="block rounded-lg px-4 py-2.5 text-lg font-semibold text-brand-forest hover:bg-brand-mist"
                     >
-                      Overview &amp; snapshot
+                      Find My Savings
                     </Link>
-                    <Link
-                      href="/customized-journey?tab=inbox"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Inbox
-                    </Link>
-                    <Link
-                      href="/customized-journey?tab=learn"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Learn
-                    </Link>
-                    <Link
-                      href="/customized-journey?tab=library"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Library
-                    </Link>
-                    <Link
-                      href="/upgrade"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Pricing
-                    </Link>
-                    <Link
-                      href="/profile"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Profile
-                    </Link>
+                    <div className="px-4 py-2">
+                      <ThemeToggle className="w-full" />
+                    </div>
                   </>
                 )}
+                {!isJourneyPage && (
                 <div className="mt-3 space-y-2 border-t border-gray-200 px-4 pt-3">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="block w-full rounded-lg border border-teal-600 py-2.5 text-center font-medium text-teal-700 transition-colors hover:bg-teal-50"
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    href="/auth?transactionType=first-time"
-                    onClick={() => setMobileOpen(false)}
-                    className="block w-full rounded-lg bg-teal-600 py-2.5 text-center font-medium text-white transition-colors hover:bg-teal-700"
-                  >
-                    Sign up
-                  </Link>
+                  {isAuthenticated ? null : (
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="block w-full rounded-lg border border-brand-sage/40 py-2.5 text-center font-medium text-brand-forest transition-colors hover:bg-brand-mist"
+                    >
+                      Sign In
+                    </Link>
+                  )}
                 </div>
+                )}
               </div>
             </motion.div>
           )}

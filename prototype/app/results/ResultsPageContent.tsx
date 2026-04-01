@@ -844,10 +844,16 @@ function ResultsPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#e8eef9] via-[#f2f6fc] to-[#f8fafc] text-slate-800 font-sans antialiased flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(var(--coral))] mx-auto mb-4"></div>
-          <p className="text-lg font-semibold">Creating your guide...</p>
+      <div className="min-h-screen bg-brand-cream text-slate-800 font-sans antialiased">
+        <div className="mx-auto max-w-3xl px-4 py-16">
+          <div className="mb-6 h-10 w-48 animate-pulse rounded-lg bg-brand-mist" />
+          <div className="mb-4 h-64 animate-pulse rounded-2xl bg-brand-mist" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="h-28 animate-pulse rounded-xl bg-brand-mist" />
+            <div className="h-28 animate-pulse rounded-xl bg-brand-mist" />
+            <div className="h-28 animate-pulse rounded-xl bg-brand-mist" />
+          </div>
+          <p className="mt-8 text-center text-sm font-medium text-slate-600">Creating your personalized results…</p>
         </div>
       </div>
     )

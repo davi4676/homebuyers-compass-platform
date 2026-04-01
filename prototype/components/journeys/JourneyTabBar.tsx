@@ -10,6 +10,7 @@ import {
   Library,
   Inbox,
   Crown,
+  PiggyBank,
   type LucideIcon,
 } from 'lucide-react'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
@@ -21,12 +22,15 @@ import {
   JOURNEY_TAB_STORAGE_KEY,
 } from '@/lib/journey-nav-tabs'
 import type { JourneyNavChrome } from '@/components/JourneyNavChromeContext'
+import { usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
+import { applyPlainEnglishCopy } from '@/lib/plain-english'
 
 const TAB_ICONS: Record<JourneyTab, LucideIcon> = {
   overview: LayoutGrid,
   phase: MapPinned,
   budget: Calculator,
   learn: BookOpen,
+  assistance: PiggyBank,
   library: Library,
   inbox: Inbox,
   upgrades: Crown,
@@ -37,6 +41,7 @@ const TAB_LABELS: Record<JourneyTab, string> = {
   phase: 'Your Phase',
   budget: 'Budget Sketch',
   learn: 'Learn',
+  assistance: 'Assistance',
   library: 'Library',
   inbox: 'Inbox',
   upgrades: 'Upgrades',
@@ -47,6 +52,7 @@ const TAB_SHORT_LABELS: Record<JourneyTab, string> = {
   phase: 'Phase',
   budget: 'Budget',
   learn: 'Learn',
+  assistance: 'Funds',
   library: 'Library',
   inbox: 'Inbox',
   upgrades: 'Upgrades',
@@ -115,6 +121,7 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
   const router = useRouter()
   const { chrome } = useJourneyNavChrome()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const plainEnglish = usePlainEnglish()
 
   const navigate = useCallback(
     (t: JourneyTab) => {
@@ -163,7 +170,7 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
       {JOURNEY_TAB_IDS.map((id, index) => {
         const active = activeTab === id
         const Icon = TAB_ICONS[id]
-        const tooltip = JOURNEY_TAB_TOOLTIPS[id]
+        const tooltip = applyPlainEnglishCopy(JOURNEY_TAB_TOOLTIPS[id], plainEnglish)
         return (
           <button
             key={id}

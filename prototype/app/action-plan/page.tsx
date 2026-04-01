@@ -62,8 +62,10 @@ export default function ActionPlanPage() {
   // Mock action plan data (would come from HOSA in production)
   const [actionPlan, setActionPlan] = useState<ActionSequence[]>([])
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null)
+  const [planReady, setPlanReady] = useState(false)
 
   useEffect(() => {
+    setPlanReady(false)
     // In production, would fetch from HOSA output stored in results
     // For now, create mock data
     const mockPlan: ActionSequence[] = [
@@ -135,6 +137,8 @@ export default function ActionPlanPage() {
       },
     ]
     setActionPlan(mockPlan)
+    const t = requestAnimationFrame(() => setPlanReady(true))
+    return () => cancelAnimationFrame(t)
   }, [])
 
   if (!hasAccess) {
@@ -152,6 +156,21 @@ export default function ActionPlanPage() {
           >
             Upgrade to Concierge →
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!planReady) {
+    return (
+      <div className="min-h-screen bg-brand-cream text-brand-charcoal dark:bg-[#0a0a0a] dark:text-[#f5f5f5]">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mb-8 h-12 max-w-md animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
+          <div className="mb-4 h-6 w-2/3 animate-pulse rounded-lg bg-brand-mist dark:bg-gray-800" />
+          <div className="space-y-4">
+            <div className="h-40 animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
+            <div className="h-40 animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
+          </div>
         </div>
       </div>
     )
@@ -194,6 +213,30 @@ export default function ActionPlanPage() {
             </div>
           )}
         </motion.div>
+
+        {searchParams.get('type') === 'move-up' ? (
+          <div className="mb-12 grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl border border-gray-700 bg-gray-900/50 p-5">
+              <h2 className="text-lg font-bold text-[#06b6d4]">Selling your current home</h2>
+              <ul className="mt-4 space-y-2 text-sm text-gray-300">
+                <li>• Get a pre-listing valuation &amp; net sheet</li>
+                <li>• List the same week you secure pre-approval on the buy side</li>
+                <li>• Align inspection timelines on both contracts</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-gray-700 bg-gray-900/50 p-5">
+              <h2 className="text-lg font-bold text-emerald-400">Buying your new home</h2>
+              <ul className="mt-4 space-y-2 text-sm text-gray-300">
+                <li>• Get pre-approved before you tour seriously</li>
+                <li>• Sync contingency dates with your sale</li>
+                <li>• Book movers only after both sides are firm</li>
+              </ul>
+              <p className="mt-4 rounded-lg bg-gray-800/80 p-3 text-xs text-gray-400">
+                Sync point: list your home the same week you get pre-approved — keeps both transactions aligned.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {/* Action Plan Timeline */}
         <div className="space-y-6">

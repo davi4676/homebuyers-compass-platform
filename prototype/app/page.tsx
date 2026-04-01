@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, Check, X, EyeOff, Zap, Shield, Crown, Users, DollarSign, FileText, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowRight, Check, X, EyeOff, Users, DollarSign, FileText, ChevronDown, ChevronUp, Calculator } from 'lucide-react'
 import TrustSignals from '@/components/trust/TrustSignals'
 import UserJourneyTracker from '@/components/analytics/UserJourneyTracker'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -49,6 +49,10 @@ export default function LandingPage() {
   const [leadEmail, setLeadEmail] = useState('')
   const [leadSubmitted, setLeadSubmitted] = useState(false)
   const [relayExpanded, setRelayExpanded] = useState(false)
+  const [equityHomeValue, setEquityHomeValue] = useState(420000)
+  const [equityMortgage, setEquityMortgage] = useState(265000)
+  const [equityYears, setEquityYears] = useState(6)
+  const [showMoveUpTools, setShowMoveUpTools] = useState(false)
   const authGateExperiment = useExperiment('auth_gate_v2')
 
   useEffect(() => {
@@ -59,6 +63,12 @@ export default function LandingPage() {
 
   const ctaHref = (transactionType: string) =>
     `/quiz?transactionType=${encodeURIComponent(transactionType)}`
+
+  const quizByIcp = (icp: string) => `/quiz?type=${encodeURIComponent(icp)}`
+
+  const estimatedEquity = Math.max(0, equityHomeValue - equityMortgage)
+  const sellingCostsPct = 0.07
+  const netProceeds = Math.max(0, equityHomeValue * (1 - sellingCostsPct) - equityMortgage)
 
   const handleLeadSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,7 +108,6 @@ export default function LandingPage() {
                 >
                   Get your assessment
                 </Link>
-                <Link href="/upgrade" className="hidden sm:inline text-sm font-medium text-white/90 hover:text-white underline underline-offset-2">See plans</Link>
                 <button onClick={() => setPromoDismissed(true)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" aria-label="Dismiss">
                   <X className="w-4 h-4" />
                 </button>
@@ -126,129 +135,192 @@ export default function LandingPage() {
             backgroundSize: 'cover',
           }}
         />
-        {/* Trust strip — visible early */}
-        <div className="relative z-10 pt-4 px-4 flex justify-center">
-          <p
-            className="text-xs sm:text-sm text-white font-medium flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-3 py-1.5 rounded-full bg-slate-900/35 border border-white/15 backdrop-blur-sm"
-            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.45)' }}
-          >
-            <span>✓ No commissions</span>
-            <span>✓ No kickbacks</span>
-            <span>✓ 100% free to start</span>
-          </p>
-        </div>
-        {/* Hero title + hierarchy: number first, then subhead */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 pt-4 sm:pt-8 pb-4">
+        {/* Hero title */}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 pt-6 sm:pt-10 pb-6">
           <div className="max-w-3xl">
-            <p className="text-lg sm:text-xl font-semibold text-white/95 mb-2" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-              How much could you <span className="inline-block text-3xl sm:text-4xl font-extrabold text-rose-300 leading-none">overpay</span> at closing?
-            </p>
-            <h1 className="text-[1.75rem] sm:text-[2.25rem] md:text-[2.75rem] lg:text-[3.25rem] font-bold text-white mb-2 tracking-tight leading-[1.15]" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.45)' }}>
-              First-time buyers overpay <span className="text-[rgb(var(--coral))]">$15,000</span> on average
+            <h1
+              className="text-[1.65rem] sm:text-[2.1rem] md:text-[2.65rem] lg:text-[3.1rem] font-bold text-white mb-3 tracking-tight leading-[1.15]"
+              style={{ textShadow: '0 2px 6px rgba(0,0,0,0.45)' }}
+            >
+              Save $10,000–$15,000 on Your Home Purchase — Without Guessing
             </h1>
-            <p className="text-[1.1rem] md:text-[1.25rem] text-slate-100/95 max-w-xl mx-auto" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.45)' }}>
-              Not because they&apos;re dumb. Because no one shows them the hidden costs.
+            <p className="text-[1.05rem] md:text-[1.2rem] text-slate-100/95 max-w-2xl mx-auto" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.45)' }}>
+              A personalized buying guide that finds hidden funds, simplifies every step, and holds your hand from search to close.
             </p>
           </div>
         </div>
 
-        {/* Overlay card */}
-        <div className="relative z-20 w-full max-w-4xl mx-auto px-4 -mb-14">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8 text-base md:text-lg">
-            <div className="mb-5 text-center">
-              <h2 className="text-xl sm:text-2xl font-black text-[#1e293b] tracking-tight">
-                Find out what most buyers discover <span className="text-[rgb(var(--coral))]">only after it&apos;s too late</span>
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">90 seconds. No credit pull. No commitment.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-3 items-end">
-              <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">I&apos;m a</label>
-                <select
-                  value={heroForm.type}
-                  onChange={(e) => setHeroForm((p) => ({ ...p, type: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value="first-time">First-time buyer</option>
-                  <option value="repeat-buyer">Repeat buyer</option>
-                  <option value="refinance">Refinancing</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">How prepared are you?</label>
-                <select
-                  value={heroForm.preparedness}
-                  onChange={(e) => setHeroForm((p) => ({ ...p, preparedness: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value="learning">Just starting to learn</option>
-                  <option value="basics">Know the basics</option>
-                  <option value="confident">Pretty confident</option>
-                  <option value="ready">Ready to move</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">When do you want to buy?</label>
-                <select
-                  value={heroForm.when}
-                  onChange={(e) => setHeroForm((p) => ({ ...p, when: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value="3-months">Within 3 months</option>
-                  <option value="6-months">Within 6 months</option>
-                  <option value="1-year">Within 1 year</option>
-                  <option value="exploring">Just exploring</option>
-                </select>
-              </div>
-              <div>
-                <Link
-                  href={`${ctaHref(heroForm.type)}&preparedness=${encodeURIComponent(heroForm.preparedness)}&timeline=${encodeURIComponent(heroForm.when)}`}
-                  onClick={() => handlePrimaryCtaClick('landing_hero_form_cta', heroForm.type)}
-                  className="flex items-center justify-center gap-2 w-full bg-[rgb(var(--coral))] hover:bg-[rgb(var(--coral-hover))] text-white text-center font-bold py-3.5 px-6 rounded-xl transition-colors"
-                >
-                  See How Much You Can Save <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-gray-500 text-center">~90 seconds to your personalized report</p>
+        {/* Trust badges — below hero */}
+        <div className="relative z-10 px-4 pb-4">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-2">
+            {[
+              'HUD-Approved Resources',
+              'CFPB-Aligned Guidance',
+              'No Affiliate Kickbacks — Ever',
+              '2,400+ Buyers Helped',
+              'State Housing Authority Partner',
+            ].map((label) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-brand-sage/30 bg-brand-mist px-3 py-1.5 text-xs font-medium text-brand-forest shadow-sm"
+              >
+                <Check className="h-3.5 w-3.5 shrink-0 text-brand-sage" aria-hidden />
+                {label}
+              </span>
+            ))}
           </div>
+        </div>
 
-          {/* Tier value strip — surface upgrade path */}
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Link
-              href="/quiz"
-              className="block bg-white/95 rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition-shadow text-center"
-            >
-              <span className="text-sm font-semibold text-[#1e293b]">Starter (Free)</span>
-              <p className="text-xs text-slate-600 mt-1">See your numbers & cost breakdown</p>
-            </Link>
-            <Link
-              href="/upgrade?tier=momentum"
-              onClick={() => trackActivity('tool_used', { tool: 'landing_tier_strip', tier: 'momentum' })}
-              className="block bg-white/95 rounded-xl p-4 border-2 border-[rgb(var(--coral))]/30 shadow-sm hover:shadow-md transition-all text-center"
-            >
-              <div className="flex items-center justify-center gap-1">
-                <Zap className="w-4 h-4 text-[#06b6d4]" />
-                <span className="text-sm font-semibold text-[#1e293b]">Guided $29</span>
-              </div>
-              <p className="text-xs text-slate-600 mt-1">Avoid costly mistakes with action plan</p>
-            </Link>
-            <Link
-              href="/upgrade?tier=navigator"
-              onClick={() => trackActivity('tool_used', { tool: 'landing_tier_strip', tier: 'navigator' })}
-              className="block bg-white/95 rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition-shadow text-center"
-            >
-              <div className="flex items-center justify-center gap-1">
-                <Shield className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-semibold text-[#1e293b]">Concierge $149</span>
-              </div>
-              <p className="text-xs text-slate-600 mt-1">Maximize savings with expert tools</p>
-            </Link>
+        {/* Primary CTA — ICP card grid */}
+        <div className="relative z-20 w-full max-w-5xl mx-auto px-4 -mb-14">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl md:p-8">
+            <p className="text-center text-sm font-semibold uppercase tracking-wide text-brand-sage">Start here</p>
+            <h2 className="mt-1 text-center text-xl font-bold text-brand-forest md:text-2xl">Which best describes you?</h2>
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {(
+                [
+                  { type: 'first-time' as const, icon: '🏠', title: 'First-Time Buyer', desc: "I've never owned a home before" },
+                  { type: 'first-gen' as const, icon: '🌱', title: 'First in My Family', desc: 'No one in my family has done this before' },
+                  { type: 'solo' as const, icon: '👩', title: 'Buying Solo', desc: "I'm purchasing on my own" },
+                  { type: 'move-up' as const, icon: '🔄', title: 'I Own & Want to Upgrade', desc: 'I want to sell and buy simultaneously' },
+                ] as const
+              ).map((row) => (
+                <Link
+                  key={row.type}
+                  href={quizByIcp(row.type)}
+                  onClick={() => {
+                    handlePrimaryCtaClick('landing_icp_grid', row.type)
+                    if (row.type === 'move-up') setShowMoveUpTools(true)
+                  }}
+                  className="group flex flex-col rounded-xl border-2 border-slate-200 p-4 transition hover:border-brand-forest hover:bg-brand-mist/60"
+                >
+                  <span className="text-2xl">{row.icon}</span>
+                  <span className="mt-2 text-lg font-bold text-brand-forest">{row.title}</span>
+                  <span className="text-sm text-slate-600">{row.desc}</span>
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-terracotta">
+                    Start free assessment <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <p className="mt-4 text-center text-xs text-slate-500">About 90 seconds · No credit pull</p>
           </div>
         </div>
       </section>
 
       <main>
+        <section className="border-b border-slate-200 bg-brand-mist/50 py-12 md:py-14">
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 md:grid-cols-2 md:px-6 lg:px-8">
+            <div className="rounded-2xl border border-brand-sage/25 bg-white p-6 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-wide text-brand-sage">Budget preview</p>
+              <p className="mt-2 text-2xl font-bold text-brand-forest">Your estimated monthly payment: ~$2,450</p>
+              <p className="mt-2 text-sm text-slate-600">
+                Example for a typical loan — your journey page breaks down mortgage, taxes, insurance, and more.
+              </p>
+              <Link
+                href="/customized-journey?tab=budget"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand-terracotta hover:underline"
+              >
+                See full breakdown →
+              </Link>
+            </div>
+            <div className="rounded-2xl border-2 border-brand-gold bg-brand-gold/10 p-6 shadow-sm">
+              <DollarSign className="h-9 w-9 text-brand-gold" strokeWidth={2} />
+              <h3 className="mt-3 text-lg font-bold text-brand-forest md:text-xl">
+                Uncover Grants &amp; Assistance You Don&apos;t Know Exist
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                The average buyer qualifies for $8,200 in down payment assistance programs. We scan 2,000+ federal, state, and local programs to find yours in minutes.
+              </p>
+              <Link
+                href="/down-payment-optimizer"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand-terracotta hover:underline"
+              >
+                Find My Hidden Funds →
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-slate-200 bg-white py-12">
+          <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8">
+            <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-brand-sage">Move-up buyers</p>
+                <h2 className="text-2xl font-bold text-brand-forest">Estimate equity before you list</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Rough net proceeds after ~6% agent + 1% closing (illustrative).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMoveUpTools((v) => !v)}
+                className="text-sm font-semibold text-brand-terracotta hover:underline"
+              >
+                {showMoveUpTools ? 'Hide calculator' : 'Show equity calculator'}
+              </button>
+            </div>
+            {showMoveUpTools ? (
+              <div className="grid gap-6 rounded-2xl border border-slate-200 bg-brand-mist/40 p-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-slate-700">
+                    Current home value
+                    <input
+                      type="range"
+                      min={150000}
+                      max={1200000}
+                      step={5000}
+                      value={equityHomeValue}
+                      onChange={(e) => setEquityHomeValue(Number(e.target.value))}
+                      className="mt-2 w-full accent-brand-forest"
+                    />
+                    <span className="mt-1 block text-lg font-bold text-brand-forest">
+                      ${equityHomeValue.toLocaleString()}
+                    </span>
+                  </label>
+                  <label className="block text-sm font-medium text-slate-700">
+                    Remaining mortgage
+                    <input
+                      type="number"
+                      value={equityMortgage}
+                      onChange={(e) => setEquityMortgage(Number(e.target.value))}
+                      className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-700">
+                    Years owned
+                    <input
+                      type="number"
+                      min={0}
+                      max={40}
+                      value={equityYears}
+                      onChange={(e) => setEquityYears(Number(e.target.value))}
+                      className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                </div>
+                <div className="flex flex-col justify-center rounded-xl bg-white p-6 shadow-inner">
+                  <div className="flex items-center gap-2 text-brand-forest">
+                    <Calculator className="h-6 w-6" />
+                    <span className="font-bold">Estimated equity</span>
+                  </div>
+                  <p className="mt-3 text-4xl font-black text-brand-gold">${estimatedEquity.toLocaleString()}</p>
+                  <p className="mt-4 text-sm text-slate-600">
+                    Est. net proceeds after selling costs:{' '}
+                    <strong className="text-brand-forest">${Math.round(netProceeds).toLocaleString()}</strong>
+                  </p>
+                  <Link
+                    href="/customized-journey?tab=budget"
+                    className="mt-6 inline-flex items-center justify-center rounded-xl bg-brand-forest px-4 py-3 text-center text-sm font-bold text-white hover:bg-brand-sage"
+                  >
+                    Use my equity as a down payment →
+                  </Link>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
         {/* PROBLEM SECTION: The Uncomfortable Truth */}
         <section className="relative pt-16 pb-12 md:pt-20 md:pb-16 bg-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -392,22 +464,6 @@ export default function LandingPage() {
               100% free. No credit card. We make money from optional premium features, never from commissions or kickbacks.
             </p>
 
-            {/* Outcome-based upgrade prompts */}
-            <div className="mt-10 grid sm:grid-cols-3 gap-4 text-left">
-              <Link href="/upgrade?tier=momentum" className="block p-4 rounded-xl bg-white border border-slate-200 hover:border-[rgb(var(--coral))]/40 hover:shadow-md transition-all" onClick={() => trackActivity('tool_used', { tool: 'landing_upgrade_prompt', tier: 'momentum', prompt: 'action_plan' })}>
-                <span className="text-xs font-semibold text-slate-500 uppercase">Unlock for $29</span>
-                <p className="mt-1 font-semibold text-[#1e293b]">Your step-by-step action plan</p>
-              </Link>
-              <Link href="/upgrade?tier=momentum" className="block p-4 rounded-xl bg-white border border-slate-200 hover:border-[rgb(var(--coral))]/40 hover:shadow-md transition-all" onClick={() => trackActivity('tool_used', { tool: 'landing_upgrade_prompt', tier: 'momentum', prompt: 'negotiation' })}>
-                <span className="text-xs font-semibold text-slate-500 uppercase">Unlock for $29</span>
-                <p className="mt-1 font-semibold text-[#1e293b]">See exactly what to negotiate at closing</p>
-              </Link>
-              <Link href="/upgrade?tier=navigator" className="block p-4 rounded-xl bg-white border border-slate-200 hover:border-amber-400/50 hover:shadow-md transition-all" onClick={() => trackActivity('tool_used', { tool: 'landing_upgrade_prompt', tier: 'navigator', prompt: 'expert' })}>
-                <span className="text-xs font-semibold text-slate-500 uppercase">Unlock for $149</span>
-                <p className="mt-1 font-semibold text-[#1e293b]">1:1 expert help to avoid overpaying</p>
-              </Link>
-            </div>
-
             {/* Lead magnet — email capture for not-ready visitors */}
             <div className="mt-10 pt-10 border-t border-slate-200">
               <p className="text-sm text-slate-600 mb-3">Not ready for the full assessment?</p>
@@ -435,21 +491,34 @@ export default function LandingPage() {
         {/* SOCIAL PROOF - Testimonials */}
         <section className="py-16 md:py-24 bg-white">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="mb-10 text-center text-2xl font-bold text-brand-forest">Real buyers. Real savings.</h2>
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-[#f8fafc] rounded-2xl p-6 border border-slate-100">
-                <p className="text-[#475569] text-base mb-4">&quot;This tool showed me I could negotiate $2,800 in closing costs. My agent never mentioned it!&quot;</p>
-                <p className="text-[#1e293b] font-bold">Sarah M.</p>
-                <p className="text-emerald-600 font-semibold">Saved $2,800</p>
+              <div className="rounded-2xl border border-slate-200 bg-brand-mist/40 p-6">
+                <p className="text-[#475569] text-base mb-4">
+                  &quot;I thought I needed 20% down. The Compass found $11,400 in programs I qualified for in my county. We closed in 8 weeks.&quot;
+                </p>
+                <p className="font-bold text-[#1e293b]">James &amp; Priya T., Austin TX</p>
+                <span className="mt-2 inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                  Saved $11,400
+                </span>
               </div>
-              <div className="bg-[#f8fafc] rounded-2xl p-6 border border-slate-100">
-                <p className="text-[#475569] text-base mb-4">&quot;I almost used my agent&apos;s &apos;preferred lender&apos; until I saw the rate comparison. Saved $18K over the loan.&quot;</p>
-                <p className="text-[#1e293b] font-bold">Marcus T.</p>
-                <p className="text-emerald-600 font-semibold">Saved $18,000</p>
+              <div className="rounded-2xl border border-slate-200 bg-brand-mist/40 p-6">
+                <p className="text-[#475569] text-base mb-4">
+                  &quot;I was the first in my family to buy. I had no idea where to start. This platform walked me through every single step and found $9,200 in grants.&quot;
+                </p>
+                <p className="font-bold text-[#1e293b]">Maria C., Phoenix AZ</p>
+                <span className="mt-2 inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                  Saved $9,200
+                </span>
               </div>
-              <div className="bg-[#f8fafc] rounded-2xl p-6 border border-slate-100">
-                <p className="text-[#475569] text-base mb-4">&quot;The hidden cost breakdown was shocking. Changed my entire budget.&quot;</p>
-                <p className="text-[#1e293b] font-bold">Jennifer K.</p>
-                <p className="text-emerald-600 font-semibold">Avoided disaster</p>
+              <div className="rounded-2xl border border-slate-200 bg-brand-mist/40 p-6">
+                <p className="text-[#475569] text-base mb-4">
+                  &quot;Buying alone felt overwhelming. The Compass gave me a clear action plan and negotiation scripts. I saved $13,100 and never felt lost.&quot;
+                </p>
+                <p className="font-bold text-[#1e293b]">Danielle R., Atlanta GA</p>
+                <span className="mt-2 inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                  Saved $13,100
+                </span>
               </div>
             </div>
           </div>
@@ -508,9 +577,6 @@ export default function LandingPage() {
             <p className="mt-6 text-white/90 text-lg">
               No one else will tell you this stuff. We will.
             </p>
-            <Link href="/upgrade" className="mt-4 inline-block text-white/70 hover:text-white text-sm underline underline-offset-2" onClick={() => trackActivity('tool_used', { tool: 'landing_final_upgrade_link' })}>
-              See premium plans from $29 →
-            </Link>
           </div>
         </section>
       </main>

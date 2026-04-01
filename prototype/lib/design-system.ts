@@ -132,10 +132,14 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
 
 // Button variants and sizes for UI components
 export const buttonVariants = {
-  primary: 'bg-[#003366] text-white hover:bg-[#004080]',
+  primary:
+    'bg-brand-forest text-white hover:bg-brand-sage dark:bg-cyan-600 dark:hover:bg-cyan-500',
+  cta:
+    'bg-brand-terracotta text-white hover:opacity-90 dark:bg-orange-600 dark:hover:bg-orange-500',
   secondary: 'bg-[#228B22] text-white hover:bg-[#2E8B57]',
-  outline: 'border-2 border-[#003366] text-[#003366] hover:bg-[#003366]/10',
-  ghost: 'text-[#003366] hover:bg-[#003366]/10',
+  outline:
+    'border-2 border-brand-forest text-brand-forest hover:bg-brand-forest/10 dark:border-cyan-500 dark:text-cyan-400',
+  ghost: 'text-brand-forest hover:bg-brand-forest/10 dark:text-cyan-400 dark:hover:bg-white/10',
   danger: 'bg-[#DC143C] text-white hover:bg-[#8B0000]',
 }
 export const buttonSizes = {

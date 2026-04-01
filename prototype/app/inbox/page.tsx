@@ -7,7 +7,10 @@ import { usePathname } from 'next/navigation'
 import { useLifecycleReminders } from '@/lib/hooks/useLifecycleReminders'
 import { useWebPush } from '@/lib/hooks/useWebPush'
 import NextBestActionSticky from '@/components/NextBestActionSticky'
+import PlainEnglishText from '@/components/PlainEnglishText'
 import { useExperiment } from '@/lib/hooks/useExperiment'
+import { usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
+import { applyPlainEnglishCopy } from '@/lib/plain-english'
 
 type PhaseStatus = 'not-started' | 'in-progress' | 'complete'
 
@@ -32,11 +35,14 @@ const NEXT_ACTION: Record<string, string> = {
 export default function InboxPage() {
   const pathname = usePathname()
   const roadmapExperiment = useExperiment('roadmap_today_view_v2')
+  const plainEnglish = usePlainEnglish()
   const [phaseStatus, setPhaseStatus] = useState<Record<string, PhaseStatus>>({})
   const [currentPhase, setCurrentPhase] = useState<string>('preparation')
+  const [phaseHydrated, setPhaseHydrated] = useState(false)
   const {
     preferences,
     notifications,
+    loading: remindersLoading,
     updatePreferences,
     markRead,
     runNow,
@@ -52,6 +58,7 @@ export default function InboxPage() {
       setPhaseStatus({})
     }
     setCurrentPhase(localStorage.getItem('currentPhase') || 'preparation')
+    requestAnimationFrame(() => setPhaseHydrated(true))
   }, [])
 
   useEffect(() => {
@@ -99,8 +106,16 @@ export default function InboxPage() {
           />
           <div className="absolute inset-0 flex items-center px-6 sm:px-10">
             <div>
-              <p className="text-white text-lg sm:text-xl font-semibold">Action Inbox</p>
-              <p className="text-white/70 text-sm">Your reminders, next best steps, and milestones</p>
+              <PlainEnglishText
+                as="p"
+                className="text-white text-lg sm:text-xl font-semibold"
+                text="Action Inbox"
+              />
+              <PlainEnglishText
+                as="p"
+                className="text-white/70 text-sm"
+                text="Your reminders, next best steps, and milestones"
+              />
             </div>
           </div>
         </div>
@@ -109,11 +124,14 @@ export default function InboxPage() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
         <div className="mb-4">
           <NextBestActionSticky
-            title="Complete one phase task this week"
-            description="Stay consistent to reduce overpay risk and keep your plan moving."
-            ctaLabel="Open roadmap"
+            title={applyPlainEnglishCopy('Complete one phase task this week', plainEnglish)}
+            description={applyPlainEnglishCopy(
+              'Stay consistent to reduce overpay risk and keep your plan moving.',
+              plainEnglish
+            )}
+            ctaLabel={applyPlainEnglishCopy('Open roadmap', plainEnglish)}
             ctaHref="/customized-journey?tab=phase"
-            secondaryLabel="Overview & snapshot"
+            secondaryLabel={applyPlainEnglishCopy('Overview & snapshot', plainEnglish)}
             secondaryHref="/customized-journey?tab=overview"
           />
         </div>
@@ -148,39 +166,67 @@ export default function InboxPage() {
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Progress</p>
-            <p className="text-2xl font-bold text-[#1e293b]">{completion.done}/{completion.total}</p>
-            <p className="text-sm text-slate-600">Phases complete ({completion.pct}%)</p>
+        {!phaseHydrated ? (
+          <div className="grid md:grid-cols-3 gap-4 mb-6" aria-busy aria-label="Loading progress">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-white p-4">
+                <div className="mb-2 h-3 w-20 rounded bg-slate-200" />
+                <div className="mb-2 h-8 w-24 rounded bg-slate-200" />
+                <div className="h-4 w-full rounded bg-slate-100" />
+              </div>
+            ))}
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Current phase</p>
-            <p className="text-xl font-bold text-[#1e293b]">{PHASES.find((p) => p.id === currentPhase)?.label || 'Preparation & Planning'}</p>
-            <p className="text-sm text-slate-600">Stay focused on one step at a time</p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white border border-slate-200 rounded-xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Progress</p>
+              <p className="text-2xl font-bold text-[#1e293b]">
+                {completion.done}/{completion.total}
+              </p>
+              <p className="text-sm text-slate-600">Phases complete ({completion.pct}%)</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Current phase</p>
+              <p className="text-xl font-bold text-[#1e293b]">
+                {PHASES.find((p) => p.id === currentPhase)?.label || 'Preparation & Planning'}
+              </p>
+              <p className="text-sm text-slate-600">Stay focused on one step at a time</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Next deadline</p>
+              <p className="text-xl font-bold text-[#1e293b]">{nextPhase.label}</p>
+              <p className="text-sm text-slate-600">Estimated time: {nextPhase.eta}</p>
+            </div>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Next deadline</p>
-            <p className="text-xl font-bold text-[#1e293b]">{nextPhase.label}</p>
-            <p className="text-sm text-slate-600">Estimated time: {nextPhase.eta}</p>
-          </div>
-        </div>
+        )}
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Bell className="w-5 h-5 text-[rgb(var(--coral))]" />
-            <h2 className="text-lg font-bold text-[#1e293b]">Today&apos;s next best action</h2>
+        {!phaseHydrated ? (
+          <div
+            className="mb-6 animate-pulse rounded-2xl border border-slate-200 bg-white p-5"
+            aria-busy
+            aria-label="Loading next action"
+          >
+            <div className="mb-3 h-6 w-56 max-w-full rounded-lg bg-slate-200" />
+            <div className="h-4 w-full rounded bg-slate-100" />
+            <div className="mt-2 h-4 max-w-[85%] rounded bg-slate-100" />
           </div>
-          <p className="text-slate-700">{NEXT_ACTION[nextPhase.id]}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/customized-journey?tab=phase" className="inline-flex items-center gap-2 rounded-lg bg-[rgb(var(--coral))] px-4 py-2 text-sm font-semibold text-white">
-              Start next action <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/customized-journey?tab=library" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1e293b]">
-              Open Library
-            </Link>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Bell className="w-5 h-5 text-[rgb(var(--coral))]" />
+              <h2 className="text-lg font-bold text-[#1e293b]">Today&apos;s next best action</h2>
+            </div>
+            <PlainEnglishText as="p" className="text-slate-700" text={NEXT_ACTION[nextPhase.id]} />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href="/customized-journey?tab=phase" className="inline-flex items-center gap-2 rounded-lg bg-[rgb(var(--coral))] px-4 py-2 text-sm font-semibold text-white">
+                Start next action <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link href="/customized-journey?tab=library" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1e293b]">
+                {applyPlainEnglishCopy('Open Library', plainEnglish)}
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
@@ -288,9 +334,37 @@ export default function InboxPage() {
           </div>
         </div>
 
-        {notifications.length > 0 && (
-          <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-sm font-semibold text-[#1e293b] mb-3">Recent reminders</p>
+        <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4">
+          <p className="text-sm font-semibold text-[#1e293b] mb-3">Recent reminders</p>
+          {remindersLoading ? (
+            <div className="space-y-2" aria-busy aria-label="Loading reminders">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-[4.25rem] animate-pulse rounded-lg border border-slate-100 bg-slate-50" />
+              ))}
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/90 px-4 py-8 text-center">
+              <PlainEnglishText
+                as="p"
+                className="mb-4 text-sm text-slate-600"
+                text="No reminders yet. Complete the quiz or open your roadmap to start seeing nudges here."
+              />
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Link
+                  href="/quiz"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[rgb(var(--coral))] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  {applyPlainEnglishCopy('Take the quiz', plainEnglish)}
+                </Link>
+                <Link
+                  href="/customized-journey?tab=overview"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1e293b]"
+                >
+                  {applyPlainEnglishCopy('Open roadmap', plainEnglish)}
+                </Link>
+              </div>
+            </div>
+          ) : (
             <div className="space-y-2">
               {notifications.slice(0, 5).map((n) => (
                 <div key={n.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
@@ -303,14 +377,14 @@ export default function InboxPage() {
                       onClick={() => markRead(n.id)}
                       className="text-xs font-semibold text-[rgb(var(--navy))] hover:underline"
                     >
-                      Mark read
+                      {applyPlainEnglishCopy('Mark read', plainEnglish)}
                     </button>
                   )}
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="mt-6 rounded-xl bg-slate-50 border border-slate-200 p-4 flex items-start gap-3">
           <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />

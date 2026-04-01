@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -18,6 +18,8 @@ import {
   type TransactionType, 
   type Question 
 } from '@/lib/quiz-questions'
+import { parseIcpTypeParam, resolveTransactionAndIcp, type IcpType } from '@/lib/icp-types'
+import PlainEnglishText from '@/components/PlainEnglishText'
 
 // Form validation schema - base schema that gets extended based on transaction type
 const baseQuizSchema = z.object({
@@ -35,6 +37,10 @@ const firstTimeSchema = baseQuizSchema.extend({
   creditScore: z.enum(['under-600', '600-650', '650-700', '700-750', '750+']),
   agentStatus: z.enum(['have-agent', 'interviewing', 'not-yet', 'solo']),
   concern: z.enum(['affording', 'hidden-costs', 'ripped-off', 'wrong-choice', 'timing', 'other']),
+  icpType: z.enum(['first-time', 'first-gen', 'solo', 'move-up']).optional(),
+  firstGenFamilyOwned: z.enum(['yes', 'no-first', 'unsure']).optional(),
+  soloPurchaseIncome: z.enum(['solo', 'coborrower', 'other']).optional(),
+  soloNeighborhoodPriority: z.enum(['safety', 'schools', 'walkability', 'commute', 'community']).optional(),
   eduQuiz_0: z.enum(['0', '1', '2', '3']).optional(),
   eduQuiz_1: z.enum(['0', '1', '2', '3']).optional(),
   eduQuiz_2: z.enum(['0', '1', '2', '3']).optional(),
@@ -120,10 +126,33 @@ const CITIES = [
   'Wichita', 'Wilmington', 'Winston-Salem', 'Worcester', 'Yonkers',
 ].sort()
 
+function quizStageLabel(
+  filtered: Question[],
+  currentIndex: number,
+  transactionType: TransactionType | null
+): string {
+  if (!transactionType || filtered.length === 0) return ''
+  const skipTxn = filtered[0]?.id === 'transactionType' ? 1 : 0
+  const i = Math.max(0, currentIndex - skipTxn)
+  if (i < 3) return 'Financial Picture'
+  if (i < 6) return 'Your Situation'
+  return 'Your Goals'
+}
+
 export default function QuizPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isAuthenticated } = useAuth()
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
+  const [icpType, setIcpType] = useState<IcpType>('first-time')
+  /** Quick scan: 3 steps then teaser; full quiz after CTA unless ?full=1 */
+  const [quizMode, setQuizMode] = useState<'quick' | 'quick-teaser' | 'full'>(() =>
+    searchParams.get('full') === '1' ? 'full' : 'quick'
+  )
+  const [quickStep, setQuickStep] = useState(0)
+  const [quickIncome, setQuickIncome] = useState(75000)
+  const [quickPrice, setQuickPrice] = useState(350000)
+  const [quickIcp, setQuickIcp] = useState<IcpType>('first-time')
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false)
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [showTooltip, setShowTooltip] = useState(false)
@@ -147,6 +176,7 @@ export default function QuizPage() {
   } = useForm<any>({
     defaultValues: {
       transactionType: null,
+      icpType: 'first-time' as IcpType,
       income: 60000,
       monthlyDebt: 0,
       downPayment: 20000,
@@ -157,9 +187,32 @@ export default function QuizPage() {
 
   const watchedValues = watch()
 
+  // Sync URL ?type= → transaction + ICP
+  useEffect(() => {
+    const fromUrl = parseIcpTypeParam(searchParams.get('type'))
+    const legacyTt = searchParams.get('transactionType') as TransactionType | null
+    if (fromUrl) {
+      const r = resolveTransactionAndIcp(fromUrl)
+      setIcpType(r.icpType)
+      setTransactionType(r.transactionType)
+      setValue('transactionType', r.transactionType)
+      setValue('icpType', r.icpType)
+      setQuickIcp(fromUrl)
+    } else if (legacyTt === 'first-time' || legacyTt === 'repeat-buyer' || legacyTt === 'refinance') {
+      setTransactionType(legacyTt)
+      setValue('transactionType', legacyTt)
+      setValue('icpType', legacyTt === 'repeat-buyer' ? 'move-up' : 'first-time')
+      setIcpType(legacyTt === 'repeat-buyer' ? 'move-up' : 'first-time')
+    }
+  }, [searchParams, setValue])
+
   // Get questions based on transaction type (null = one question: transaction type with three categories)
   const allQuestions = getQuestionsForTransactionType(transactionType)
-  const filteredQuestions = getFilteredQuestions(allQuestions, { transactionType, ...watchedValues })
+  const filteredQuestions = getFilteredQuestions(allQuestions, {
+    transactionType,
+    icpType: (watchedValues.icpType as IcpType) || icpType,
+    ...watchedValues,
+  })
 
   // Reset to first question if current index is out of bounds
   useEffect(() => {
@@ -258,6 +311,9 @@ export default function QuizPage() {
     const params = new URLSearchParams({
       transactionType: transactionType || 'first-time',
     })
+    const icp = (data.icpType as IcpType) || icpType
+    params.set('icpType', icp)
+    params.set('type', icp)
 
     // Add all form data to params
     Object.keys(data).forEach(key => {
@@ -281,8 +337,8 @@ export default function QuizPage() {
 
     // Save quiz state for signed-in users so it's remembered next time
     if (isAuthenticated) {
-      saveQuizResults({ ...data, transactionType: transactionType || 'first-time' }).catch(() => {})
-      trackActivity('quiz_completed', { transactionType: transactionType || 'first-time' })
+      saveQuizResults({ ...data, transactionType: transactionType || 'first-time', icpType: icp }).catch(() => {})
+      trackActivity('quiz_completed', { transactionType: transactionType || 'first-time', icpType: icp })
     }
 
     // Navigate after loading screen
@@ -309,6 +365,30 @@ export default function QuizPage() {
   const isStartOfFinancialAssessment =
     Boolean(transactionType && currentQ?.id === FINANCIAL_ASSESSMENT_START_ID[transactionType])
 
+  const teaserAssist = Math.min(25000, Math.round(quickIncome * 0.11 + quickPrice * 0.012))
+
+  const applyQuickDefaultsToForm = () => {
+    const r = resolveTransactionAndIcp(quickIcp)
+    setTransactionType(r.transactionType)
+    setValue('transactionType', r.transactionType)
+    setValue('icpType', r.icpType)
+    setIcpType(r.icpType)
+    setValue('income', quickIncome)
+    setValue('targetHomePrice', quickPrice)
+  }
+
+  const startFullQuizFromQuick = () => {
+    applyQuickDefaultsToForm()
+    setQuizMode('full')
+    setCurrentQuestion(0)
+  }
+
+  const skipToFullAssessment = () => {
+    applyQuickDefaultsToForm()
+    setQuizMode('full')
+    setCurrentQuestion(0)
+  }
+
   return (
     <div className="min-h-screen bg-[rgb(var(--sky-light))] text-slate-800 font-sans">
       {/* Header section with graphic */}
@@ -328,6 +408,132 @@ export default function QuizPage() {
           </div>
         </div>
       </div>
+
+      {quizMode === 'quick' && (
+        <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-brand-sage">Quick scan · 3 questions</p>
+            <h2 className="mt-2 text-2xl font-bold text-brand-forest">
+              {quickStep === 0 && 'What best describes your situation?'}
+              {quickStep === 1 && 'Approximate household income?'}
+              {quickStep === 2 && 'Target home price?'}
+            </h2>
+            {quickStep === 0 && (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    { icp: 'first-time' as IcpType, icon: '🏠', label: 'First-Time Buyer', sub: "I've never owned a home before" },
+                    { icp: 'first-gen' as IcpType, icon: '🌱', label: 'First in My Family', sub: 'No one in my family has done this before' },
+                    { icp: 'solo' as IcpType, icon: '👩', label: 'Buying Solo', sub: "I'm purchasing on my own" },
+                    { icp: 'move-up' as IcpType, icon: '🔄', label: 'I Own & Want to Upgrade', sub: 'I want to sell and buy simultaneously' },
+                  ] as const
+                ).map((row) => (
+                  <button
+                    key={row.icp}
+                    type="button"
+                    onClick={() => setQuickIcp(row.icp)}
+                    className={`rounded-xl border-2 p-4 text-left transition ${
+                      quickIcp === row.icp
+                        ? 'border-brand-forest bg-brand-mist'
+                        : 'border-slate-200 hover:border-brand-sage/50'
+                    }`}
+                  >
+                    <span className="text-2xl">{row.icon}</span>
+                    <p className="mt-2 font-bold text-brand-forest">{row.label}</p>
+                    <p className="text-sm text-slate-600">{row.sub}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+            {quickStep === 1 && (
+              <div className="mt-6">
+                <p className="text-center text-3xl font-bold text-brand-forest">{formatCurrency(quickIncome)}</p>
+                <input
+                  type="range"
+                  min={30000}
+                  max={250000}
+                  step={1000}
+                  value={quickIncome}
+                  onChange={(e) => setQuickIncome(Number(e.target.value))}
+                  className="mt-4 w-full accent-brand-forest"
+                />
+                <div className="mt-2 flex justify-between text-xs text-slate-500">
+                  <span>$30k</span>
+                  <span>$250k+</span>
+                </div>
+              </div>
+            )}
+            {quickStep === 2 && (
+              <div className="mt-6">
+                <p className="text-center text-3xl font-bold text-brand-forest">{formatCurrency(quickPrice)}</p>
+                <input
+                  type="range"
+                  min={100000}
+                  max={1500000}
+                  step={5000}
+                  value={quickPrice}
+                  onChange={(e) => setQuickPrice(Number(e.target.value))}
+                  className="mt-4 w-full accent-brand-forest"
+                />
+              </div>
+            )}
+            <div className="mt-8 flex justify-between">
+              <button
+                type="button"
+                disabled={quickStep === 0}
+                onClick={() => setQuickStep((s) => Math.max(0, s - 1))}
+                className="rounded-lg border border-slate-300 px-4 py-2 font-semibold disabled:opacity-40"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (quickStep < 2) setQuickStep((s) => s + 1)
+                  else setQuizMode('quick-teaser')
+                }}
+                className="rounded-lg bg-brand-forest px-6 py-2 font-semibold text-white hover:bg-brand-sage"
+              >
+                {quickStep < 2 ? 'Next' : 'See estimate'}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={skipToFullAssessment}
+              className="mt-4 w-full text-center text-sm font-semibold text-brand-sage underline"
+            >
+              Skip quick scan — full assessment
+            </button>
+          </div>
+        </div>
+      )}
+
+      {quizMode === 'quick-teaser' && (
+        <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-brand-gold bg-brand-gold/10 p-8 text-center shadow-sm">
+            <PlainEnglishText
+              className="text-lg text-brand-forest"
+              text="Based on your answers, you may qualify for up to"
+              as="p"
+            />
+            <p className="mt-3 text-4xl font-black text-brand-gold">{formatCurrency(teaserAssist)}</p>
+            <PlainEnglishText
+              className="mt-2 text-slate-600"
+              text="in assistance programs. Complete the full assessment for your personalized plan."
+              as="p"
+            />
+            <button
+              type="button"
+              onClick={startFullQuizFromQuick}
+              className="mt-8 w-full rounded-xl bg-brand-terracotta py-4 text-lg font-bold text-white hover:opacity-90 sm:w-auto sm:px-10"
+            >
+              Get My Full Plan (5+ more questions)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {quizMode === 'full' && (
       <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Top Navigation Bar */}
         <div className="mb-6 flex items-center justify-between sticky top-4 z-40 bg-white/95 backdrop-blur-sm border border-slate-200 shadow-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 rounded-xl">
@@ -359,6 +565,7 @@ export default function QuizPage() {
               transition={{ duration: 0.3 }}
             />
           </div>
+          <p className="mt-2 text-sm text-brand-sage">{quizStageLabel(filteredQuestions, currentQuestion, transactionType)}</p>
         </div>
 
         {/* Question Card */}
@@ -376,17 +583,22 @@ export default function QuizPage() {
               role="status"
               aria-live="polite"
             >
-              <p className="font-bold text-[rgb(var(--navy))]">Financial assessment</p>
-              <p className="mt-1 leading-snug text-slate-700">
-                You&apos;re now on the questions we use to estimate affordability, debt-to-income, and your personalized
-                numbers. Your answers stay private and power your results — rough estimates are fine.
-              </p>
+              <PlainEnglishText className="font-bold text-[rgb(var(--navy))]" text="Financial assessment" as="p" />
+              <PlainEnglishText
+                className="mt-1 leading-snug text-slate-700"
+                text="You're now on the questions we use to estimate affordability, debt-to-income, and your personalized numbers. Your answers stay private and power your results — rough estimates are fine."
+                as="p"
+              />
             </div>
           ) : null}
           {/* Question Header */}
           <div className="mb-6">
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-2xl font-bold text-[rgb(var(--navy))]">{currentQ.title}</h2>
+              <PlainEnglishText
+                className="text-2xl font-bold text-[rgb(var(--navy))]"
+                text={currentQ.title}
+                as="h2"
+              />
               <button
                 type="button"
                 onClick={(e) => {
@@ -411,14 +623,14 @@ export default function QuizPage() {
                   exit={{ opacity: 0, y: -10 }}
                   className="bg-[#06b6d4]/20 border border-[#06b6d4]/60 rounded-lg p-4 text-sm text-slate-800 mb-4"
                 >
-                  💡 {currentQ.tooltip}
+                  💡 <PlainEnglishText text={currentQ.tooltip} as="span" />
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Helper text */}
             {currentQ.helper && (
-              <p className="text-sm text-slate-500">{currentQ.helper}</p>
+              <PlainEnglishText className="text-sm text-slate-500" text={currentQ.helper} as="p" />
             )}
           </div>
 
@@ -432,6 +644,8 @@ export default function QuizPage() {
                     const type: TransactionType = 'first-time'
                     setTransactionType(type)
                     setValue('transactionType', type)
+                    setValue('icpType', 'first-time')
+                    setIcpType('first-time')
                   }}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     transactionType === 'first-time'
@@ -450,6 +664,8 @@ export default function QuizPage() {
                     const type: TransactionType = 'repeat-buyer'
                     setTransactionType(type)
                     setValue('transactionType', type)
+                    setValue('icpType', 'move-up')
+                    setIcpType('move-up')
                   }}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     transactionType === 'repeat-buyer'
@@ -468,6 +684,8 @@ export default function QuizPage() {
                     const type: TransactionType = 'refinance'
                     setTransactionType(type)
                     setValue('transactionType', type)
+                    setValue('icpType', 'first-time')
+                    setIcpType('first-time')
                   }}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     transactionType === 'refinance'
@@ -862,6 +1080,7 @@ export default function QuizPage() {
         </motion.div>
         )}
       </div>
+      )}
 
       {/* Loading Screen */}
       <AnimatePresence>

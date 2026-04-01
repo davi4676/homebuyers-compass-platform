@@ -48,6 +48,40 @@ export const transactionTypeQuestion: Question = {
 // First-Time Buyer Questions
 export const firstTimeQuestions: Question[] = [
   {
+    id: 'firstGenFamilyOwned',
+    title: 'Has anyone in your immediate family (parents or siblings) owned a home?',
+    tooltip: 'First-generation buyers may qualify for targeted local and state programs.',
+    type: 'radio',
+    options: [
+      { value: 'yes', label: 'Yes' },
+      { value: 'no-first', label: "No — I'm the first" },
+      { value: 'unsure', label: 'Not sure' },
+    ],
+    getInsight: (value: string) =>
+      value === 'no-first'
+        ? "Great news — first-generation buyers qualify for additional grant programs. We'll find them for you."
+        : null,
+    conditional: (values) =>
+      values.transactionType === 'first-time' &&
+      (values.icpType === 'first-gen' || values.icpType === 'first-time'),
+  },
+  {
+    id: 'soloPurchaseIncome',
+    title: 'Are you purchasing this home entirely on your own income?',
+    tooltip: 'Some programs prioritize single-income or solo buyers.',
+    type: 'radio',
+    options: [
+      { value: 'solo', label: 'Yes, solo income' },
+      { value: 'coborrower', label: 'With a co-borrower (not a spouse)' },
+      { value: 'other', label: 'Other' },
+    ],
+    getInsight: (value: string) =>
+      value === 'solo'
+        ? "Solo buyers often qualify for special programs. We'll factor this into your plan."
+        : null,
+    conditional: (values) => values.transactionType === 'first-time' && values.icpType === 'solo',
+  },
+  {
     id: 'income',
     title: "What's your annual household income?",
     tooltip: "Lenders approve you for more than you can afford. We'll show you a realistic budget based on the 28/36 rule, not their maximums.",
@@ -229,6 +263,20 @@ export const firstTimeQuestions: Question[] = [
   },
   // Educational preparedness quiz (knowledge check)
   {
+    id: 'soloNeighborhoodPriority',
+    title: 'What matters most to you in a neighborhood?',
+    tooltip: "We'll use this to tailor safety and lifestyle tips in your action plan.",
+    type: 'radio',
+    options: [
+      { value: 'safety', label: 'Safety ratings' },
+      { value: 'schools', label: 'School quality' },
+      { value: 'walkability', label: 'Walkability' },
+      { value: 'commute', label: 'Commute time' },
+      { value: 'community', label: 'Community feel' },
+    ],
+    conditional: (values) => values.transactionType === 'first-time' && values.icpType === 'solo',
+  },
+  {
     id: 'eduQuiz_0',
     title: 'What does DTI (Debt-to-Income ratio) measure?',
     tooltip: 'DTI is a key metric lenders use to assess your ability to repay a mortgage.',
@@ -302,6 +350,31 @@ export const firstTimeQuestions: Question[] = [
 
 // Repeat Buyer Questions
 export const repeatBuyerQuestions: Question[] = [
+  {
+    id: 'moveUpSellFirst',
+    title: 'Do you need to sell your current home before purchasing the new one?',
+    tooltip: 'Sell-first vs buy-first changes financing and timing risk.',
+    type: 'radio',
+    options: [
+      { value: 'sell-first', label: 'Yes — sell first' },
+      { value: 'carry-both', label: 'No — I can carry both' },
+      { value: 'unsure', label: 'Not sure yet' },
+    ],
+    conditional: (values) => values.transactionType === 'repeat-buyer' && values.icpType === 'move-up',
+  },
+  {
+    id: 'moveUpEquityApprox',
+    title: "Do you know your current home's approximate equity?",
+    tooltip: 'Equity helps estimate how much you can put toward the next purchase.',
+    type: 'slider',
+    min: 0,
+    max: 800000,
+    step: 5000,
+    conditional: (values) =>
+      values.transactionType === 'repeat-buyer' &&
+      values.icpType === 'move-up' &&
+      values.moveUpSellFirst === 'sell-first',
+  },
   {
     id: 'income',
     title: "What's your annual household income?",

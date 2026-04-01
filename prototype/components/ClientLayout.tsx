@@ -10,6 +10,7 @@ import BlinkProvider from './BlinkProvider'
 import CookieConsent from './CookieConsent'
 import OfflineIndicator from './OfflineIndicator'
 import TopNav from './TopNav'
+import MobileLandingCta from './MobileLandingCta'
 import Link from 'next/link'
 import { JourneyNavChromeProvider } from './JourneyNavChromeContext'
 import { TierMindsetProvider } from './tier-mindset/TierMindsetProvider'
@@ -24,7 +25,11 @@ const EmptyFallback = () => (
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
-    <div id="main-content" className="min-h-screen bg-[rgb(var(--sky-light))] text-[rgb(var(--text-dark))]" tabIndex={-1}>
+    <div
+      id="main-content"
+      className="min-h-screen bg-brand-cream text-brand-charcoal dark:bg-darkaccent-bg dark:text-slate-100"
+      tabIndex={-1}
+    >
       <ErrorBoundary
         fallback={
           <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-[rgb(var(--sky-light))]">
@@ -49,6 +54,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           </JourneyProvider>
         </BlinkProvider>
       </ErrorBoundary>
+      <MobileLandingCta />
       <HomebuyerChatbotWidget />
       <CookieConsent />
       <OfflineIndicator />

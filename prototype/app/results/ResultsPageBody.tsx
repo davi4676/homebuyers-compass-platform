@@ -1,8 +1,13 @@
 'use client'
 
 import { useContext, useEffect, useState } from 'react'
+import FirstGenHub from '@/components/results/FirstGenHub'
+import SoloAdvocateChecklist from '@/components/results/SoloAdvocateChecklist'
+import GlossaryTooltip from '@/components/GlossaryTooltip'
+import { usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
+import { applyPlainEnglishCopy } from '@/lib/plain-english'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight, DollarSign, Target,
@@ -177,8 +182,28 @@ const EDU_QUIZ = [
   },
 ] as const
 
+const ICP_RESULT_HEADLINES: Record<string, string> = {
+  'first-time': "Here's Your First-Time Buyer Savings Plan",
+  'first-gen': "You're Making History — Here's What We Found For You",
+  solo: 'Your Solo Buyer Action Plan',
+  'move-up': 'Your Move-Up Strategy & Equity Analysis',
+}
+
+function normalizeIcpKey(raw: string): keyof typeof ICP_RESULT_HEADLINES | '' {
+  const p = raw.trim().toLowerCase().replace(/_/g, '-')
+  if (p === 'first-gen' || p === 'firstgen') return 'first-gen'
+  if (p === 'solo') return 'solo'
+  if (p === 'move-up' || p === 'moveup') return 'move-up'
+  if (p === 'first-time' || p === 'firsttime') return 'first-time'
+  return ''
+}
+
 export default function ResultsPageBody() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const icpParam = searchParams.get('type') || searchParams.get('icpType') || ''
+  const [quizIcpHint, setQuizIcpHint] = useState('')
+  const plainEnglish = usePlainEnglish()
   const [showFullBreakdown, setShowFullBreakdown] = useState(false)
   const [showTuner, setShowTuner] = useState(false)
   // Educational preparedness quiz state
@@ -193,6 +218,21 @@ export default function ResultsPageBody() {
   const [showAllSavingsOpportunities, setShowAllSavingsOpportunities] = useState(false)
   const resultsExperiment = useExperiment('results_layout_v2')
   const state = useContext(ResultsPageStateContext)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = localStorage.getItem('quizData')
+      if (raw) {
+        const q = JSON.parse(raw) as { icpType?: string; type?: string }
+        setQuizIcpHint(String(q.icpType || q.type || ''))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const effectiveIcpKey = normalizeIcpKey(icpParam || quizIcpHint)
   if (!state) {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -659,6 +699,12 @@ export default function ResultsPageBody() {
           ABOVE FOLD: 3 core sections only
       ════════════════════════════════════════════════════════════════ */}
 
+      {effectiveIcpKey && ICP_RESULT_HEADLINES[effectiveIcpKey] ? (
+        <p className="mb-4 text-center text-xl font-bold text-brand-forest sm:text-2xl">
+          {ICP_RESULT_HEADLINES[effectiveIcpKey]}
+        </p>
+      ) : null}
+
       {/* 1. Primary outcome */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
         {topIntroByType[resolvedJourneyType] ? (
@@ -667,6 +713,326 @@ export default function ResultsPageBody() {
           </p>
         ) : null}
         {resType === 'first-time' && totalSavings > 0 ? (
+          <>
+            {hasResults && resType === 'first-time' && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 rounded-2xl shadow-xl border border-gray-100 bg-white p-6 md:p-8"
+            >
+              <div className="mb-4 flex w-full items-center gap-2 rounded-xl bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-3 shadow-sm sm:py-3.5">
+                <Lightbulb className="h-5 w-5 shrink-0 text-white/90" aria-hidden />
+                <p className="text-base font-bold uppercase tracking-wide text-white">Protect your buying power now</p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+                <div className="mb-2">
+                  <SavingsOpportunitiesHeadline firstName={firstName} count={savingsList.length} totalDollars={totalSavings} />
+                </div>
+
+                <div className="mt-6 rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 sm:p-6">
+                  <h3 className="text-lg font-bold text-[#1e293b]">
+                    {plainEnglish
+                      ? 'Help with your down payment and closing costs'
+                      : 'Down Payment & Closing Cost Assistance You Qualify For'}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {applyPlainEnglishCopy(
+                      'Illustrative programs matched to your profile — always verify with the program administrator.',
+                      plainEnglish
+                    )}
+                  </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    {[
+                      { n: 'HFA First-Time Buyer', a: 12000 },
+                      { n: 'Local Workforce Grant', a: 8500 },
+                      { n: 'Closing Cost Assistance', a: 4500 },
+                    ].map((prog, idx) => (
+                      <div
+                        key={prog.n}
+                        className={`rounded-lg border border-slate-200 bg-white p-3 ${
+                          userTier === 'foundations' && idx > 0 ? 'relative overflow-hidden blur-[3px]' : ''
+                        }`}
+                      >
+                        <p className="font-semibold text-slate-900">{prog.n}</p>
+                        <p className="mt-1 text-lg font-bold text-emerald-700">{formatCurrency(prog.a)}</p>
+                        <p className="text-xs text-slate-500">Income &amp; occupancy rules apply</p>
+                        <Link href="/down-payment-optimizer" className="mt-2 inline-block text-sm font-bold text-sky-700 hover:underline">
+                          Learn More
+                        </Link>
+                        {userTier === 'foundations' && idx > 0 ? (
+                          <div className="absolute inset-0 flex items-center justify-center bg-white/40">
+                            <span className="rounded-full bg-slate-900/85 px-3 py-1 text-xs font-bold text-white">
+                              Unlock — $29
+                            </span>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-sm font-semibold text-slate-800">
+                    Total potential assistance: {formatCurrency(25000)}
+                  </p>
+                </div>
+
+                {effectiveIcpKey === 'first-gen' ? <FirstGenHub /> : null}
+                {effectiveIcpKey === 'solo' ? (
+                  <SoloAdvocateChecklist
+                    neighborhoodPriority={
+                      quizData?.soloNeighborhoodPriority != null
+                        ? String(quizData.soloNeighborhoodPriority)
+                        : null
+                    }
+                  />
+                ) : null}
+
+                <p className="mt-4 text-xs text-slate-500">
+                  <span className="font-semibold text-slate-600">Key terms:</span>{' '}
+                  <GlossaryTooltip term="DTI">DTI</GlossaryTooltip>
+                  <span aria-hidden> · </span>
+                  <GlossaryTooltip term="LTV">LTV</GlossaryTooltip>
+                  <span aria-hidden> · </span>
+                  <GlossaryTooltip term="PMI">PMI</GlossaryTooltip>
+                  <span aria-hidden> · </span>
+                  <GlossaryTooltip term="Escrow">Escrow</GlossaryTooltip>
+                </p>
+
+                {/* ── Educational quiz in progress (only when not completed in main quiz) ── */}
+                {showInPageEducationQuiz && eduStep >= 1 && eduStep <= EDU_QUIZ.length && (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/50 overflow-hidden">
+                    <motion.div
+                      key={`edu-q-${eduStep}`}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="px-4 pt-3 pb-4"
+                    >
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                              Question {eduStep} of {EDU_QUIZ.length}
+                            </p>
+                            <div className="flex gap-1">
+                              {EDU_QUIZ.map((_, i) => (
+                                <span
+                                  key={i}
+                                  className={`inline-block h-1.5 w-4 rounded-full transition-all ${
+                                    i < eduStep - 1 ? (eduAnswers[i] ? 'bg-emerald-500' : 'bg-rose-400') :
+                                    i === eduStep - 1 ? 'bg-[rgb(var(--navy))]' : 'bg-slate-200'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-sm font-bold text-slate-800 mb-3 leading-snug">
+                            {EDU_QUIZ[eduStep - 1].q}
+                          </p>
+                          <div className="space-y-1.5">
+                            {EDU_QUIZ[eduStep - 1].options.map((opt, i) => {
+                              const correctIdx = EDU_QUIZ[eduStep - 1].correct
+                              const isSelected = eduSelected === i
+                              const isCorrect = i === correctIdx
+                              const showFeedback = eduSelected !== null
+                              let style = 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                              if (showFeedback && isCorrect) style = 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                              else if (showFeedback && isSelected && !isCorrect) style = 'border-rose-400 bg-rose-50 text-rose-800'
+                              else if (!showFeedback) style = 'border-slate-200 bg-white text-slate-700 hover:border-[rgb(var(--navy))]/40 hover:bg-slate-50 cursor-pointer'
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  disabled={showFeedback}
+                                  onClick={() => handleEduAnswer(i)}
+                                  className={`w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-all ${style}`}
+                                >
+                                  <span className="inline-flex items-center gap-2">
+                                    <span className={`shrink-0 inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black border ${
+                                      showFeedback && isCorrect ? 'border-emerald-500 bg-emerald-500 text-white' :
+                                      showFeedback && isSelected && !isCorrect ? 'border-rose-500 bg-rose-500 text-white' :
+                                      'border-slate-300 text-slate-400'
+                                    }`}>
+                                      {String.fromCharCode(65 + i)}
+                                    </span>
+                                    {opt}
+                                  </span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                          {eduSelected !== null && (
+                            <motion.p
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="mt-2.5 text-[10px] text-slate-600 leading-relaxed border-t border-slate-100 pt-2"
+                            >
+                              <strong>{eduAnswers[eduStep - 1] ? '✓ Correct.' : '✗ Not quite.'}</strong>{' '}
+                              {EDU_QUIZ[eduStep - 1].explain}
+                            </motion.p>
+                          )}
+                    </motion.div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-2.5">
+                  {savingsList.length > 0 &&
+                    savingsList.slice(0, 3).map((opp, index) => {
+                      const diff = (opp.difficulty || 'medium').toLowerCase()
+                      const badgeColor =
+                        diff === 'easy'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : diff === 'hard'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-amber-100 text-amber-800'
+                      const label = diff === 'easy' ? 'Easy' : diff === 'hard' ? 'Hard' : 'Medium'
+                      return (
+                        <div
+                          key={`${opp.title || 'opp'}-${index}`}
+                          className="flex min-h-0 flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50/80 p-2.5 sm:p-3"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--navy))] text-xs font-bold text-white sm:h-9 sm:w-9 sm:text-sm">
+                              {index + 1}
+                            </span>
+                            <span
+                              className={`shrink-0 text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 sm:text-xs ${badgeColor}`}
+                            >
+                              {label}
+                            </span>
+                          </div>
+                          <p className="min-h-[2.75rem] text-sm font-semibold leading-snug text-slate-900 line-clamp-3 sm:min-h-[3.25rem] sm:text-[0.9375rem]">
+                            {opp.title || 'Savings opportunity'}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  {savingsList.length === 0 && (
+                    <p className="col-span-full text-sm text-slate-500">
+                      Complete the quiz to see your ranked savings opportunities.
+                    </p>
+                  )}
+                </div>
+
+                {savingsList.length > 3 && (
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAllSavingsOpportunities((v) => !v)
+                        trackActivity('tool_used', {
+                          tool: 'results_savings_expand_all',
+                          expanded: !showAllSavingsOpportunities,
+                        })
+                      }}
+                      className="text-sm font-semibold text-[rgb(var(--navy))] underline underline-offset-2 hover:text-slate-900"
+                    >
+                      {showAllSavingsOpportunities
+                        ? 'Show less'
+                        : `All ${savingsList.length} moves + dollar impact`}
+                    </button>
+                  </div>
+                )}
+
+                {savingsList.length > 0 && savingsList.length <= 3 && (
+                  <details className="mt-4 rounded-xl border border-slate-200 bg-white">
+                    <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[rgb(var(--navy))] hover:bg-slate-50 rounded-xl">
+                      Dollar impact by item
+                    </summary>
+                    <ul className="divide-y divide-slate-100 border-t border-slate-100">
+                      {savingsList.map((opp, index) => {
+                        const min = Number(opp.savingsMin || 0)
+                        const max = Number(opp.savingsMax || opp.savingsMin || 0)
+                        const rangeLabel =
+                          min > 0 && max > 0 && min !== max
+                            ? `${formatCurrency(min)} – ${formatCurrency(max)}`
+                            : max > 0
+                              ? formatCurrency(max)
+                              : min > 0
+                                ? formatCurrency(min)
+                                : '—'
+                        const diff = (opp.difficulty || 'medium').toLowerCase()
+                        const label = diff === 'easy' ? 'Easy' : diff === 'hard' ? 'Hard' : 'Medium'
+                        return (
+                          <li key={`compact-${opp.title || 'opp'}-${index}`} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm">
+                            <span className="font-medium text-slate-800">
+                              <span className="tabular-nums text-slate-500 mr-2">{index + 1}.</span>
+                              {opp.title || 'Savings opportunity'}
+                              <span className="ml-2 text-[10px] font-bold uppercase text-slate-400">{label}</span>
+                            </span>
+                            <span className="font-semibold tabular-nums text-emerald-700">{rangeLabel}</span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    {totalSavings > 0 && (
+                      <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-500">
+                        Combined (upper range):{' '}
+                        <span className="font-semibold text-slate-700">{formatCurrency(totalSavings)}</span>
+                        <span className="text-slate-400"> · illustrative, not a guarantee</span>
+                      </p>
+                    )}
+                  </details>
+                )}
+
+                {showAllSavingsOpportunities && savingsList.length > 3 && (
+                  <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <ul className="divide-y divide-slate-100">
+                      {savingsList.map((opp, index) => {
+                        const min = Number(opp.savingsMin || 0)
+                        const max = Number(opp.savingsMax || opp.savingsMin || 0)
+                        const rangeLabel =
+                          min > 0 && max > 0 && min !== max
+                            ? `${formatCurrency(min)} – ${formatCurrency(max)}`
+                            : max > 0
+                              ? formatCurrency(max)
+                              : min > 0
+                                ? formatCurrency(min)
+                                : '—'
+                        const diff = (opp.difficulty || 'medium').toLowerCase()
+                        const label = diff === 'easy' ? 'Easy' : diff === 'hard' ? 'Hard' : 'Medium'
+                        return (
+                          <li key={`full-${opp.title || 'opp'}-${index}`} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm">
+                            <span className="font-medium text-slate-800">
+                              <span className="tabular-nums text-slate-500 mr-2">{index + 1}.</span>
+                              {opp.title || 'Savings opportunity'}
+                              <span className="ml-2 text-[10px] font-bold uppercase text-slate-400">{label}</span>
+                            </span>
+                            <span className="font-semibold tabular-nums text-emerald-700">{rangeLabel}</span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    {totalSavings > 0 && (
+                      <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-500">
+                        Combined (upper range):{' '}
+                        <span className="font-semibold text-slate-700">{formatCurrency(totalSavings)}</span>
+                        <span className="text-slate-400"> · illustrative, not a guarantee</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+                <Link
+                  href="/inbox"
+                  onClick={() => trackActivity('tool_used', { tool: 'results_open_inbox' })}
+                  className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900"
+                >
+                  See prioritized action plan
+                </Link>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowFullBreakdown((prev) => !prev)
+                  }}
+                  className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900 cursor-pointer"
+                >
+                  {showFullBreakdown ? 'Hide assumptions and full breakdown' : 'See assumptions and full breakdown'}
+                </button>
+              </div>
+            </motion.div>
+            )}
           <div className="relative overflow-hidden rounded-2xl shadow-xl border border-gray-100 bg-white p-6 md:p-8">
             <Link
               href="/customized-journey"
@@ -1011,313 +1377,8 @@ export default function ResultsPageBody() {
                 )
               })()}
             </div>
-
-            {/* ── Protect your buying power (combined savings summary + opportunities) ── */}
-            {hasResults && resType === 'first-time' && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 rounded-2xl shadow-xl border border-gray-100 bg-white p-6 md:p-8"
-            >
-              <div className="mb-4 flex w-full items-center gap-2 rounded-xl bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-3 shadow-sm sm:py-3.5">
-                <Lightbulb className="h-5 w-5 shrink-0 text-white/90" aria-hidden />
-                <p className="text-base font-bold uppercase tracking-wide text-white">Protect your buying power now</p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-                <div className="mb-2">
-                  <SavingsOpportunitiesHeadline firstName={firstName} count={savingsList.length} totalDollars={totalSavings} />
-                </div>
-
-                {/* ── Educational quiz in progress (only when not completed in main quiz) ── */}
-                {showInPageEducationQuiz && eduStep >= 1 && eduStep <= EDU_QUIZ.length && (
-                  <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/50 overflow-hidden">
-                    <motion.div
-                      key={`edu-q-${eduStep}`}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="px-4 pt-3 pb-4"
-                    >
-                          {/* Progress dots */}
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                              Question {eduStep} of {EDU_QUIZ.length}
-                            </p>
-                            <div className="flex gap-1">
-                              {EDU_QUIZ.map((_, i) => (
-                                <span
-                                  key={i}
-                                  className={`inline-block h-1.5 w-4 rounded-full transition-all ${
-                                    i < eduStep - 1 ? (eduAnswers[i] ? 'bg-emerald-500' : 'bg-rose-400') :
-                                    i === eduStep - 1 ? 'bg-[rgb(var(--navy))]' : 'bg-slate-200'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <p className="text-sm font-bold text-slate-800 mb-3 leading-snug">
-                            {EDU_QUIZ[eduStep - 1].q}
-                          </p>
-                          <div className="space-y-1.5">
-                            {EDU_QUIZ[eduStep - 1].options.map((opt, i) => {
-                              const correctIdx = EDU_QUIZ[eduStep - 1].correct
-                              const isSelected = eduSelected === i
-                              const isCorrect = i === correctIdx
-                              const showFeedback = eduSelected !== null
-                              let style = 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                              if (showFeedback && isCorrect) style = 'border-emerald-400 bg-emerald-50 text-emerald-800'
-                              else if (showFeedback && isSelected && !isCorrect) style = 'border-rose-400 bg-rose-50 text-rose-800'
-                              else if (!showFeedback) style = 'border-slate-200 bg-white text-slate-700 hover:border-[rgb(var(--navy))]/40 hover:bg-slate-50 cursor-pointer'
-                              return (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  disabled={showFeedback}
-                                  onClick={() => handleEduAnswer(i)}
-                                  className={`w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-all ${style}`}
-                                >
-                                  <span className="inline-flex items-center gap-2">
-                                    <span className={`shrink-0 inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black border ${
-                                      showFeedback && isCorrect ? 'border-emerald-500 bg-emerald-500 text-white' :
-                                      showFeedback && isSelected && !isCorrect ? 'border-rose-500 bg-rose-500 text-white' :
-                                      'border-slate-300 text-slate-400'
-                                    }`}>
-                                      {String.fromCharCode(65 + i)}
-                                    </span>
-                                    {opt}
-                                  </span>
-                                </button>
-                              )
-                            })}
-                          </div>
-                          {eduSelected !== null && (
-                            <motion.p
-                              initial={{ opacity: 0, y: 6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="mt-2.5 text-[10px] text-slate-600 leading-relaxed border-t border-slate-100 pt-2"
-                            >
-                              <strong>{eduAnswers[eduStep - 1] ? '✓ Correct.' : '✗ Not quite.'}</strong>{' '}
-                              {EDU_QUIZ[eduStep - 1].explain}
-                            </motion.p>
-                          )}
-                    </motion.div>
-                  </div>
-                )}
-
-                {/* Top 3 — compact tiles in a row on wider screens */}
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-2.5">
-                  {savingsList.length > 0 &&
-                    savingsList.slice(0, 3).map((opp, index) => {
-                      const diff = (opp.difficulty || 'medium').toLowerCase()
-                      const badgeColor =
-                        diff === 'easy'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : diff === 'hard'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-amber-100 text-amber-800'
-                      const label = diff === 'easy' ? 'Easy' : diff === 'hard' ? 'Hard' : 'Medium'
-                      return (
-                        <div
-                          key={`${opp.title || 'opp'}-${index}`}
-                          className="flex min-h-0 flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50/80 p-2.5 sm:p-3"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--navy))] text-xs font-bold text-white sm:h-9 sm:w-9 sm:text-sm">
-                              {index + 1}
-                            </span>
-                            <span
-                              className={`shrink-0 text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 sm:text-xs ${badgeColor}`}
-                            >
-                              {label}
-                            </span>
-                          </div>
-                          <p className="min-h-[2.75rem] text-sm font-semibold leading-snug text-slate-900 line-clamp-3 sm:min-h-[3.25rem] sm:text-[0.9375rem]">
-                            {opp.title || 'Savings opportunity'}
-                          </p>
-                        </div>
-                      )
-                    })}
-                  {savingsList.length === 0 && (
-                    <p className="col-span-full text-sm text-slate-500">
-                      Complete the quiz to see your ranked savings opportunities.
-                    </p>
-                  )}
-                </div>
-
-                {savingsList.length > 3 && (
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAllSavingsOpportunities((v) => !v)
-                        trackActivity('tool_used', {
-                          tool: 'results_savings_expand_all',
-                          expanded: !showAllSavingsOpportunities,
-                        })
-                      }}
-                      className="text-sm font-semibold text-[rgb(var(--navy))] underline underline-offset-2 hover:text-slate-900"
-                    >
-                      {showAllSavingsOpportunities
-                        ? 'Show less'
-                        : `All ${savingsList.length} moves + dollar impact`}
-                    </button>
-                  </div>
-                )}
-
-                {/* Few opportunities: dollar impact in a collapsible (no duplicate "see all" control) */}
-                {savingsList.length > 0 && savingsList.length <= 3 && (
-                  <details className="mt-4 rounded-xl border border-slate-200 bg-white">
-                    <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[rgb(var(--navy))] hover:bg-slate-50 rounded-xl">
-                      Dollar impact by item
-                    </summary>
-                    <ul className="divide-y divide-slate-100 border-t border-slate-100">
-                      {savingsList.map((opp, index) => {
-                        const min = Number(opp.savingsMin || 0)
-                        const max = Number(opp.savingsMax || opp.savingsMin || 0)
-                        const rangeLabel =
-                          min > 0 && max > 0 && min !== max
-                            ? `${formatCurrency(min)} – ${formatCurrency(max)}`
-                            : max > 0
-                              ? formatCurrency(max)
-                              : min > 0
-                                ? formatCurrency(min)
-                                : '—'
-                        const diff = (opp.difficulty || 'medium').toLowerCase()
-                        const label = diff === 'easy' ? 'Easy' : diff === 'hard' ? 'Hard' : 'Medium'
-                        return (
-                          <li key={`compact-${opp.title || 'opp'}-${index}`} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm">
-                            <span className="font-medium text-slate-800">
-                              <span className="tabular-nums text-slate-500 mr-2">{index + 1}.</span>
-                              {opp.title || 'Savings opportunity'}
-                              <span className="ml-2 text-[10px] font-bold uppercase text-slate-400">{label}</span>
-                            </span>
-                            <span className="font-semibold tabular-nums text-emerald-700">{rangeLabel}</span>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                    {totalSavings > 0 && (
-                      <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-500">
-                        Combined (upper range):{' '}
-                        <span className="font-semibold text-slate-700">{formatCurrency(totalSavings)}</span>
-                        <span className="text-slate-400"> · illustrative, not a guarantee</span>
-                      </p>
-                    )}
-                  </details>
-                )}
-
-                {showAllSavingsOpportunities && savingsList.length > 3 && (
-                  <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    <ul className="divide-y divide-slate-100">
-                      {savingsList.map((opp, index) => {
-                        const min = Number(opp.savingsMin || 0)
-                        const max = Number(opp.savingsMax || opp.savingsMin || 0)
-                        const rangeLabel =
-                          min > 0 && max > 0 && min !== max
-                            ? `${formatCurrency(min)} – ${formatCurrency(max)}`
-                            : max > 0
-                              ? formatCurrency(max)
-                              : min > 0
-                                ? formatCurrency(min)
-                                : '—'
-                        const diff = (opp.difficulty || 'medium').toLowerCase()
-                        const label = diff === 'easy' ? 'Easy' : diff === 'hard' ? 'Hard' : 'Medium'
-                        return (
-                          <li key={`full-${opp.title || 'opp'}-${index}`} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-sm">
-                            <span className="font-medium text-slate-800">
-                              <span className="tabular-nums text-slate-500 mr-2">{index + 1}.</span>
-                              {opp.title || 'Savings opportunity'}
-                              <span className="ml-2 text-[10px] font-bold uppercase text-slate-400">{label}</span>
-                            </span>
-                            <span className="font-semibold tabular-nums text-emerald-700">{rangeLabel}</span>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                    {totalSavings > 0 && (
-                      <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-500">
-                        Combined (upper range):{' '}
-                        <span className="font-semibold text-slate-700">{formatCurrency(totalSavings)}</span>
-                        <span className="text-slate-400"> · illustrative, not a guarantee</span>
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* What's next CTA */}
-                <Link
-                  href="/customized-journey"
-                  onClick={() => trackActivity('tool_used', { tool: 'results_action_roadmap_cta' })}
-                  className={`group relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-800 to-slate-900 px-6 py-6 shadow-2xl ring-2 ring-white/10 transition-all duration-200 hover:ring-white/20 sm:gap-8 sm:px-10 sm:py-8 ${savingsList.length > 0 ? 'mt-6' : 'mt-4'}`}
-                >
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,255,255,0.12),transparent)]" aria-hidden />
-                  <div className="relative flex-1">
-                    <p className="space-y-1.5 mb-3">
-                      <span className="block text-lg sm:text-xl font-bold text-[rgb(var(--coral))]">Still feeling confused or overwhelmed?</span>
-                      <span className="block text-base sm:text-lg font-semibold text-white/90">Let us walk through this journey with you.</span>
-                    </p>
-                    <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm">Start your next best step</h3>
-                  </div>
-                  <span className="relative shrink-0 inline-flex items-center justify-center gap-2 self-start sm:self-center rounded-xl bg-[rgb(var(--coral))] px-7 py-4 text-lg font-bold text-white shadow-lg shadow-black/20 ring-2 ring-white/20 transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl group-hover:ring-white/30">
-                    Open Action Roadmap
-                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </Link>
-
-                <div className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3.5">
-                  <Link
-                    href="/find-my-plan"
-                    onClick={() => trackActivity('tool_used', { tool: 'results_find_my_plan_cta' })}
-                    className="mt-4 flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3.5 hover:border-[rgb(var(--coral))]/50 hover:bg-[rgb(var(--coral))]/5 transition-all group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-base shadow-sm">🧭</span>
-                      <div>
-                        <p className="text-sm font-bold text-slate-800 group-hover:text-[rgb(var(--coral))] transition-colors">Not sure how much help you need?</p>
-                        <p className="text-xs text-slate-500">Answer 5 quick questions → get your plan match</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-[rgb(var(--coral))] transition-colors" />
-                  </Link>
-                  <div className="relative mt-4 w-full sm:w-auto inline-block">
-                    {/* Animated pulse ring */}
-                    <span className="absolute inset-0 rounded-xl bg-[rgb(var(--coral))]/30 animate-ping opacity-60 pointer-events-none" style={{ animationDuration: '2s' }} />
-                    <Link
-                      href="/customized-journey"
-                      onClick={() => trackActivity('tool_used', { tool: 'results_customized_guidance_cta' })}
-                      className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[rgb(var(--coral))] px-7 py-4 text-base font-bold text-white hover:opacity-90 transition shadow-lg"
-                    >
-                      Show me my action plan
-                      <ArrowRight className="h-5 w-5" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
-                <Link
-                  href="/inbox"
-                  onClick={() => trackActivity('tool_used', { tool: 'results_open_inbox' })}
-                  className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900"
-                >
-                  See prioritized action plan
-                </Link>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setShowFullBreakdown((prev) => !prev)
-                  }}
-                  className="font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900 cursor-pointer"
-                >
-                  {showFullBreakdown ? 'Hide assumptions and full breakdown' : 'See assumptions and full breakdown'}
-                </button>
-              </div>
-            </motion.div>
-            )}
           </div>
+          </>
         ) : (
           resType === 'first-time' && realisticMax != null ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
@@ -1343,6 +1404,205 @@ export default function ResultsPageBody() {
             </div>
           ) : null
         )}
+
+      {hasResults && resType === 'first-time' && affordability && (
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+          <h2 className="text-xl font-bold text-[#1e293b] mb-4">
+            {plainEnglish ? 'Your numbers at a glance' : 'Snapshot metrics'}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {readiness != null && (
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center min-h-[120px]">
+                <div
+                  className="relative w-16 h-16 mb-2"
+                  title={`Readiness score: ${readiness}/100`}
+                >
+                  <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+                    <circle
+                      cx="18" cy="18" r="15.9" fill="none"
+                      stroke={readinessColor(readiness)}
+                      strokeWidth="3"
+                      strokeDasharray={`${readiness} 100`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#1e293b]">
+                    {readiness}
+                  </span>
+                </div>
+                <span className="text-xs font-semibold text-slate-500 text-center">
+                  {plainEnglish ? 'How ready you are (0–100)' : 'Readiness score'}
+                </span>
+                <span className="text-xs text-slate-400 mt-0.5">
+                  {readiness >= 75 ? 'Ready to buy' : readiness >= 50 ? 'Almost ready' : 'Needs work'}
+                </span>
+              </div>
+            )}
+            {realisticMax != null && (
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm min-w-0">
+                <div className="flex items-center gap-2 text-emerald-500 mb-1">
+                  <Target className="w-4 h-4 shrink-0" />
+                  <span className="text-xs font-semibold uppercase tracking-wide">
+                    Loan Amount (adjustable{maxApproved != null ? `, lender max ${formatCurrency(maxApproved)}` : ''})
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  min={0}
+                  max={maxApproved ?? undefined}
+                  step={1000}
+                  value={formatNumberForInput(loanAmountInput, 0)}
+                  onChange={(e) => {
+                    setHasEditedLoanAmount(true)
+                    setLoanAmountInput(parseOrEmpty(e.target.value))
+                  }}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-[#1e293b] focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Comfortable max home price estimate: <span className="font-semibold text-slate-700">{comfortableMaxText}</span>
+                </p>
+              </div>
+            )}
+            {affordability.monthlyPayment != null && (
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm min-w-0">
+                <div className="flex items-center gap-2 text-[#06b6d4] mb-1">
+                  <DollarSign className="w-4 h-4 shrink-0" />
+                  <span className="text-xs font-semibold uppercase tracking-wide">Monthly (adjusted scenario)</span>
+                </div>
+                <p className="text-xl font-bold text-[#1e293b]">{formatCurrency(adjustedMonthlyScenario)}</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Baseline: {formatCurrency(Number(affordability.monthlyPayment))}. Includes adjusted taxes, insurance, PMI, HOA, and maintenance.
+                </p>
+              </div>
+            )}
+            {closingCosts?.total != null && (
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm min-w-0">
+                <div className="flex items-center gap-2 text-rose-500 mb-1">
+                  <BarChart2 className="w-4 h-4 shrink-0" />
+                  <span className="text-xs font-semibold uppercase tracking-wide">Closing costs</span>
+                </div>
+                <p className="text-xl font-bold text-[#1e293b]">{formatCurrency(Number(closingCosts.total))}</p>
+                <p className="text-xs text-slate-500 mt-1">Estimate — most of this is negotiable.</p>
+              </div>
+            )}
+          </div>
+        </motion.section>
+      )}
+
+      {hasResults && resType === 'first-time' && costBreakdown && (
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+          <h2 className="text-xl font-bold text-[#1e293b] mb-1">
+            {plainEnglish ? 'What buying really costs' : 'Full cost breakdown'}
+          </h2>
+          <p className="text-sm text-[#475569] mb-5">
+            {plainEnglish
+              ? 'A straight list of fees and monthly costs — so nothing at closing feels like a surprise.'
+              : 'Every fee, clearly explained. Most buyers see this for the first time at the closing table.'}
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-base font-bold text-[#1e293b] mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500" /> Closing costs (what you pay at the table)
+              </h3>
+              <div className="space-y-2.5 text-sm">
+                {[
+                  { label: 'Total closing costs', value: closingCosts?.total, bold: true },
+                  { label: 'Lender fees', value: closingCosts?.lenderFees?.total },
+                  { label: 'Title + settlement', value: closingCosts?.titleAndSettlement?.total },
+                  { label: 'Government fees', value: closingCosts?.governmentFees?.total },
+                  { label: 'Prepaid costs (insurance, taxes, interest)', value: closingCosts?.prepaidCosts?.total },
+                ].map(({ label, value, bold }) =>
+                  value != null ? (
+                    <div key={label} className={`flex items-center justify-between ${bold ? 'pt-2 border-t border-slate-100 font-bold' : ''}`}>
+                      <span className="text-[#475569]">{label}</span>
+                      <span className={bold ? 'text-[#1e293b] text-base' : 'font-semibold text-[#1e293b]'}>{formatCurrency(Number(value))}</span>
+                    </div>
+                  ) : null
+                )}
+              </div>
+              <p className="mt-3 text-xs text-slate-400">Most lender fees and title insurance are negotiable. Always shop at least 3 lenders.</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-base font-bold text-[#1e293b] mb-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#06b6d4]" /> Monthly + long-term costs
+              </h3>
+              <div className="space-y-2.5 text-sm">
+                {[
+                  { label: 'All-in monthly total', value: monthlyPayment?.total, bold: true, note: 'PITI + PMI + maintenance buffer' },
+                  { label: 'Principal + interest', value: monthlyPayment?.principalAndInterest },
+                  { label: 'Property taxes', value: monthlyPayment?.propertyTaxes },
+                  { label: 'Home insurance', value: monthlyPayment?.homeownersInsurance },
+                  { label: 'PMI (drops at 20% equity)', value: monthlyPayment?.pmi && Number(monthlyPayment.pmi) > 0 ? monthlyPayment.pmi : null },
+                  { label: 'Lifetime interest (30 yr)', value: lifetimeCosts?.totalInterest, bold: true },
+                ].map(({ label, value, bold, note }) =>
+                  value != null ? (
+                    <div key={label} className={`flex items-start justify-between ${bold ? 'pt-2 border-t border-slate-100' : ''}`}>
+                      <div>
+                        <span className={`${bold ? 'font-bold text-[#1e293b]' : 'text-[#475569]'}`}>{label}</span>
+                        {note && <p className="text-xs text-slate-400">{note}</p>}
+                      </div>
+                      <span className={bold ? 'font-bold text-[#1e293b] text-base' : 'font-semibold text-[#1e293b]'}>{formatCurrency(Number(value))}</span>
+                    </div>
+                  ) : null
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+      )}
+
+      {hasResults && resType === 'first-time' && totalSavings > 0 && (
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-10 space-y-4">
+          <Link
+            href="/customized-journey"
+            onClick={() => trackActivity('tool_used', { tool: 'results_action_roadmap_cta' })}
+            className="group relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-800 to-slate-900 px-6 py-6 shadow-2xl ring-2 ring-white/10 transition-all duration-200 hover:ring-white/20 sm:gap-8 sm:px-10 sm:py-8"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,255,255,0.12),transparent)]" aria-hidden />
+            <div className="relative flex-1">
+              <p className="space-y-1.5 mb-3">
+                <span className="block text-lg sm:text-xl font-bold text-[rgb(var(--coral))]">Still feeling confused or overwhelmed?</span>
+                <span className="block text-base sm:text-lg font-semibold text-white/90">Let us walk through this journey with you.</span>
+              </p>
+              <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm">Start your next best step</h3>
+            </div>
+            <span className="relative shrink-0 inline-flex items-center justify-center gap-2 self-start sm:self-center rounded-xl bg-[rgb(var(--coral))] px-7 py-4 text-lg font-bold text-white shadow-lg shadow-black/20 ring-2 ring-white/20 transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl group-hover:ring-white/30">
+              Open Action Roadmap
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </span>
+          </Link>
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-3.5">
+            <Link
+              href="/find-my-plan"
+              onClick={() => trackActivity('tool_used', { tool: 'results_find_my_plan_cta' })}
+              className="flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3.5 hover:border-[rgb(var(--coral))]/50 hover:bg-[rgb(var(--coral))]/5 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-base shadow-sm">🧭</span>
+                <div>
+                  <p className="text-sm font-bold text-slate-800 group-hover:text-[rgb(var(--coral))] transition-colors">Not sure how much help you need?</p>
+                  <p className="text-xs text-slate-500">Answer 5 quick questions → get your plan match</p>
+                </div>
+              </div>
+              <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-[rgb(var(--coral))] transition-colors" />
+            </Link>
+            <div className="relative mt-4 w-full sm:w-auto inline-block">
+              <span className="absolute inset-0 rounded-xl bg-[rgb(var(--coral))]/30 animate-ping opacity-60 pointer-events-none" style={{ animationDuration: '2s' }} />
+              <Link
+                href="/customized-journey"
+                onClick={() => trackActivity('tool_used', { tool: 'results_customized_guidance_cta' })}
+                className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[rgb(var(--coral))] px-7 py-4 text-base font-bold text-white hover:opacity-90 transition shadow-lg"
+              >
+                Show me my action plan
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
         {showFullBreakdown && (
         <div className="mt-4 rounded-2xl border border-slate-200/90 bg-white/90 backdrop-blur-sm p-3.5 sm:p-4 shadow-sm">
               <button
@@ -1950,162 +2210,6 @@ export default function ResultsPageBody() {
             </div>
           </div>
 
-          {/* Readiness + stat cards row */}
-      {hasResults && resType === 'first-time' && affordability && (
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <h2 className="text-xl font-bold text-[#1e293b] mb-4">Snapshot metrics</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-
-            {/* Readiness score with colour ring */}
-            {readiness != null && (
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center min-h-[120px]">
-                <div
-                  className="relative w-16 h-16 mb-2"
-                  title={`Readiness score: ${readiness}/100`}
-                >
-                  <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.9" fill="none"
-                      stroke={readinessColor(readiness)}
-                      strokeWidth="3"
-                      strokeDasharray={`${readiness} 100`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-[#1e293b]">
-                    {readiness}
-                  </span>
-                </div>
-                <span className="text-xs font-semibold text-slate-500 text-center">Readiness score</span>
-                <span className="text-xs text-slate-400 mt-0.5">
-                  {readiness >= 75 ? 'Ready to buy' : readiness >= 50 ? 'Almost ready' : 'Needs work'}
-                </span>
-              </div>
-            )}
-
-            {/* Loan amount (adjustable) */}
-            {realisticMax != null && (
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm min-w-0">
-                <div className="flex items-center gap-2 text-emerald-500 mb-1">
-                  <Target className="w-4 h-4 shrink-0" />
-                  <span className="text-xs font-semibold uppercase tracking-wide">
-                    Loan Amount (adjustable{maxApproved != null ? `, lender max ${formatCurrency(maxApproved)}` : ''})
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  min={0}
-                  max={maxApproved ?? undefined}
-                  step={1000}
-                  value={formatNumberForInput(loanAmountInput, 0)}
-                  onChange={(e) => {
-                    setHasEditedLoanAmount(true)
-                    setLoanAmountInput(parseOrEmpty(e.target.value))
-                  }}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-[#1e293b] focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  Comfortable max home price estimate: <span className="font-semibold text-slate-700">{comfortableMaxText}</span>
-                </p>
-              </div>
-            )}
-
-            {/* Monthly PITI */}
-            {affordability.monthlyPayment != null && (
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm min-w-0">
-                <div className="flex items-center gap-2 text-[#06b6d4] mb-1">
-                  <DollarSign className="w-4 h-4 shrink-0" />
-                  <span className="text-xs font-semibold uppercase tracking-wide">Monthly (adjusted scenario)</span>
-                </div>
-                <p className="text-xl font-bold text-[#1e293b]">{formatCurrency(adjustedMonthlyScenario)}</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Baseline: {formatCurrency(Number(affordability.monthlyPayment))}. Includes adjusted taxes, insurance, PMI, HOA, and maintenance.
-                </p>
-              </div>
-            )}
-
-            {/* Closing costs */}
-            {closingCosts?.total != null && (
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm min-w-0">
-                <div className="flex items-center gap-2 text-rose-500 mb-1">
-                  <BarChart2 className="w-4 h-4 shrink-0" />
-                  <span className="text-xs font-semibold uppercase tracking-wide">Closing costs</span>
-                </div>
-                <p className="text-xl font-bold text-[#1e293b]">{formatCurrency(Number(closingCosts.total))}</p>
-                <p className="text-xs text-slate-500 mt-1">Estimate — most of this is negotiable.</p>
-              </div>
-            )}
-          </div>
-
-        </motion.section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════
-          ZONE 2 – EDUCATE (scroll reveal, building trust)
-      ════════════════════════════════════════════════════════════════ */}
-
-      {/* Full cost breakdown */}
-      {hasResults && resType === 'first-time' && costBreakdown && (
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <h2 className="text-xl font-bold text-[#1e293b] mb-1">Full cost breakdown</h2>
-          <p className="text-sm text-[#475569] mb-5">Every fee, clearly explained. Most buyers see this for the first time at the closing table.</p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Closing costs */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-base font-bold text-[#1e293b] mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-500" /> Closing costs (what you pay at the table)
-              </h3>
-              <div className="space-y-2.5 text-sm">
-                {[
-                  { label: 'Total closing costs', value: closingCosts?.total, bold: true },
-                  { label: 'Lender fees', value: closingCosts?.lenderFees?.total },
-                  { label: 'Title + settlement', value: closingCosts?.titleAndSettlement?.total },
-                  { label: 'Government fees', value: closingCosts?.governmentFees?.total },
-                  { label: 'Prepaid costs (insurance, taxes, interest)', value: closingCosts?.prepaidCosts?.total },
-                ].map(({ label, value, bold }) =>
-                  value != null ? (
-                    <div key={label} className={`flex items-center justify-between ${bold ? 'pt-2 border-t border-slate-100 font-bold' : ''}`}>
-                      <span className="text-[#475569]">{label}</span>
-                      <span className={bold ? 'text-[#1e293b] text-base' : 'font-semibold text-[#1e293b]'}>{formatCurrency(Number(value))}</span>
-                    </div>
-                  ) : null
-                )}
-              </div>
-              <p className="mt-3 text-xs text-slate-400">Most lender fees and title insurance are negotiable. Always shop at least 3 lenders.</p>
-            </div>
-
-            {/* Monthly + lifetime */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-base font-bold text-[#1e293b] mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#06b6d4]" /> Monthly + long-term costs
-              </h3>
-              <div className="space-y-2.5 text-sm">
-                {[
-                  { label: 'All-in monthly total', value: monthlyPayment?.total, bold: true, note: 'PITI + PMI + maintenance buffer' },
-                  { label: 'Principal + interest', value: monthlyPayment?.principalAndInterest },
-                  { label: 'Property taxes', value: monthlyPayment?.propertyTaxes },
-                  { label: 'Home insurance', value: monthlyPayment?.homeownersInsurance },
-                  { label: 'PMI (drops at 20% equity)', value: monthlyPayment?.pmi && Number(monthlyPayment.pmi) > 0 ? monthlyPayment.pmi : null },
-                  { label: 'Lifetime interest (30 yr)', value: lifetimeCosts?.totalInterest, bold: true },
-                ].map(({ label, value, bold, note }) =>
-                  value != null ? (
-                    <div key={label} className={`flex items-start justify-between ${bold ? 'pt-2 border-t border-slate-100' : ''}`}>
-                      <div>
-                        <span className={`${bold ? 'font-bold text-[#1e293b]' : 'text-[#475569]'}`}>{label}</span>
-                        {note && <p className="text-xs text-slate-400">{note}</p>}
-                      </div>
-                      <span className={bold ? 'font-bold text-[#1e293b] text-base' : 'font-semibold text-[#1e293b]'}>{formatCurrency(Number(value))}</span>
-                    </div>
-                  ) : null
-                )}
-              </div>
-            </div>
-          </div>
-        </motion.section>
-      )}
         </motion.div>
       )}
 
@@ -2316,6 +2420,46 @@ export default function ResultsPageBody() {
           </p>
         </div>
       </motion.div>
+      )}
+
+      {hasResults && resType === 'first-time' && totalSavings > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10 mt-8 scroll-mt-28"
+          id="results-upgrade-cta"
+        >
+          <div className="rounded-2xl border-2 border-brand-sage/30 bg-brand-mist/60 p-6 sm:p-8">
+            <p className="text-center text-lg font-bold text-brand-forest">
+              You&apos;ve identified {formatCurrency(totalSavings)} in potential savings. Unlock your complete action plan to
+              capture every dollar.
+            </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <Link
+                href="/upgrade?tier=momentum&source=results"
+                className="relative flex flex-col rounded-2xl border-2 border-brand-forest bg-white p-5 shadow-md transition hover:shadow-lg"
+              >
+                <span className="absolute -top-3 right-4 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white">
+                  Best Value
+                </span>
+                <p className="text-sm font-semibold text-slate-500">Strategist</p>
+                <p className="mt-1 text-3xl font-black text-brand-forest">$29</p>
+                <p className="mt-2 text-sm text-slate-600">One-time · Full action plan &amp; negotiation scripts</p>
+              </Link>
+              <Link
+                href="/upgrade?tier=navigator&source=results"
+                className="relative flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+              >
+                <span className="absolute -top-3 right-4 rounded-full bg-slate-700 px-3 py-1 text-xs font-bold text-white">
+                  Most Popular
+                </span>
+                <p className="text-sm font-semibold text-slate-500">Pro</p>
+                <p className="mt-1 text-3xl font-black text-slate-900">$149</p>
+                <p className="mt-2 text-sm text-slate-600">Deeper tools &amp; concierge-style guidance</p>
+              </Link>
+            </div>
+          </div>
+        </motion.section>
       )}
 
       {/* ── Tier Switcher (bottom) ────────────────────────────────────── */}

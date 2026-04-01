@@ -7,12 +7,16 @@ import { getUserProfile } from '@/lib/user-profile'
 import { useAuth } from '@/lib/hooks/useAuth'
 import ProductivityTracker from '@/components/ProductivityTracker'
 import NextBestActionSticky from '@/components/NextBestActionSticky'
+import PlainEnglishText from '@/components/PlainEnglishText'
 import { useExperiment } from '@/lib/hooks/useExperiment'
+import { PLAIN_ENGLISH_LS_KEY, usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
+import { applyPlainEnglishCopy } from '@/lib/plain-english'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ReturnType<typeof getUserProfile> | null>(null)
   const { user, isAuthenticated, signOut } = useAuth()
   const roadmapExperiment = useExperiment('roadmap_today_view_v2')
+  const plainEnglish = usePlainEnglish()
 
   useEffect(() => {
     if (roadmapExperiment.isReady) {
@@ -52,22 +56,59 @@ export default function ProfilePage() {
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         {roadmapExperiment.isTreatment && (
           <NextBestActionSticky
-            title="Resume your current roadmap phase"
-            description="Pick up where you left off in Today View and complete one task."
-            ctaLabel="Open roadmap"
+            title={applyPlainEnglishCopy('Resume your current roadmap phase', plainEnglish)}
+            description={applyPlainEnglishCopy(
+              'Pick up where you left off in Today View and complete one task.',
+              plainEnglish
+            )}
+            ctaLabel={applyPlainEnglishCopy('Open roadmap', plainEnglish)}
             ctaHref="/customized-journey?view=today"
-            secondaryLabel="Open inbox"
+            secondaryLabel={applyPlainEnglishCopy('Open inbox', plainEnglish)}
             secondaryHref="/inbox"
           />
         )}
         <div className="flex items-center gap-3">
           <User className="w-10 h-10 text-[rgb(var(--navy))]" />
-          <h1 className="text-2xl font-bold text-[rgb(var(--navy))]">Profile & Progress</h1>
+          <PlainEnglishText
+            as="h1"
+            className="text-2xl font-bold text-[rgb(var(--navy))]"
+            text="Profile & Progress"
+          />
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+          <PlainEnglishText
+            as="h2"
+            className="text-lg font-semibold text-[rgb(var(--navy))]"
+            text="Reading preferences"
+          />
+          <label className="mt-4 flex cursor-pointer items-center justify-between gap-4">
+            <PlainEnglishText as="span" className="text-sm text-slate-700" text="Plain English mode" />
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[rgb(var(--coral))]"
+              checked={plainEnglish}
+              onChange={(e) => {
+                const on = e.target.checked
+                try {
+                  localStorage.setItem(PLAIN_ENGLISH_LS_KEY, on ? '1' : '0')
+                  window.dispatchEvent(new Event('nq-plain-english-changed'))
+                } catch {
+                  // ignore
+                }
+              }}
+            />
+          </label>
+          <PlainEnglishText
+            as="p"
+            className="mt-2 text-xs text-slate-500"
+            text="When on, we prefer plain language over jargon where the app supports it (stored on this device)."
+          />
         </div>
 
         {isAuthenticated && user && (
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 space-y-3">
-            <h2 className="text-lg font-semibold text-[rgb(var(--navy))]">Account</h2>
+            <PlainEnglishText as="h2" className="text-lg font-semibold text-[rgb(var(--navy))]" text="Account" />
             <div className="flex justify-between text-sm">
               <span className="text-slate-500">Name</span>
               <span className="font-medium text-slate-800">
@@ -88,13 +129,17 @@ export default function ProfilePage() {
         )}
 
         <section>
-          <h2 className="text-lg font-semibold mb-3 text-[rgb(var(--navy))]">Productivity Tracker</h2>
+          <PlainEnglishText
+            as="h2"
+            className="text-lg font-semibold mb-3 text-[rgb(var(--navy))]"
+            text="Productivity Tracker"
+          />
           <ProductivityTracker />
         </section>
 
         {profile ? (
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-[rgb(var(--navy))]">Journey profile</h2>
+            <PlainEnglishText as="h2" className="text-lg font-semibold text-[rgb(var(--navy))]" text="Journey profile" />
             <div className="flex justify-between text-sm">
               <span className="text-slate-500">Buyer type</span>
               <span className="font-medium text-slate-800">{profile.buyerType}</span>
@@ -117,14 +162,14 @@ export default function ProfilePage() {
             </div>
           </div>
         ) : (
-          <p className="text-slate-500">Loading journey profile...</p>
+          <PlainEnglishText as="p" className="text-slate-500" text="Loading journey profile..." />
         )}
 
         <Link
           href="/customized-journey"
           className="inline-flex items-center gap-2 text-[rgb(var(--coral))] hover:underline text-sm font-semibold"
         >
-          View your journey →
+          {applyPlainEnglishCopy('View your journey →', plainEnglish)}
         </Link>
       </main>
     </div>

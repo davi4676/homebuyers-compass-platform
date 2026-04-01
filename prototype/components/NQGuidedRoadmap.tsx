@@ -71,6 +71,7 @@ import {
   type UserSnapshot,
 } from '@/lib/user-snapshot'
 import HousingBudgetSketchTile from '@/components/HousingBudgetSketchTile'
+import AssistanceProgramsTab from '@/components/journey/AssistanceProgramsTab'
 import TierPreviewSwitcher from '@/components/TierPreviewSwitcher'
 import TierBadge from '@/components/TierBadge'
 import { useTierMindset } from '@/components/tier-mindset/TierMindsetProvider'
@@ -975,6 +976,8 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
           </div>
         </div>
       ) : null}
+
+      {activeTab === 'assistance' ? <AssistanceProgramsTab /> : null}
 
       {activeTab === 'phase' ? (
         <div

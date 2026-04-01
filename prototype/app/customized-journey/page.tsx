@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import UserJourneyTracker from '@/components/analytics/UserJourneyTracker'
 import { useExperiment } from '@/lib/hooks/useExperiment'
 import NQGuidedRoadmap from '@/components/NQGuidedRoadmap'
+import PlainEnglishText from '@/components/PlainEnglishText'
 
 export default function CustomizedJourneyPage() {
   const searchParams = useSearchParams()
@@ -68,12 +69,16 @@ export default function CustomizedJourneyPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent" />
             <div className="absolute inset-0 flex flex-col justify-center gap-2 px-6 sm:px-10">
-              <p className="text-2xl font-bold text-white drop-shadow-sm sm:text-3xl">
-                {user?.firstName ? `${user.firstName}'s Homebuying Roadmap` : 'Your Homebuying Roadmap'}
-              </p>
-              <p className="text-base font-medium text-white/90">
-                Seven calm tabs — overview, your phase, sketch, learn, library, inbox, and upgrades.
-              </p>
+              <PlainEnglishText
+                as="p"
+                className="text-2xl font-bold text-white drop-shadow-sm sm:text-3xl"
+                text={user?.firstName ? `${user.firstName}'s Homebuying Roadmap` : 'Your Homebuying Roadmap'}
+              />
+              <PlainEnglishText
+                as="p"
+                className="text-base font-medium text-white/90"
+                text="Seven calm tabs — overview, your phase, sketch, learn, library, inbox, and upgrades."
+              />
             </div>
           </div>
         </div>
@@ -107,21 +112,33 @@ export default function CustomizedJourneyPage() {
             transition={{ duration: 0.4 }}
             className="mb-10 text-center md:mb-14"
           >
-            <h1 className="mb-3 text-3xl font-bold tracking-tight text-[rgb(var(--navy))] sm:text-4xl md:text-[2.75rem] md:leading-tight">
-              Your customized NestQuest journey
-            </h1>
-            <p className="mx-auto max-w-2xl text-sm text-slate-600 md:text-lg">
-              Use the tabs above to move between your snapshot, phase work, budget sketch, learning, library, inbox, and
-              upgrade options — keyboard-friendly and saved between visits.
-            </p>
+            <PlainEnglishText
+              as="h1"
+              className="mb-3 text-3xl font-bold tracking-tight text-[rgb(var(--navy))] sm:text-4xl md:text-[2.75rem] md:leading-tight"
+              text="Your customized NestQuest journey"
+            />
+            <PlainEnglishText
+              as="p"
+              className="mx-auto max-w-2xl text-sm text-slate-600 md:text-lg"
+              text="Use the tabs above to move between your snapshot, phase work, budget sketch, learning, library, inbox, and upgrade options — keyboard-friendly and saved between visits."
+            />
           </motion.div>
 
           <Suspense
             fallback={
               <div
-                className="min-h-[20rem] rounded-3xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white"
-                aria-hidden
-              />
+                className="min-h-[24rem] space-y-4 rounded-3xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-6 md:p-8"
+                aria-busy
+                aria-label="Loading roadmap"
+              >
+                <div className="mb-2 h-10 max-w-md animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
+                <div className="h-6 w-2/3 max-w-lg animate-pulse rounded-lg bg-brand-mist dark:bg-gray-800" />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="h-40 animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
+                  <div className="h-40 animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
+                </div>
+                <div className="h-32 animate-pulse rounded-xl bg-brand-mist/80 dark:bg-gray-800" />
+              </div>
             }
           >
             <NQGuidedRoadmap userFirstName={user?.firstName} onGoToResults={goToDownPaymentEstimate} />

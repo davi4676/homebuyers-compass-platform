@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { DM_Sans } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import ClientLayout from '@/components/ClientLayout'
 
@@ -29,8 +30,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="min-h-full">
-      <body className={`${dmSans.variable} ${dmSans.className} min-h-full antialiased font-sans`}>
+    <html lang="en" className="min-h-full" suppressHydrationWarning>
+      <Script id="nq-theme-init" strategy="beforeInteractive">
+        {`(function(){try{var k='nq-theme',v=localStorage.getItem(k);if(v==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');}catch(e){}})()`}
+      </Script>
+      <body
+        className={`${dmSans.variable} ${dmSans.className} min-h-full antialiased font-sans bg-brand-cream text-brand-charcoal dark:bg-darkaccent-bg dark:text-slate-100`}
+      >
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
