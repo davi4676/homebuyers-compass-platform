@@ -135,13 +135,13 @@ export default function LandingPage() {
             <p className="text-[1.05rem] md:text-[1.2rem] text-white max-w-2xl mx-auto" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.45)' }}>
               A personalized buying guide that finds hidden funds, simplifies every step, and holds your hand from search to close.
             </p>
-            <button
-              type="button"
-              onClick={() => document.getElementById('icp-selector')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="mt-6 w-full rounded-lg bg-brand-forest px-8 py-4 text-lg font-semibold text-white shadow-md transition hover:brightness-90 md:mx-auto md:w-auto"
+            <Link
+              href={ctaHref('first-time')}
+              onClick={() => handlePrimaryCtaClick('landing_hero_primary_savings', 'first-time')}
+              className="mt-8 inline-flex w-full max-w-none items-center justify-center rounded-lg bg-brand-forest px-6 py-4 text-lg font-semibold text-white shadow-md transition hover:brightness-90 md:mx-auto md:mt-10 md:w-auto md:px-10 md:py-4"
             >
               Find My Savings in 90 Seconds →
-            </button>
+            </Link>
           </div>
         </div>
 
