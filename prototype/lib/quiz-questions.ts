@@ -62,8 +62,7 @@ export const firstTimeQuestions: Question[] = [
         ? "Great news — first-generation buyers qualify for additional grant programs. We'll find them for you."
         : null,
     conditional: (values) =>
-      values.transactionType === 'first-time' &&
-      (values.icpType === 'first-gen' || values.icpType === 'first-time'),
+      values.transactionType === 'first-time' && values.icpType === 'first-gen',
   },
   {
     id: 'soloPurchaseIncome',
@@ -277,20 +276,6 @@ export const firstTimeQuestions: Question[] = [
     conditional: (values) => values.transactionType === 'first-time' && values.icpType === 'solo',
   },
   {
-    id: 'eduQuiz_0',
-    title: 'What does DTI (Debt-to-Income ratio) measure?',
-    tooltip: 'DTI is a key metric lenders use to assess your ability to repay a mortgage.',
-    type: 'knowledge-check',
-    options: [
-      { value: '0', label: 'The interest rate on your loan' },
-      { value: '1', label: 'How much of your monthly income goes to all debt payments' },
-      { value: '2', label: 'Your down payment as a % of home price' },
-      { value: '3', label: 'Your credit utilization rate' },
-    ],
-    correctIndex: 1,
-    explain: 'DTI is the share of your gross monthly income that goes to all debt payments. Lenders use it to decide how much mortgage you can safely carry.',
-  },
-  {
     id: 'eduQuiz_1',
     title: 'Which step typically comes BEFORE making an offer on a home?',
     tooltip: 'The order of steps matters in the homebuying process.',
@@ -303,20 +288,6 @@ export const firstTimeQuestions: Question[] = [
     ],
     correctIndex: 2,
     explain: 'A pre-approval letter tells sellers you can actually afford the home — it dramatically strengthens your offer in a competitive market.',
-  },
-  {
-    id: 'eduQuiz_2',
-    title: 'PMI (Private Mortgage Insurance) is required when:',
-    tooltip: 'PMI affects your monthly payment and can be removed over time.',
-    type: 'knowledge-check',
-    options: [
-      { value: '0', label: 'Your credit score is below 620' },
-      { value: '1', label: 'Your down payment is less than 20% of the purchase price' },
-      { value: '2', label: 'You own more than one property' },
-      { value: '3', label: 'Your DTI exceeds 43%' },
-    ],
-    correctIndex: 1,
-    explain: 'PMI protects the lender — not you — when you put down less than 20%. It typically adds $50–$200/month and can be removed once you reach 20% equity.',
   },
   {
     id: 'eduQuiz_3',

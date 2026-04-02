@@ -1,6 +1,9 @@
 'use client'
 
 import { ReactNode, Suspense } from 'react'
+import clsx from 'clsx'
+import { usePathname } from 'next/navigation'
+import { useAuth } from '@/lib/hooks/useAuth'
 import DeveloperTierSwitcher from './DeveloperTierSwitcher'
 import { ErrorBoundary } from './ErrorBoundary'
 import { JourneyProvider } from './JourneyProvider'
@@ -10,7 +13,7 @@ import BlinkProvider from './BlinkProvider'
 import CookieConsent from './CookieConsent'
 import OfflineIndicator from './OfflineIndicator'
 import TopNav from './TopNav'
-import MobileLandingCta from './MobileLandingCta'
+import StickyMobileCta from './StickyMobileCta'
 import Link from 'next/link'
 import { JourneyNavChromeProvider } from './JourneyNavChromeContext'
 import { TierMindsetProvider } from './tier-mindset/TierMindsetProvider'
@@ -24,10 +27,17 @@ const EmptyFallback = () => (
 )
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+  const { isAuthenticated } = useAuth()
+  const reserveMobileStickyCta = pathname === '/' && !isAuthenticated
+
   return (
     <div
       id="main-content"
-      className="min-h-screen bg-brand-cream text-brand-charcoal dark:bg-darkaccent-bg dark:text-slate-100"
+      className={clsx(
+        'min-h-screen bg-brand-cream text-brand-charcoal dark:bg-darkaccent-bg dark:text-slate-100',
+        reserveMobileStickyCta && 'pb-16 md:pb-0'
+      )}
       tabIndex={-1}
     >
       <ErrorBoundary
@@ -54,7 +64,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           </JourneyProvider>
         </BlinkProvider>
       </ErrorBoundary>
-      <MobileLandingCta />
+      <StickyMobileCta />
       <HomebuyerChatbotWidget />
       <CookieConsent />
       <OfflineIndicator />

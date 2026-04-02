@@ -1,6 +1,6 @@
 # 🎨 Design Improvement Recommendations
 
-**Homebuyer's Compass Platform**  
+**NestQuest**  
 **Date:** January 21, 2026  
 **Status:** Recommendations for Implementation
 
@@ -283,7 +283,7 @@ const getGreeting = () => {
     <div className="flex items-center justify-between h-16">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2">
-        <span className="text-xl font-bold">🏠 Homebuyer's Compass</span>
+        <span className="text-xl font-bold">🏠 NestQuest</span>
       </Link>
       
       {/* Main Nav */}

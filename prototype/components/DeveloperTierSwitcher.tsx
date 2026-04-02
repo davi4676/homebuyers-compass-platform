@@ -12,12 +12,12 @@ export default function DeveloperTierSwitcher() {
   const [currentTier, setCurrentTier] = useState<UserTier>('foundations')
   const [isDevMode, setIsDevMode] = useState(false)
 
-  // Check if we're in development mode
+  // Show switcher in dev, localStorage devMode, localhost, or tier-review/staging builds
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Show in development or if localStorage has dev mode enabled
-      const devMode = 
-        process.env.NODE_ENV === 'development' || 
+      const devMode =
+        process.env.NEXT_PUBLIC_TIER_REVIEW_PUBLIC === 'true' ||
+        process.env.NODE_ENV === 'development' ||
         localStorage.getItem('devMode') === 'true' ||
         window.location.hostname === 'localhost'
       setIsDevMode(devMode)

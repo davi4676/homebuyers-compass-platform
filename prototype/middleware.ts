@@ -3,8 +3,19 @@ import type { NextRequest } from 'next/server'
 
 const SESSION_COOKIE = 'session'
 
-/** Routes that do not require authentication (home and auth only). */
-const PUBLIC_PATHS = ['/', '/auth']
+/**
+ * When true (or in development): skip the auth redirect so reviewers can open journey, upgrade,
+ * dashboard, etc. without signing in. Tier is driven by localStorage + the Developer Tier Switcher.
+ * Set NEXT_PUBLIC_TIER_REVIEW_PUBLIC=false on production when you want the session gate back.
+ */
+function isTierReviewBrowsing(): boolean {
+  if (process.env.NEXT_PUBLIC_TIER_REVIEW_PUBLIC === 'true') return true
+  if (process.env.NODE_ENV === 'development') return true
+  return false
+}
+
+/** Routes that do not require authentication. */
+const PUBLIC_PATHS = ['/', '/auth', '/quiz', '/results']
 
 /** Path prefixes that are always allowed (api, static, etc.). */
 const PUBLIC_PREFIXES = ['/api/', '/_next/', '/favicon', '/privacy']
@@ -12,13 +23,15 @@ const PUBLIC_PREFIXES = ['/api/', '/_next/', '/favicon', '/privacy']
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) return true
-  /** Prototype / demo: journey must work without login; tab navigations use the same path. */
-  if (pathname === '/customized-journey' || pathname.startsWith('/customized-journey/')) return true
   return false
 }
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (isTierReviewBrowsing()) {
+    return NextResponse.next()
+  }
 
   if (isPublicPath(pathname)) {
     return NextResponse.next()

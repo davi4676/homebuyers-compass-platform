@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 import type { UserTier } from '@/lib/tiers';
 import { normalizeUserTier } from '@/lib/tiers';
 import { AuthModal } from './AuthModal';
+import { SIGNUP_DISABLED } from '@/lib/auth-flags';
 
 interface UserMenuProps {
   className?: string;
@@ -29,7 +30,9 @@ interface UserMenuProps {
 export function UserMenu({ className = '' }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('signup');
+  const [authModalView, setAuthModalView] = useState<'login' | 'signup'>(() =>
+    SIGNUP_DISABLED ? 'login' : 'signup'
+  );
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, signOut, isAuthenticated } = useAuth();
   const router = useRouter();
@@ -216,12 +219,14 @@ export function UserMenu({ className = '' }: UserMenuProps) {
                     <LogIn className="w-5 h-5" />
                     Sign In
                   </button>
-                  <button
-                    onClick={() => handleOpenAuthModal('signup')}
-                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    Create Account
-                  </button>
+                  {!SIGNUP_DISABLED && (
+                    <button
+                      onClick={() => handleOpenAuthModal('signup')}
+                      className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      Create Account
+                    </button>
+                  )}
                 </div>
 
                 <div className="border-t border-gray-100" />

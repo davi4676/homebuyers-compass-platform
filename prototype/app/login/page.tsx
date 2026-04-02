@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogIn, ArrowLeft } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { SIGNUP_DISABLED } from '@/lib/auth-flags'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -36,12 +37,14 @@ export default function LoginPage() {
             redirectTo="/"
           />
         )}
-        <p className="mt-6 text-sm text-slate-500">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-[rgb(var(--coral))] hover:underline font-semibold">
-            Sign up
-          </Link>
-        </p>
+        {!SIGNUP_DISABLED && (
+          <p className="mt-6 text-sm text-slate-500">
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="text-[rgb(var(--coral))] hover:underline font-semibold">
+              Sign up
+            </Link>
+          </p>
+        )}
         <Link
           href="/"
           className="inline-flex items-center gap-2 mt-8 text-slate-600 hover:text-[rgb(var(--navy))] transition-colors text-sm font-medium"

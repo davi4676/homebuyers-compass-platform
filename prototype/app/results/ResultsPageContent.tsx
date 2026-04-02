@@ -266,6 +266,7 @@ function ChooseYourPlanSection({
 
 import { ResultsPageStateContext } from './ResultsPageStateContext'
 import ResultsPageBody from './ResultsPageBody'
+import GuestResultsPreview from '@/components/results/GuestResultsPreview'
 
 function ResultsPageLayout({ children }: { children: ReactNode }) {
   return (
@@ -371,9 +372,7 @@ function ResultsPageContent() {
         'agentStatus',
         'concern',
         'zipCode',
-        'eduQuiz_0',
         'eduQuiz_1',
-        'eduQuiz_2',
         'eduQuiz_3',
         'eduQuiz_4',
         'currentHomeValue',
@@ -971,6 +970,23 @@ function ResultsPageContent() {
           </p>
         </div>
       </div>
+    )
+  }
+
+  const resultsRecord = results as Record<string, unknown>
+  const isFirstTimeResults =
+    resultsRecord &&
+    typeof resultsRecord === 'object' &&
+    resultsRecord.type === 'first-time'
+
+  if (!isAuthenticated && isFirstTimeResults) {
+    return React.createElement(ResultsPageStateContext.Provider, { value: state },
+      React.createElement(ResultsPageLayout, null,
+        React.createElement(UserJourneyTracker),
+        React.createElement('div', { className: 'bg-white border-b border-slate-200 shadow-sm' },
+          React.createElement('div', { className: 'max-w-7xl mx-auto' }, React.createElement(TrustSignals))),
+        React.createElement(GuestResultsPreview, { results: resultsRecord })
+      )
     )
   }
 

@@ -1,4 +1,4 @@
-# Homebuyer's Compass Platform - Prototype Summary
+# NestQuest — Prototype Summary
 
 ## 🚀 Quick Start
 

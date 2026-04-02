@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { UserPlus, ArrowLeft } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { SIGNUP_DISABLED } from '@/lib/auth-flags'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -13,11 +14,23 @@ export default function RegisterPage() {
   const view = searchParams.get('view') === 'login' ? 'login' : 'signup'
 
   useEffect(() => {
+    if (SIGNUP_DISABLED) {
+      router.replace('/login')
+      return
+    }
     setMounted(true)
-  }, [])
+  }, [router])
 
   const handleClose = () => {
     router.push('/')
+  }
+
+  if (SIGNUP_DISABLED) {
+    return (
+      <div className="min-h-screen bg-[rgb(var(--sky-light))] flex items-center justify-center">
+        <p className="text-slate-500 text-sm">Redirecting…</p>
+      </div>
+    )
   }
 
   return (

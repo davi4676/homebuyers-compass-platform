@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo Homebuyer's Compass Prototype
+echo NestQuest Prototype
 echo ========================================
 echo.
 

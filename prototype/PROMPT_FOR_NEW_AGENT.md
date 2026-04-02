@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW
 
-You are tasked with recreating the **Homebuyer's Compass Platform** - a comprehensive Next.js 14 application that helps first-time homebuyers, repeat buyers, and refinancers understand the true costs of homeownership and avoid overpaying.
+You are tasked with recreating **NestQuest** — a comprehensive Next.js 14 application that helps first-time homebuyers, repeat buyers, and refinancers understand the true costs of homeownership and avoid overpaying.
 
 **Core Mission**: Reveal hidden costs, provide accurate affordability analysis, and help users save thousands through negotiation strategies and informed decision-making.
 
@@ -573,5 +573,5 @@ The recreated app should:
 
 **END OF PROMPT**
 
-This prompt contains all information needed to recreate the Homebuyer's Compass Platform from scratch. Follow the structure, implement the calculations accurately, and ensure all features work as described.
+This prompt contains all information needed to recreate NestQuest from scratch. Follow the structure, implement the calculations accurately, and ensure all features work as described.
 

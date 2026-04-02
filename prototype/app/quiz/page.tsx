@@ -41,9 +41,7 @@ const firstTimeSchema = baseQuizSchema.extend({
   firstGenFamilyOwned: z.enum(['yes', 'no-first', 'unsure']).optional(),
   soloPurchaseIncome: z.enum(['solo', 'coborrower', 'other']).optional(),
   soloNeighborhoodPriority: z.enum(['safety', 'schools', 'walkability', 'commute', 'community']).optional(),
-  eduQuiz_0: z.enum(['0', '1', '2', '3']).optional(),
   eduQuiz_1: z.enum(['0', '1', '2', '3']).optional(),
-  eduQuiz_2: z.enum(['0', '1', '2', '3']).optional(),
   eduQuiz_3: z.enum(['0', '1', '2', '3']).optional(),
   eduQuiz_4: z.enum(['0', '1', '2', '3']).optional(),
 })
@@ -166,6 +164,8 @@ export default function QuizPage() {
   const [zillowPrice, setZillowPrice] = useState<number | null>(null)
   const [loadingZillow, setLoadingZillow] = useState(false)
   const cityDropdownRef = useRef<HTMLDivElement>(null)
+  /** Questions already answered in quick scan or implied by URL — do not show again in full quiz. */
+  const [skippedQuestionIds, setSkippedQuestionIds] = useState<Set<string>>(() => new Set())
 
   const {
     register,
@@ -206,13 +206,30 @@ export default function QuizPage() {
     }
   }, [searchParams, setValue])
 
+  // Quick / teaser modes: clear skips so a fresh full run can ask everything
+  useEffect(() => {
+    if (quizMode === 'quick' || quizMode === 'quick-teaser') {
+      setSkippedQuestionIds(new Set())
+    }
+  }, [quizMode])
+
+  // Deep link ?full=1 with transaction type or ICP in URL — skip re-asking transaction type
+  useEffect(() => {
+    if (quizMode !== 'full' || searchParams.get('full') !== '1') return
+    if (transactionType === null) return
+    setSkippedQuestionIds((prev) => {
+      if (prev.has('transactionType')) return prev
+      return new Set(Array.from(prev).concat('transactionType'))
+    })
+  }, [quizMode, searchParams, transactionType])
+
   // Get questions based on transaction type (null = one question: transaction type with three categories)
   const allQuestions = getQuestionsForTransactionType(transactionType)
   const filteredQuestions = getFilteredQuestions(allQuestions, {
     transactionType,
     icpType: (watchedValues.icpType as IcpType) || icpType,
     ...watchedValues,
-  })
+  }).filter((q) => !skippedQuestionIds.has(q.id))
 
   // Reset to first question if current index is out of bounds
   useEffect(() => {
@@ -379,12 +396,18 @@ export default function QuizPage() {
 
   const startFullQuizFromQuick = () => {
     applyQuickDefaultsToForm()
+    setSkippedQuestionIds(new Set(['transactionType', 'income', 'targetHomePrice']))
     setQuizMode('full')
     setCurrentQuestion(0)
   }
 
+  /** Skip link from quick scan: always skip transaction type; skip income/price only after those quick steps were shown. */
   const skipToFullAssessment = () => {
     applyQuickDefaultsToForm()
+    const skip = new Set<string>(['transactionType'])
+    if (quickStep >= 1) skip.add('income')
+    if (quickStep >= 2) skip.add('targetHomePrice')
+    setSkippedQuestionIds(skip)
     setQuizMode('full')
     setCurrentQuestion(0)
   }
@@ -527,7 +550,7 @@ export default function QuizPage() {
               onClick={startFullQuizFromQuick}
               className="mt-8 w-full rounded-xl bg-brand-terracotta py-4 text-lg font-bold text-white hover:opacity-90 sm:w-auto sm:px-10"
             >
-              Get My Full Plan (5+ more questions)
+              Get My Full Plan
             </button>
           </div>
         </div>

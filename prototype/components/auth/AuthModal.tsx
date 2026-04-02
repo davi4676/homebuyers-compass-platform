@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Phone, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth, saveQuizResults } from '@/lib/hooks/useAuth';
+import { SIGNUP_DISABLED } from '@/lib/auth-flags';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -29,7 +30,9 @@ export function AuthModal({
   usePostLoginRedirect = false,
   postLoginTransactionType,
 }: AuthModalProps) {
-  const [view, setView] = useState<'login' | 'signup' | 'verify-email' | 'forgot-password'>(initialView);
+  const [view, setView] = useState<'login' | 'signup' | 'verify-email' | 'forgot-password'>(() =>
+    SIGNUP_DISABLED ? 'login' : initialView ?? 'signup'
+  );
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -48,7 +51,7 @@ export function AuthModal({
     if (!isOpen) {
       setError('');
       setStep(1);
-      setView(initialView);
+      setView(SIGNUP_DISABLED ? 'login' : initialView);
       // Reset form fields when modal closes
       setUsername('');
       setEmail('');
@@ -60,6 +63,12 @@ export function AuthModal({
       setMarketingOptIn(true);
     }
   }, [isOpen, initialView]);
+
+  useEffect(() => {
+    if (isOpen && SIGNUP_DISABLED && view === 'signup') {
+      setView('login');
+    }
+  }, [isOpen, view]);
 
   const getValueProp = () => {
     switch (trigger) {
@@ -325,7 +334,7 @@ export function AuthModal({
 
             {/* Right side: Auth form */}
             <div className="p-8 flex flex-col justify-center">
-              {view === 'signup' && (
+              {!SIGNUP_DISABLED && view === 'signup' && (
                 <SignUpForm
                   step={step}
                   username={username}
@@ -363,7 +372,8 @@ export function AuthModal({
                   loading={loading}
                   onSubmit={handleLogin}
                   onSocialLogin={handleSocialLogin}
-                  onSwitchToSignup={() => setView('signup')}
+                  onSwitchToSignup={() => !SIGNUP_DISABLED && setView('signup')}
+                  signupDisabled={SIGNUP_DISABLED}
                   onForgotPassword={() => setView('forgot-password')}
                 />
               )}
@@ -449,7 +459,7 @@ function SignUpForm({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <h3 className="text-2xl font-bold mb-2">Create Account</h3>
+        <h3 className="text-2xl font-bold mb-2">Create Your Free Account</h3>
         <p className="text-gray-600 text-sm">Sign up to get started</p>
       </div>
 
@@ -537,7 +547,7 @@ function SignUpForm({
             disabled={loading}
             className="w-full bg-teal-600 text-white py-2 rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Creating...' : 'Continue'}
+            {loading ? 'Creating...' : 'Create Account'}
           </button>
 
           <div className="relative">
@@ -579,11 +589,7 @@ function SignUpForm({
 
           <p className="text-center text-sm text-gray-600">
             Already have an account?{' '}
-            <button
-              type="button"
-              onClick={onSwitchToLogin}
-              className="text-teal-600 hover:underline font-medium"
-            >
+            <button type="button" onClick={onSwitchToLogin} className="text-teal-600 hover:underline font-medium">
               Sign in
             </button>
           </p>
@@ -685,6 +691,7 @@ interface LoginFormProps {
   onSocialLogin: (provider: 'google' | 'apple') => void;
   onSwitchToSignup: () => void;
   onForgotPassword: () => void;
+  signupDisabled?: boolean;
 }
 
 function LoginForm({
@@ -697,7 +704,8 @@ function LoginForm({
   onSubmit,
   onSocialLogin,
   onSwitchToSignup,
-  onForgotPassword
+  onForgotPassword,
+  signupDisabled = false,
 }: LoginFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -803,16 +811,18 @@ function LoginForm({
         </button>
       </div>
 
-      <p className="text-center text-sm text-gray-600">
-        Don't have an account?{' '}
-        <button
-          type="button"
-          onClick={onSwitchToSignup}
-          className="text-teal-600 hover:underline font-medium"
-        >
-          Sign up
-        </button>
-      </p>
+      {!signupDisabled && (
+        <p className="text-center text-sm text-gray-600">
+          Don&apos;t have an account?{' '}
+          <button
+            type="button"
+            onClick={onSwitchToSignup}
+            className="text-teal-600 hover:underline font-medium"
+          >
+            Sign up
+          </button>
+        </p>
+      )}
     </form>
   );
 }

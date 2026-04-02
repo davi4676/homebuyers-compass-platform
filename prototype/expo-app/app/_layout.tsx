@@ -20,7 +20,7 @@ export default function RootLayout() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       >
-        <Stack.Screen name="index" options={{ title: "Homebuyer's Compass" }} />
+        <Stack.Screen name="index" options={{ title: 'NestQuest' }} />
         <Stack.Screen name="quiz" options={{ title: 'Quiz' }} />
       </Stack>
     </>

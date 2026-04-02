@@ -182,7 +182,7 @@ The prompt contains:
 
 ## 🚀 READY FOR USE
 
-The prompt is ready to be used by a new AI agent to recreate the Homebuyer's Compass Platform from scratch. All critical information is present and accurate.
+The prompt is ready to be used by a new AI agent to recreate NestQuest from scratch. All critical information is present and accurate.
 
 ---
 

@@ -18,7 +18,7 @@ Follow these steps so checkout and webhooks work.
 
 1. Go to [Stripe Dashboard → Products](https://dashboard.stripe.com/test/products).
 2. Click **Add product**.
-   - Name: e.g. **Homebuyer Compass Subscription**
+   - Name: e.g. **NestQuest Subscription**
    - Add a **Price**: recurring, **Monthly**, set amount (e.g. $29).
    - Add another **Price**: recurring, **Yearly**, set amount (e.g. $290).
 3. Open each price and copy its **Price ID** (e.g. `price_1ABC...`).

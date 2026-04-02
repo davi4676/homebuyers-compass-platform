@@ -18,7 +18,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxx
 ## 2. Create product and prices
 
 1. In Stripe Dashboard go to **Product catalog** → **Add product**.
-2. Name it (e.g. **Homebuyer Compass Subscription**).
+2. Name it (e.g. **NestQuest Subscription**).
 3. Add a **Price**:
    - **Monthly**: Billing period = Monthly, set amount → Save.
    - Copy the **Price ID** (e.g. `price_xxxxx`) into `.env.local` as `STRIPE_PRICE_ID_MONTHLY`.

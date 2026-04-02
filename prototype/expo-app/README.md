@@ -1,4 +1,4 @@
-# Homebuyer's Compass – Expo (React Native) App
+# NestQuest — Expo (React Native) App
 
 This folder contains the **React Native + Expo SDK 54** application. It runs on **web**, **iOS**, and **Android** from a single codebase.
 

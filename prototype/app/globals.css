@@ -55,6 +55,16 @@ body {
 }
 
 @layer utilities {
+  .font-display {
+    font-family: 'Lora', Georgia, serif;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
   .text-balance {
     text-wrap: balance;
   }

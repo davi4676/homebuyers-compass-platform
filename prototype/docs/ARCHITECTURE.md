@@ -1,9 +1,9 @@
-# Homebuyer's Compass Platform Architecture
+# NestQuest Architecture
 ## Three-Tiered Monetized Service with Gamification & HOSA Algorithm
 
 ### Executive Summary
 
-This document outlines the comprehensive architecture for transforming the Homebuyer's Compass platform into a three-tiered monetized service (Free → Premium → Pro) with:
+This document outlines the comprehensive architecture for transforming NestQuest into a three-tiered monetized service (Free → Premium → Pro) with:
 - Strategic tier differentiation
 - Habit-forming gamification system
 - Patent-worthy Homebuyer Optimization & Savings Algorithm (HOSA)

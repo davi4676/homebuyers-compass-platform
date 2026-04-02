@@ -15,6 +15,7 @@ import JourneyTabBar from '@/components/journeys/JourneyTabBar'
 import TierBadge from '@/components/TierBadge'
 import MindsetTag from '@/components/journey/MindsetTag'
 import MoneyTracker from '@/components/journey/MoneyTracker'
+import { SIGNUP_DISABLED } from '@/lib/auth-flags'
 import { getUserTier } from '@/lib/user-tracking'
 import type { UserTier } from '@/lib/tiers'
 import { TIER_DEFINITIONS } from '@/lib/tiers'
@@ -75,8 +76,13 @@ export default function TopNav() {
                 <path d="M12 8l-2 4 2 1 2-1-2-4z" />
               </svg>
             </span>
-            <span className="hidden text-base font-semibold tracking-tight text-brand-forest sm:inline md:text-lg dark:text-cyan-400">
-              NestQuest
+            <span className="hidden flex-col items-start sm:flex">
+              <span className="text-base font-semibold tracking-tight text-brand-forest md:text-lg dark:text-cyan-400">
+                NestQuest
+              </span>
+              <span className="hidden text-xs font-normal text-gray-500 md:block dark:text-slate-400">
+                Your Home Buying Advocate
+              </span>
             </span>
           </Link>
 
@@ -150,7 +156,7 @@ export default function TopNav() {
                 How It Works
               </Link>
               <Link
-                href="/quiz"
+                href={SIGNUP_DISABLED ? '/quiz' : '/auth?mode=signup&redirect=%2Fquiz'}
                 className="rounded-lg bg-brand-forest px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-sage dark:bg-cyan-600 dark:hover:bg-cyan-500"
               >
                 Find My Savings
@@ -170,7 +176,7 @@ export default function TopNav() {
             ) : (
               <>
                 <Link
-                  href="/login"
+                  href="/auth?mode=signin"
                   className="hidden md:inline-flex items-center justify-center rounded-lg border border-brand-sage/40 bg-white px-4 py-2.5 text-sm font-medium text-brand-forest transition-colors hover:bg-brand-mist dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   Sign In
@@ -343,7 +349,7 @@ export default function TopNav() {
                       How It Works
                     </Link>
                     <Link
-                      href="/quiz"
+                      href={SIGNUP_DISABLED ? '/quiz' : '/auth?mode=signup&redirect=%2Fquiz'}
                       onClick={() => setMobileOpen(false)}
                       className="block rounded-lg px-4 py-2.5 text-lg font-semibold text-brand-forest hover:bg-brand-mist"
                     >
@@ -358,7 +364,7 @@ export default function TopNav() {
                 <div className="mt-3 space-y-2 border-t border-gray-200 px-4 pt-3">
                   {isAuthenticated ? null : (
                     <Link
-                      href="/login"
+                      href="/auth?mode=signin"
                       onClick={() => setMobileOpen(false)}
                       className="block w-full rounded-lg border border-brand-sage/40 py-2.5 text-center font-medium text-brand-forest transition-colors hover:bg-brand-mist"
                     >

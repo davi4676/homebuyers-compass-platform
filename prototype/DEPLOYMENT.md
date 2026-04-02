@@ -1,4 +1,4 @@
-# Deployment Guide - Homebuyer's Compass Platform
+# Deployment Guide — NestQuest
 
 This guide covers multiple deployment options for your Next.js application.
 
