@@ -136,7 +136,7 @@ export default function FreeTierJourney({
                     onClick={() => setCurrentPhase('education')}
                     className="text-[#06b6d4] hover:text-[#22d3ee] text-sm font-semibold flex items-center gap-1"
                   >
-                    Learn more <ArrowRight className="w-4 h-4" />
+                    See How It Works <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -164,7 +164,7 @@ export default function FreeTierJourney({
                       'Personal savings & investments',
                       'Gifts from family (up to $17,000/year tax-free)',
                       '401(k) or IRA withdrawals',
-                      'Down payment assistance programs',
+                      'Free money toward your down payment',
                       'Employer assistance programs',
                       'Government grants (FHA, VA, USDA)',
                     ].map((source, idx) => (

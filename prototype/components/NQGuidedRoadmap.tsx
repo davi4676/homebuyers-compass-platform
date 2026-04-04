@@ -36,7 +36,8 @@ import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
 import {
   type JourneyTab,
   parseJourneyTabParam,
-  journeyTabHref,
+  journeyTabHrefPreservingSearch,
+  JOURNEY_PAGE_PATH,
   JOURNEY_TAB_STORAGE_KEY,
 } from '@/lib/journey-nav-tabs'
 import {
@@ -66,6 +67,7 @@ import {
 import { getJourneyPhaseById, getJourneyPhaseByOrder } from '@/lib/journey-phases-data'
 import {
   buildUserSnapshot,
+  getStoredQuizTransactionMeta,
   loadQuizDataFromLocalStorage,
   personalizeNqStep,
   type UserSnapshot,
@@ -141,7 +143,7 @@ function ReadinessScoreReveal({ readiness }: { readiness: ReadinessScore }) {
         aria-hidden
       >
         <div
-          className={`h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-600 ${
+          className={`h-full rounded-full bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary ${
             reduceMotion ? '' : 'transition-[width] duration-150 ease-out'
           }`}
           style={{ width: `${displayed}%` }}
@@ -154,6 +156,8 @@ function ReadinessScoreReveal({ readiness }: { readiness: ReadinessScore }) {
 interface NQGuidedRoadmapProps {
   userFirstName?: string | null
   onGoToResults: () => void
+  /** Hub page should pass the tab from `useSearchParams()` so panels match the URL reliably. */
+  activeTab?: JourneyTab
 }
 
 const hasAccessToStep = (stepIndex: number, tier: UserTier): boolean => {
@@ -186,7 +190,7 @@ function renderWithAnnualCreditReportLink(text: string): ReactNode {
               href="https://www.annualcreditreport.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-sky-600 underline decoration-sky-400/70 underline-offset-2 hover:text-sky-800"
+              className="font-semibold text-millennial-cta-primary underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
             >
               {ANNUAL_CREDIT_REPORT_MARKER}
             </a>
@@ -208,7 +212,7 @@ function renderNqSaysContext(text: string): ReactNode {
     const blue = chunk.match(/^\*\*([^*]+)\*\*$/)
     if (blue) {
       return (
-        <strong key={i} className="font-bold not-italic text-sky-600">
+        <strong key={i} className="font-bold not-italic text-millennial-cta-primary">
           {blue[1]}
         </strong>
       )
@@ -249,7 +253,7 @@ const itemVariants = {
 
 const WHY_IT_MATTERS_MYTH_ICONS = [Receipt, CalendarClock, Gauge] as const
 const WHY_IT_MATTERS_MYTH_ICON_STYLES = [
-  'bg-sky-100 text-sky-700 ring-sky-200/80',
+  'bg-millennial-primary-light/50 text-teal-800 ring-teal-200/80',
   'bg-amber-100 text-amber-800 ring-amber-200/70',
   'bg-violet-100 text-violet-700 ring-violet-200/70',
 ] as const
@@ -258,7 +262,26 @@ const PHASE_CHECKLIST_LS = 'nq_phase_checklist_v1'
 
 const ONBOARDING_LS = 'nq_customized_onboarding_v1'
 
-export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuidedRoadmapProps) {
+const REFINANCE_PHASE_TITLES: Record<number, string> = {
+  1: 'Review Current Loan & Goals',
+  2: 'Check Credit & Equity',
+  3: 'Compare Rates & Lenders',
+  4: 'Lock Rate & Apply',
+  5: 'Close & Save',
+}
+
+/** Aligns hub phase headings with repeat / move-up buyer workflow (buy-sell journey steps). */
+const REPEAT_BUYER_PHASE_TITLES: Record<number, string> = {
+  1: 'Current Home Profile',
+  2: 'New Home Vision',
+  3: 'Bridge Financing',
+  4: 'Financial Waterfall',
+  5: 'Comparative Scenarios',
+  6: 'Savings & Opportunity',
+  7: 'Action Plan',
+}
+
+export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTab: activeTabProp }: NQGuidedRoadmapProps) {
   const { userTier, effectiveTier, previewTier, setPreviewTier, resetPreviewToAccount, mindsetFor } =
     useTierMindset()
   const reduceMotion = useReducedMotion() ?? false
@@ -266,20 +289,24 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
   const searchParams = useSearchParams()
   /** `toString()` dependency: ensures updates on client query changes (some Next versions reuse the ReadonlyURLSearchParams ref). */
   const searchKey = searchParams.toString()
-  const activeTab = useMemo(
+  const activeTabFromUrl = useMemo(
     () => parseJourneyTabParam(new URLSearchParams(searchKey).get('tab')),
     [searchKey]
   )
+  const activeTab = activeTabProp ?? activeTabFromUrl
   const { setJourneyNavChrome } = useJourneyNavChrome()
 
-  const goTab = useCallback((t: JourneyTab) => {
-    try {
-      localStorage.setItem(JOURNEY_TAB_STORAGE_KEY, t)
-    } catch {
-      // ignore
-    }
-    router.push(journeyTabHref(t), { scroll: false })
-  }, [router])
+  const goTab = useCallback(
+    (t: JourneyTab) => {
+      try {
+        localStorage.setItem(JOURNEY_TAB_STORAGE_KEY, t)
+      } catch {
+        // ignore
+      }
+      router.push(journeyTabHrefPreservingSearch(JOURNEY_PAGE_PATH, searchKey, t), { scroll: false })
+    },
+    [router, searchKey]
+  )
 
   useEffect(() => {
     if (activeTab !== 'library' || typeof window === 'undefined') return
@@ -306,6 +333,9 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
   const [chatOpen, setChatOpen] = useState(false)
   const [chatAnchor, setChatAnchor] = useState<'message' | 'help'>('message')
   const [snapshot, setSnapshot] = useState<UserSnapshot | null>(null)
+  const [quizTxnMeta, setQuizTxnMeta] = useState<
+    ReturnType<typeof getStoredQuizTransactionMeta>
+  >({ transactionType: null, icpType: null })
   const chatTriggerRef = useRef<HTMLButtonElement>(null)
   const helpChatTriggerRef = useRef<HTMLButtonElement>(null)
   const chatExtraTriggerRefs = useMemo(() => [chatTriggerRef, helpChatTriggerRef], [])
@@ -313,6 +343,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
   const refreshSnapshot = useCallback(() => {
     const q = loadQuizDataFromLocalStorage()
     setSnapshot(buildUserSnapshot(q, { firstName: userFirstName }))
+    setQuizTxnMeta(getStoredQuizTransactionMeta())
   }, [userFirstName])
 
   useEffect(() => {
@@ -376,6 +407,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
   const [openMythTitle, setOpenMythTitle] = useState<string | null>(null)
   const [libraryQuery, setLibraryQuery] = useState('')
   const [libraryCategory, setLibraryCategory] = useState<LibraryCategoryId | 'all'>('all')
+  const [libraryMoreExpanded, setLibraryMoreExpanded] = useState(false)
   const [budgetSketchDirty, setBudgetSketchDirty] = useState(false)
   const [inboxTasks, setInboxTasks] = useState<
     {
@@ -438,12 +470,17 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
     if (!step) return
     const displayPhaseOrder = Math.max(1, step.phaseOrder)
     const guidedPhaseTotal = NQ_GUIDED_PHASE_ORDERS.length
+    const isRefi =
+      quizTxnMeta.transactionType === 'refinance' || quizTxnMeta.icpType === 'refinance'
+    const phaseTotalForDisplay =
+      isRefi && displayPhaseOrder >= 1 && displayPhaseOrder <= 5 ? 5 : guidedPhaseTotal
+    const progressDenom = isRefi && displayPhaseOrder <= 5 ? 5 : guidedPhaseTotal
     const indicesInCurrentPhase = getNqGuidedIndicesForPhaseOrder(step.phaseOrder)
     const milestoneIndexInPhase = Math.max(1, indicesInCurrentPhase.indexOf(currentStepIndex) + 1)
     const milestonesInPhase = indicesInCurrentPhase.length
     const progressPct = Math.min(
       100,
-      ((step.phaseOrder - 1 + milestoneIndexInPhase / milestonesInPhase) / guidedPhaseTotal) * 100
+      ((step.phaseOrder - 1 + milestoneIndexInPhase / milestonesInPhase) / progressDenom) * 100
     )
     const readinessScore = snapshot ? Math.round(snapshot.readiness.total) : null
     const learnTipCount =
@@ -457,14 +494,14 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
     const inboxPendingCount = snapshot ? 2 : 3
     setJourneyNavChrome({
       phaseOrder: displayPhaseOrder,
-      phaseTotal: guidedPhaseTotal,
+      phaseTotal: phaseTotalForDisplay,
       phaseProgressPct: progressPct,
       readinessScore,
       learnTipCount,
       inboxPendingCount,
       libraryHasNew: !librarySeen,
     })
-  }, [step, currentStepIndex, snapshot, displayStep, setJourneyNavChrome])
+  }, [step, currentStepIndex, snapshot, displayStep, setJourneyNavChrome, quizTxnMeta])
 
   const totalSteps = NQ_GUIDED_STEPS.length
   const isStepLocked = !hasAccessToStep(currentStepIndex, effectiveTier)
@@ -605,6 +642,14 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
   /** 1-based phase index on the purchase roadmap (prep = 1, never 0). */
   const displayPhaseOrder = Math.max(1, step.phaseOrder)
   const guidedPhaseTotal = NQ_GUIDED_PHASE_ORDERS.length
+  const isRefinanceUser =
+    quizTxnMeta.transactionType === 'refinance' || quizTxnMeta.icpType === 'refinance'
+  const isRepeatBuyerUser =
+    !isRefinanceUser &&
+    (quizTxnMeta.transactionType === 'repeat-buyer' || quizTxnMeta.icpType === 'move-up')
+  const phaseTotalForDisplay =
+    isRefinanceUser && displayPhaseOrder >= 1 && displayPhaseOrder <= 5 ? 5 : guidedPhaseTotal
+  const progressDenom = isRefinanceUser && displayPhaseOrder <= 5 ? 5 : guidedPhaseTotal
   const libraryPhase =
     getJourneyPhaseByOrder(displayPhaseOrder) ?? getJourneyPhaseById(step.phaseId)
   const nextLibraryPhase =
@@ -616,9 +661,30 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
   const milestonesInPhase = indicesInCurrentPhase.length
   const phasesDoneCount = countNqGuidedPhasesFullyComplete(completedSteps)
 
+  const refinancePhaseTitle =
+    isRefinanceUser && REFINANCE_PHASE_TITLES[displayPhaseOrder]
+      ? REFINANCE_PHASE_TITLES[displayPhaseOrder]
+      : null
+  const repeatBuyerPhaseTitle =
+    isRepeatBuyerUser && REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder]
+      ? REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder]
+      : null
+  const phaseHeadingTitle =
+    refinancePhaseTitle ?? repeatBuyerPhaseTitle ?? libraryPhase?.title ?? `Phase ${displayPhaseOrder}`
+  const nextRefiTitle =
+    isRefinanceUser && displayPhaseOrder < 5 && REFINANCE_PHASE_TITLES[displayPhaseOrder + 1]
+      ? REFINANCE_PHASE_TITLES[displayPhaseOrder + 1]
+      : null
+  const nextRepeatBuyerTitle =
+    isRepeatBuyerUser &&
+    displayPhaseOrder < guidedPhaseTotal &&
+    REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder + 1]
+      ? REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder + 1]
+      : null
+
   const progressPct = Math.min(
     100,
-    ((step.phaseOrder - 1 + milestoneIndexInPhase / milestonesInPhase) / guidedPhaseTotal) * 100
+    ((step.phaseOrder - 1 + milestoneIndexInPhase / milestonesInPhase) / progressDenom) * 100
   )
   const currentStepMarkedDone = completedSteps.has(currentStepIndex)
 
@@ -693,16 +759,37 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             fundingDetails={fundingDetails}
             alternativeDetails={alternativeDetails}
           />
+          {isRefinanceUser ? (
+            <section
+              className="rounded-xl border border-slate-200/90 border-l-4 border-l-teal-500 bg-white p-5 shadow-sm sm:p-6"
+              aria-labelledby="refi-journey-hub-overview"
+            >
+              <h2 id="refi-journey-hub-overview" className="font-display text-lg font-bold text-slate-900">
+                Your Refinance Journey
+              </h2>
+              <p className="mt-2 text-sm text-slate-600 sm:text-base">
+                Follow your personalized 5-step refinance roadmap — from reviewing your current loan to
+                locking your new rate and closing.
+              </p>
+              <Link
+                href="/homebuyer/refinance-journey"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+              >
+                Continue My Refinance Journey
+                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+              </Link>
+            </section>
+          ) : null}
           <motion.section
             initial={reduceMotion ? undefined : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
-            className="rounded-3xl border-2 border-sky-300/80 bg-gradient-to-br from-white via-sky-50/50 to-indigo-50/40 p-5 shadow-xl shadow-sky-900/10 ring-1 ring-sky-100/80 sm:p-6"
+            className="rounded-3xl border-2 border-teal-300/70 bg-gradient-to-br from-white via-millennial-primary-light/30 to-emerald-50/35 p-5 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/80 sm:p-6"
           >
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-800/90">Readiness score</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-900/90">Readiness score</p>
             <p className="mt-1.5 text-base font-semibold text-slate-700">{overviewWarmth}</p>
             {snapshot ? (
-              <div className="mt-4 border-t border-sky-100/90 pt-4">
+              <div className="mt-4 border-t border-teal-100/90 pt-4">
                 <ReadinessScoreReveal readiness={snapshot.readiness} />
               </div>
             ) : (
@@ -711,7 +798,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                   <button
                     type="button"
                     onClick={onGoToResults}
-                    className="font-semibold text-sky-700 underline decoration-sky-400/70 underline-offset-2 hover:text-sky-900"
+                    className="font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
                   >
                     Run the savings snapshot
                   </button>{' '}
@@ -776,7 +863,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                 <button
                   type="button"
                   onClick={onGoToResults}
-                  className="inline-flex w-full justify-center rounded-xl border-2 border-sky-400 bg-white px-5 py-3 text-sm font-bold text-sky-900 shadow-md transition hover:bg-sky-50 sm:w-auto sm:text-base sm:px-6"
+                  className="inline-flex w-full justify-center rounded-xl border-2 border-millennial-cta-primary bg-white px-5 py-3 text-sm font-bold text-teal-900 shadow-md transition hover:bg-millennial-primary-light/25 sm:w-auto sm:text-base sm:px-6"
                 >
                   Update snapshot
                 </button>
@@ -791,20 +878,20 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
-            className="rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-sky-50/30 to-indigo-50/20 p-6 shadow-lg sm:p-8"
+            className="rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/25 to-emerald-50/25 p-6 shadow-lg sm:p-8"
           >
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-sky-100/80 to-indigo-100/50 shadow-lg ring-2 ring-sky-200/50">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-millennial-primary-light/70 to-teal-100/55 shadow-lg ring-2 ring-teal-200/50">
                 <Image
                   src="/images/nq-assistant.png"
-                  alt="NQ, your homebuying guide"
+                  alt="NQ, your home buying guide"
                   width={120}
                   height={120}
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-700/90">From NQ</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-800/90">From NQ</p>
                 <p className="mt-3 font-serif text-lg italic leading-relaxed text-slate-700 sm:text-xl">
                   &ldquo;{renderNqSaysContext(displayStep.nqContext)}&rdquo;
                 </p>
@@ -825,7 +912,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
             <p className="text-sm font-bold uppercase tracking-wide text-slate-600">Your phase</p>
             <p className="mt-1 text-sm text-slate-700">
-              Phase {displayPhaseOrder} of {guidedPhaseTotal}. A simple step now keeps your momentum steady.
+              Phase {displayPhaseOrder} of {phaseTotalForDisplay}. A simple step now keeps your momentum steady.
             </p>
             <div className="mt-4">
               <NextStepCard
@@ -839,14 +926,14 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             <button
               type="button"
               onClick={() => goTab('phase')}
-              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:shadow-lg sm:text-base"
+              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-5 py-3 text-sm font-bold text-white shadow-md transition hover:shadow-lg sm:text-base"
             >
               View your phase
             </button>
             <button
               type="button"
               onClick={() => goTab('budget')}
-              className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 sm:text-base"
+              className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 sm:text-base"
             >
               Open Budget Sketch
             </button>
@@ -882,14 +969,14 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             alternativeDetails={alternativeDetails}
           />
           {!hasJourneyFeature(effectiveTier, 'affordability_review') ? (
-            <div className="rounded-2xl border border-sky-100/90 bg-sky-50/40 p-4 shadow-sm sm:p-5">
-              <p className="text-sm font-semibold text-slate-900">Navigator unlocks a personalized affordability review.</p>
-              <MindsetTag className="mt-2 border-sky-100 bg-white/90" mindset={TIER_DEFINITIONS.navigator.mindset} />
+            <div className="rounded-2xl border border-teal-100/90 bg-millennial-primary-light/30 p-4 shadow-sm sm:p-5">
+              <p className="text-sm font-semibold text-slate-900">Navigator+ unlocks a personalized affordability review.</p>
+              <MindsetTag className="mt-2 border-teal-100 bg-white/90" mindset={TIER_DEFINITIONS.navigator.mindset} />
               <Link
                 href="/upgrade?source=budget-inline&tier=navigator"
-                className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-sky-800 underline decoration-sky-400/60 underline-offset-2 hover:text-sky-950"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2 hover:text-teal-950"
               >
-                Explore Navigator
+                Explore Navigator+
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             </div>
@@ -906,7 +993,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             <button
               type="button"
               onClick={() => document.getElementById('nq-budget-sketch-reset')?.click()}
-              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-sky-300 hover:bg-sky-50"
+              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25"
             >
               Reset
             </button>
@@ -945,7 +1032,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             <button
               type="button"
               onClick={() => goTab('library')}
-              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-sky-700 underline decoration-sky-400/70 underline-offset-2 hover:text-sky-900"
+              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
             >
               Funding opportunities based on your profile
               <ArrowRight className="h-4 w-4" aria-hidden />
@@ -968,7 +1055,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             <button
               type="button"
               onClick={() => goTab('library')}
-              className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-sky-700 underline decoration-sky-400/70 underline-offset-2 hover:text-sky-900"
+              className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
             >
               Open the Library tab
               <ArrowRight className="h-4 w-4" aria-hidden />
@@ -1013,16 +1100,16 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 px-5 py-5 shadow-lg ring-1 ring-slate-200/50 sm:px-6 sm:py-6 md:px-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700/90">
-                    Phase {displayPhaseOrder} of {guidedPhaseTotal}
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-teal-800/90">
+                    Phase {displayPhaseOrder} of {phaseTotalForDisplay}
                   </p>
                   <h1
                     id="nq-phase-heading"
                     className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl md:text-[2.25rem] md:leading-tight"
                   >
-                    {libraryPhase?.title ?? `Phase ${displayPhaseOrder}`}
+                    {phaseHeadingTitle}
                   </h1>
-                  {libraryPhase?.description ? (
+                  {libraryPhase?.description && !refinancePhaseTitle && !repeatBuyerPhaseTitle ? (
                     <p className="mt-2 max-w-prose text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
                       {libraryPhase.description}
                     </p>
@@ -1034,12 +1121,12 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                 </div>
               </div>
 
-              <div className="my-4 h-[3px] w-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-slate-200/80 sm:my-5" aria-hidden />
+              <div className="my-4 h-[3px] w-full rounded-full bg-gradient-to-r from-millennial-cta-primary via-teal-500 to-slate-200/80 sm:my-5" aria-hidden />
 
               <div className="h-1.5 w-full max-w-xl overflow-hidden rounded-full bg-slate-200/90">
                 <motion.div
                   key={activeTab}
-                  className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500"
+                  className="h-full rounded-full bg-gradient-to-r from-millennial-cta-primary to-teal-600"
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPct}%` }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -1110,17 +1197,20 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
             </div>
           ) : null}
 
-          {nextLibraryPhase ? (
-            <div className="rounded-2xl border border-indigo-200/60 bg-gradient-to-br from-indigo-50/50 to-white p-4 shadow-sm sm:p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-700/90">Coming up</p>
+          {nextRefiTitle || nextRepeatBuyerTitle || nextLibraryPhase ? (
+            <div className="rounded-2xl border border-millennial-border bg-gradient-to-br from-millennial-primary-light/35 to-white p-4 shadow-sm sm:p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-millennial-cta-secondary">Coming up</p>
               <p className="mt-1.5 text-base font-bold text-slate-900 sm:text-lg">
-                Phase {displayPhaseOrder + 1} — {nextLibraryPhase.title}
+                Phase {displayPhaseOrder + 1} —{' '}
+                {nextRefiTitle ?? nextRepeatBuyerTitle ?? nextLibraryPhase?.title}
               </p>
-              <p className="mt-1.5 text-sm text-slate-600">{nextLibraryPhase.description}</p>
+              {nextRefiTitle || nextRepeatBuyerTitle ? null : (
+                <p className="mt-1.5 text-sm text-slate-600">{nextLibraryPhase?.description}</p>
+              )}
               <button
                 type="button"
                 onClick={() => goTab('library')}
-                className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 hover:text-sky-900"
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-teal-800 hover:text-teal-900"
               >
                 Scripts &amp; checklists in Library
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -1147,25 +1237,25 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                   animate="visible"
                   exit="exit"
                   transition={{ duration: 0.25 }}
-                  className="relative rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-sky-50/40 to-indigo-50/30 shadow-xl shadow-sky-900/10 ring-1 ring-sky-100/60 sm:rounded-3xl"
+                  className="relative rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/28 to-emerald-50/28 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/60 sm:rounded-3xl"
                 >
                   <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl sm:rounded-3xl" aria-hidden>
-                    <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-blue-900 via-indigo-600 to-sky-400" />
-                    <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-sky-400/10 blur-3xl" />
-                    <div className="absolute -left-16 bottom-0 h-32 w-32 rounded-full bg-indigo-400/10 blur-3xl" />
+                    <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[rgb(var(--navy))] via-millennial-cta-primary to-teal-400" />
+                    <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-millennial-cta-primary/10 blur-3xl" />
+                    <div className="absolute -left-16 bottom-0 h-32 w-32 rounded-full bg-millennial-cta-primary/10 blur-3xl" />
                   </div>
 
-                  <div className="relative z-10 border-l-4 border-sky-500 bg-gradient-to-b from-transparent to-white/70 p-4 pl-4 sm:p-6 sm:pl-6">
+                  <div className="relative z-10 border-l-4 border-millennial-cta-primary bg-gradient-to-b from-transparent to-white/70 p-4 pl-4 sm:p-6 sm:pl-6">
                     <motion.div variants={itemVariants} className="mb-4 flex items-start gap-3 sm:gap-4">
                       <div className="relative">
                         <motion.div
-                          className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-sky-100/80 to-indigo-100/50 shadow-xl shadow-indigo-500/20 ring-2 ring-sky-200/60"
+                          className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-millennial-primary-light/70 to-teal-100/55 shadow-xl shadow-teal-600/15 ring-2 ring-teal-200/60"
                           whileHover={{ scale: 1.03 }}
                           transition={{ type: 'spring', stiffness: 400 }}
                         >
                           <Image
                             src="/images/nq-assistant.png"
-                            alt="NQ, your homebuying guide"
+                            alt="NQ, your home buying guide"
                             width={140}
                             height={140}
                             className="h-full w-full object-contain"
@@ -1198,8 +1288,8 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                           title="Ask NQ a question"
                           className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 shadow-sm transition-all ${
                             chatOpen
-                              ? 'border-sky-400 bg-sky-100 text-sky-800 ring-2 ring-sky-200'
-                              : 'border-sky-200 bg-white text-sky-600 hover:border-sky-300 hover:bg-sky-50 hover:shadow-md'
+                              ? 'border-millennial-cta-primary bg-millennial-primary-light/50 text-teal-900 ring-2 ring-teal-200'
+                              : 'border-teal-200 bg-white text-millennial-cta-primary hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 hover:shadow-md'
                           }`}
                         >
                           <MessageCircle className="h-6 w-6" strokeWidth={2} />
@@ -1231,12 +1321,12 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                     ) : null}
 
                     <motion.div variants={itemVariants} className="space-y-4 pt-3">
-                      <div className="rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 p-[2px] shadow-md shadow-sky-900/15">
+                      <div className="rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary p-[2px] shadow-md shadow-slate-900/12">
                         <div className="relative overflow-visible rounded-[calc(0.75rem-2px)] bg-white/90 px-4 pb-3 pt-6 shadow-inner shadow-slate-100/50 sm:px-5 sm:pb-3.5 sm:pt-7">
                           <h3 className="sr-only">From NQ</h3>
                           <div className="pointer-events-none absolute left-3 top-0 z-20 -translate-y-1/2 sm:left-4">
                             <span className="relative inline-flex items-center">
-                              <span className="inline-flex items-center rounded-full bg-gradient-to-r from-sky-600 to-indigo-600 py-1 pl-[1.35rem] pr-2.5 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-sky-900/20 sm:py-1.5 sm:pl-7 sm:pr-3 sm:text-base">
+                              <span className="inline-flex items-center rounded-full bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary py-1 pl-[1.35rem] pr-2.5 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-slate-900/15 sm:py-1.5 sm:pl-7 sm:pr-3 sm:text-base">
                                 NQ says
                               </span>
                               <span
@@ -1261,7 +1351,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,7.5rem)_1fr] sm:items-stretch">
                         <div className="flex flex-row items-center justify-center gap-3 rounded-2xl bg-[rgb(var(--navy))] px-4 py-3 shadow-lg shadow-slate-900/15 ring-1 ring-white/10 sm:flex-col sm:gap-2.5 sm:px-3 sm:py-4 sm:text-center">
-                          <Target className="h-5 w-5 shrink-0 text-sky-300/90 sm:h-5 sm:w-5" strokeWidth={2} aria-hidden />
+                          <Target className="h-5 w-5 shrink-0 text-teal-300/90 sm:h-5 sm:w-5" strokeWidth={2} aria-hidden />
                           <h3 className="text-xs font-bold uppercase leading-snug tracking-[0.12em] text-white/95 sm:max-w-[7rem] sm:text-sm sm:leading-tight">
                             What to do now
                           </h3>
@@ -1280,7 +1370,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                                   href={displayStep.toolLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="group relative mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-400 via-sky-500 to-indigo-600 px-5 py-3 text-base font-bold text-white shadow-md shadow-sky-900/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-sky-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50"
+                                  className="group relative mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-teal-400 via-millennial-cta-primary to-millennial-cta-secondary px-5 py-3 text-base font-bold text-white shadow-md shadow-slate-900/15 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-millennial-primary-light/60"
                                 >
                                   {displayStep.toolLabel || 'Open tool'}{' '}
                                   <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
@@ -1288,7 +1378,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                               ) : (
                                 <Link
                                   href={displayStep.toolLink}
-                                  className="group relative mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-400 via-sky-500 to-indigo-600 px-5 py-3 text-base font-bold text-white shadow-md shadow-sky-900/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-sky-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50"
+                                  className="group relative mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-teal-400 via-millennial-cta-primary to-millennial-cta-secondary px-5 py-3 text-base font-bold text-white shadow-md shadow-slate-900/15 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-millennial-primary-light/60"
                                 >
                                   {displayStep.toolLabel || 'Open tool'}{' '}
                                   <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
@@ -1320,7 +1410,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                                     type="checkbox"
                                     checked={done}
                                     onChange={() => togglePhaseChecklist(i)}
-                                    className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                                    className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
                                   />
                                   <label
                                     htmlFor={cid}
@@ -1341,8 +1431,8 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                       ) : null}
 
                       {displayStep.nqEncouragement ? (
-                        <div className="rounded-xl border-l-4 border-sky-500 bg-gradient-to-r from-sky-50/80 to-transparent py-2.5 pl-4 pr-2">
-                          <p className="text-base font-semibold italic text-sky-800">
+                        <div className="rounded-xl border-l-4 border-millennial-cta-primary bg-gradient-to-r from-millennial-primary-light/40 to-transparent py-2.5 pl-4 pr-2">
+                          <p className="text-base font-semibold italic text-teal-900">
                             &ldquo;{displayStep.nqEncouragement}&rdquo;
                           </p>
                         </div>
@@ -1376,9 +1466,9 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                         }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3.5 text-lg font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:border-sky-400 hover:bg-sky-50 hover:shadow-md"
+                        className="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3.5 text-lg font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 hover:shadow-md"
                       >
-                        <HelpCircle className="h-5 w-5 text-sky-600" strokeWidth={2} />
+                        <HelpCircle className="h-5 w-5 text-millennial-cta-primary" strokeWidth={2} />
                         I need help
                       </motion.button>
                       {!isLastStep ? (
@@ -1406,14 +1496,14 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
               <button
                 type="button"
                 onClick={() => goTab('learn')}
-                className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:shadow-lg min-[480px]:flex-none"
+                className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:shadow-lg min-[480px]:flex-none"
               >
                 Learn
               </button>
               <button
                 type="button"
                 onClick={() => goTab('library')}
-                className="inline-flex flex-1 items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 min-[480px]:flex-none"
+                className="inline-flex flex-1 items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 min-[480px]:flex-none"
               >
                 Library
               </button>
@@ -1467,7 +1557,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                   className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
                     active
                       ? 'bg-[rgb(var(--navy))] text-white shadow-sm'
-                      : 'border border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-millennial-primary-light/25'
                   }`}
                 >
                   {label}
@@ -1481,7 +1571,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
               <Link
                 key={item.id}
                 href={item.href}
-                className="group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
+                className="group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md"
               >
                 <div className="flex flex-wrap gap-1.5">
                   {item.moneyTags.includes('saves_money') ? (
@@ -1497,7 +1587,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                 </span>
                 <p className="mt-2 font-bold text-slate-900">{item.title}</p>
                 <p className="mt-1 text-sm text-slate-600">{item.sub}</p>
-                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-sky-700">
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-teal-800">
                   Open
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
                 </span>
@@ -1588,7 +1678,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
 
           {hasLearnContent ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,7.5rem)_1fr] sm:items-stretch">
-              <div className="flex flex-row items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 px-4 py-3 shadow-lg shadow-sky-900/20 ring-1 ring-white/20 sm:flex-col sm:gap-2.5 sm:px-3 sm:py-4 sm:text-center">
+              <div className="flex flex-row items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-4 py-3 shadow-lg shadow-slate-900/15 ring-1 ring-white/20 sm:flex-col sm:gap-2.5 sm:px-3 sm:py-4 sm:text-center">
                 <Lightbulb className="h-5 w-5 shrink-0 text-white/90 sm:h-5 sm:w-5" strokeWidth={2.5} aria-hidden />
                 <h3 className="text-xs font-bold uppercase leading-snug tracking-[0.12em] text-white/95 sm:max-w-[7rem] sm:text-sm sm:leading-tight">
                   Why it matters
@@ -1596,7 +1686,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
               </div>
               <div className="relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md ring-1 ring-slate-100/80 sm:p-6">
                 <div className="absolute right-2 top-2 opacity-[0.06] sm:right-3 sm:top-3">
-                  <Lightbulb className="h-14 w-14 text-sky-600" strokeWidth={1} aria-hidden />
+                  <Lightbulb className="h-14 w-14 text-millennial-cta-primary" strokeWidth={1} aria-hidden />
                 </div>
                 {displayStep.nqWhyItMattersCards && displayStep.nqWhyItMattersCards.length > 0 ? (
                   <div className="relative">
@@ -1692,7 +1782,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
           {nextStepTitles.length > 0 ? (
             <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                Recommended for your phase · {libraryPhase?.title ?? 'this phase'}
+                Recommended for your phase · {phaseHeadingTitle ?? 'this phase'}
               </p>
               <ul className="mt-3 list-none space-y-2">
                 {nextStepTitles.map((t) => (
@@ -1700,7 +1790,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                     <button
                       type="button"
                       onClick={() => goTab('phase')}
-                      className="text-left text-sm font-semibold text-sky-800 underline decoration-sky-400/60 underline-offset-2 hover:text-sky-950"
+                      className="text-left text-sm font-semibold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2 hover:text-teal-950"
                     >
                       {t}
                     </button>
@@ -1747,7 +1837,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
               value={libraryQuery}
               onChange={(e) => setLibraryQuery(e.target.value)}
               placeholder="Search titles and summaries…"
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm font-medium text-slate-900 shadow-sm outline-none ring-sky-200 transition focus:border-sky-400 focus:ring-2"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm font-medium text-slate-900 shadow-sm outline-none ring-teal-200 transition focus:border-millennial-cta-primary focus:ring-2"
             />
           </div>
 
@@ -1778,7 +1868,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                   className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
                     active
                       ? 'bg-[rgb(var(--navy))] text-white shadow-sm'
-                      : 'border border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-millennial-primary-light/25'
                   }`}
                 >
                   {label}
@@ -1788,53 +1878,144 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
           </div>
 
           <ul className="space-y-3" role="list">
-            {libraryFiltered.map((item) => {
-              const minT = item.minTier ?? 'foundations'
-              const locked = !tierAtLeast(effectiveTier, minT)
-              const unlockTier = minT
-              const unlockDef = TIER_DEFINITIONS[unlockTier]
-              return (
-                <li key={item.id}>
-                  <div
-                    className={`relative block rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5 ${
-                      locked ? 'opacity-95' : 'transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md'
-                    }`}
+            {libraryFiltered.slice(0, 3).map((item) => (
+              <li key={item.id}>
+                <div className="block rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md sm:p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
+                      {JOURNEY_LIBRARY_CATEGORY_LABEL[item.category]}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500">{item.readMin} min read</span>
+                  </div>
+                  <p className="mt-2 text-lg font-bold text-slate-900">{item.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.summary}</p>
+                  <Link
+                    href={item.href}
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-800"
                   >
-                    {locked ? (
-                      <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-50/85 p-4 text-center backdrop-blur-[2px]">
-                        <Lock className="h-5 w-5 text-slate-500" aria-hidden />
-                        <p className="text-sm font-semibold text-slate-800">Included in {unlockDef.name}</p>
-                        <p className="text-xs italic text-slate-600">&ldquo;{unlockDef.mindset}&rdquo;</p>
+                    Open
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {libraryFiltered.length > 3 ? (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setLibraryMoreExpanded((e) => !e)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:border-teal-200 hover:bg-millennial-primary-light/25"
+                aria-expanded={libraryMoreExpanded}
+              >
+                {libraryMoreExpanded ? (
+                  <>Show fewer resources</>
+                ) : (
+                  <>Show {libraryFiltered.length - 3} more resources (Momentum unlocks full archive)</>
+                )}
+              </button>
+
+              <AnimatePresence initial={false}>
+                {libraryMoreExpanded ? (
+                  <motion.div
+                    key="library-more-expanded"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="space-y-4 overflow-hidden"
+                  >
+                    {!tierAtLeast(effectiveTier, 'momentum') ? (
+                      <div className="rounded-2xl border border-[#0d9488]/25 bg-gradient-to-br from-teal-50/90 to-white p-5 shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900">Unlock the full library</h3>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Momentum unlocks every script and deep guide in this tab — one upgrade instead of repeated
+                          nudges.
+                        </p>
+                        <ul className="mt-3 list-none space-y-2 text-sm text-slate-700">
+                          <li className="flex gap-2">
+                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" aria-hidden />
+                            <span>All scripts &amp; checklists across phases</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" aria-hidden />
+                            <span>Money Finder, savings strategies, and weekly plans</span>
+                          </li>
+                        </ul>
+                        <p className="mt-4 text-lg font-bold text-slate-900">
+                          {TIER_DEFINITIONS.momentum.price.displayMonthly}{' '}
+                          <span className="text-sm font-semibold text-slate-500">billed monthly · cancel anytime</span>
+                        </p>
                         <Link
-                          href={`/upgrade?source=library&tier=${unlockTier}`}
-                          className="mt-1 text-sm font-bold text-sky-700 underline underline-offset-2 hover:text-sky-900"
+                          href="/upgrade?source=library-bundle&tier=momentum"
+                          className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[#1a6b3c] px-6 py-3.5 text-center text-base font-bold text-white shadow-md transition hover:bg-[#155c33] sm:w-auto"
                         >
-                          Upgrade to {unlockDef.name}
+                          Upgrade to Momentum — $29/mo
                         </Link>
                       </div>
-                    ) : null}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
-                        {JOURNEY_LIBRARY_CATEGORY_LABEL[item.category]}
-                      </span>
-                      <span className="text-xs font-semibold text-slate-500">{item.readMin} min read</span>
-                    </div>
-                    <p className="mt-2 text-lg font-bold text-slate-900">{item.title}</p>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.summary}</p>
-                    {locked ? null : (
-                      <Link
-                        href={item.href}
-                        className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-sky-700"
-                      >
-                        Open
-                        <ArrowRight className="h-4 w-4" aria-hidden />
-                      </Link>
+                    ) : (
+                      <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
+                        You&apos;re on <strong>{TIER_DEFINITIONS.momentum.name}</strong> or higher — open any resource below
+                        that your plan includes. Navigator+ unlocks the deepest guides marked in copy.
+                      </p>
                     )}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
+
+                    <ul className="space-y-3" role="list">
+                      {libraryFiltered.slice(3).map((item) => {
+                        const minT = item.minTier ?? 'foundations'
+                        const canOpen = tierAtLeast(effectiveTier, minT)
+                        const unlockDef = TIER_DEFINITIONS[minT]
+                        return (
+                          <li key={item.id}>
+                            <div
+                              className={`rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5 ${
+                                canOpen
+                                  ? 'transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md'
+                                  : 'opacity-80'
+                              }`}
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
+                                  {JOURNEY_LIBRARY_CATEGORY_LABEL[item.category]}
+                                </span>
+                                <span className="text-xs font-semibold text-slate-500">{item.readMin} min read</span>
+                              </div>
+                              <p className="mt-2 text-lg font-bold text-slate-900">{item.title}</p>
+                              <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.summary}</p>
+                              {canOpen ? (
+                                <Link
+                                  href={item.href}
+                                  className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-800"
+                                >
+                                  Open
+                                  <ArrowRight className="h-4 w-4" aria-hidden />
+                                </Link>
+                              ) : (
+                                <p className="mt-3 text-sm text-slate-500">
+                                  <Lock className="inline h-3.5 w-3.5 text-slate-400" aria-hidden /> Included in{' '}
+                                  <span className="font-semibold text-slate-700">{unlockDef.name}</span>
+                                  {tierAtLeast(effectiveTier, 'momentum') &&
+                                  (minT === 'navigator' || minT === 'navigator_plus') ? (
+                                    <Link
+                                      href={`/upgrade?source=library-item&tier=${minT}`}
+                                      className="ml-2 font-bold text-teal-800 underline underline-offset-2"
+                                    >
+                                      Upgrade to {unlockDef.name}
+                                    </Link>
+                                  ) : null}
+                                </p>
+                              )}
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </div>
+          ) : null}
 
           {libraryFiltered.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-6 text-center text-slate-600">
@@ -1844,7 +2025,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
 
           <Link
             href="/resources"
-            className="inline-flex items-center gap-2 text-sm font-bold text-sky-800 underline decoration-sky-400/60 underline-offset-2 hover:text-sky-950"
+            className="inline-flex items-center gap-2 text-sm font-bold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2 hover:text-teal-950"
           >
             Browse all resources on the site
             <ArrowRight className="h-4 w-4" aria-hidden />
@@ -1894,7 +2075,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                   <button
                     type="button"
                     onClick={() => followNextHint(a.hint)}
-                    className="text-left text-sm font-semibold text-sky-800 underline decoration-sky-400/60 underline-offset-2"
+                    className="text-left text-sm font-semibold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2"
                   >
                     {a.label}
                   </button>
@@ -1956,7 +2137,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                         setDocTaskTouched(true)
                       }
                     }}
-                    className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
                   />
                   <label
                     htmlFor={`inbox-task-${task.id}`}
@@ -1996,7 +2177,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
           <section aria-labelledby="inbox-messages-heading" className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 sm:p-6">
             <h3 id="inbox-messages-heading" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-600">
               <Mail className="h-4 w-4 shrink-0" aria-hidden />
-              Messages preview
+              Messages
             </h3>
             <div className="mt-4 space-y-3">
               <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
@@ -2006,16 +2187,17 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults }: NQGuid
                   check off one checklist item — small wins keep momentum.
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm opacity-80">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">System</p>
-                <p className="mt-1 text-sm text-slate-600">No lender emails connected — this is a preview layout.</p>
+              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-6 text-center">
+                <Mail className="h-7 w-7 text-slate-300" aria-hidden />
+                <p className="text-sm font-medium text-slate-500">No new messages</p>
+                <p className="text-xs text-slate-400">Lender updates, agent notes, and NQ tips will appear here as your journey progresses.</p>
               </div>
             </div>
           </section>
 
           <Link
             href="/inbox"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-5 py-3.5 text-base font-bold text-white shadow-md transition hover:shadow-lg sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-5 py-3.5 text-base font-bold text-white shadow-md transition hover:shadow-lg sm:w-auto"
           >
             Open full inbox
             <ArrowRight className="h-4 w-4" aria-hidden />
@@ -2105,7 +2287,7 @@ function PaywallCard({
         >
           <Image
             src="/images/nq-assistant.png"
-            alt="NQ, your homebuying guide"
+            alt="NQ, your home buying guide"
             width={120}
             height={120}
             className="h-full w-full object-contain"
@@ -2162,7 +2344,7 @@ function PaywallCard({
       </motion.button>
       <p className="mt-4 text-base text-slate-500">
         Or{' '}
-        <Link href="/inbox" className="text-sky-600 font-semibold hover:underline">
+        <Link href="/inbox" className="text-millennial-cta-primary font-semibold hover:underline">
           ask NQ a question
         </Link>{' '}
         anytime.

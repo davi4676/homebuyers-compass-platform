@@ -62,7 +62,7 @@ export const NQ_ROADMAP_PHASE_LINE: Record<number, string> = {
 
 /** Tailwind text color classes for `NQ_ROADMAP_PHASE_LINE` (one distinct hue per phase). */
 export const NQ_ROADMAP_PHASE_LINE_COLOR: Record<number, string> = {
-  1: 'text-sky-600',
+  1: 'text-teal-600',
   2: 'text-emerald-600',
   3: 'text-amber-700',
   4: 'text-orange-600',
@@ -77,9 +77,9 @@ export const NQ_GUIDED_STEPS: NQGuidedStep[] = [
     order: 1,
     phaseId: 'preparation',
     phaseOrder: 1,
-    title: 'Welcome to your homebuying journey',
+    title: 'Welcome to your home buying journey',
     nqContext:
-      "Hi{{greetingName}}! I'm **NQ**, your **homebuying guide**. We'll take this **one step at a time** — no overwhelm, just **clear next moves** — and I'll help you **find savings** at every step along the way.[[s: From your **savings snapshot**, you're focused on **{{city}}** on a **{{timeline}}** timeline.]]",
+      "Hi{{greetingName}}! I'm **NQ**, your **home buying guide**. We'll take this **one step at a time** — no overwhelm, just **clear next moves** — and I'll help you **find savings** at every step along the way.[[s: From your **savings snapshot**, you're focused on **{{city}}** on a **{{timeline}}** timeline.]]",
     nqWhatToDo:
       "Let's start with the foundation: your **credit score** and **documents**. Most buyers spend **2–4 weeks** here.",
     nqPhaseChecklist: [

@@ -18,8 +18,8 @@ export default function GuidedModeStep({
   action,
 }: GuidedModeStepProps) {
   return (
-    <section className="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-white to-white p-5 shadow-sm">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-700">Guided mode</p>
+    <section className="rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50/70 via-white to-white p-5 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">Guided mode</p>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-white p-3">
           <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Do this next</p>
@@ -33,9 +33,9 @@ export default function GuidedModeStep({
           <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-800">Here is how much it saves</p>
           <p className="mt-1 text-sm font-semibold text-emerald-950">{savesText}</p>
         </div>
-        <div className="rounded-xl border border-sky-200/80 bg-sky-50/70 p-3">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-sky-800">Here is what you unlock</p>
-          <p className="mt-1 text-sm font-semibold text-sky-950">{unlocksText}</p>
+        <div className="rounded-xl border border-teal-200/80 bg-teal-50/70 p-3">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-teal-800">Here is what you unlock</p>
+          <p className="mt-1 text-sm font-semibold text-teal-950">{unlocksText}</p>
         </div>
       </div>
       {action ? <div className="mt-3">{action}</div> : null}

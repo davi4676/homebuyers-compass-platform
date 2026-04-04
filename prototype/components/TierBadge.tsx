@@ -25,7 +25,7 @@ export default function TierBadge({ tier, mindset, className = '', compact = fal
       <div className="flex items-start gap-2">
         <span
           className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-            premium ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-700'
+            premium ? 'bg-amber-100 text-amber-800' : 'bg-teal-100 text-teal-700'
           }`}
         >
           <Sparkles className="h-4 w-4" strokeWidth={2} aria-hidden />

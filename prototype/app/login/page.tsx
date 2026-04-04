@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { LogIn, ArrowLeft } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { SIGNUP_DISABLED } from '@/lib/auth-flags'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -20,12 +21,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-[rgb(var(--text-dark))] flex flex-col items-center justify-center p-8">
+    <div className="app-page-shell flex flex-col items-center justify-center p-8">
       <div className="max-w-md w-full text-center">
+        <div className="mb-4 flex justify-center">
+          <BackToMyJourneyLink className="font-medium" />
+        </div>
         <div className="flex justify-center mb-6">
           <LogIn className="w-12 h-12 text-[rgb(var(--navy))]" />
         </div>
-        <h1 className="text-2xl font-bold mb-2 text-[rgb(var(--navy))]">Log in</h1>
+        <h1 className="font-display text-2xl font-bold mb-2 text-[rgb(var(--navy))]">Log in</h1>
         <p className="text-slate-600 mb-6">
           Use your email and password to access your account and saved progress.
         </p>

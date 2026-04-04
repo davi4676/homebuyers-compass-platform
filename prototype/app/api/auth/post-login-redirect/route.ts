@@ -6,7 +6,7 @@ import { getUserQuizState } from '@/lib/user-store'
  * Returns where to send the user after login/signup:
  * - If they have completed quiz (saved state with enough data), redirect to /results with query params.
  * - Otherwise redirect to /quiz (with transactionType if known).
- * Used when user comes from "Get started" / "Get my free guide" so they land on results or quiz accordingly.
+ * Used when user comes from primary CTAs (e.g. Find My Savings) so they land on results or quiz accordingly.
  */
 export async function GET(request: Request) {
   const session = await getSessionFromRequest()

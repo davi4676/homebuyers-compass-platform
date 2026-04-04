@@ -11,7 +11,7 @@ const dmSans = DM_Sans({
 
 const siteTitle = 'NestQuest — Save $10,000–$15,000 on Your Home Purchase'
 const siteDescription =
-  "NestQuest is a free personalized homebuying guide that finds hidden funds, simplifies every step, and helps you save $10,000–$15,000 on your home purchase."
+  "NestQuest is a free personalized home buying guide that finds hidden funds, simplifies every step, and helps you save $10,000–$15,000 on your home purchase."
 
 export const metadata: Metadata = {
   title: { default: siteTitle, template: '%s | NestQuest' },
@@ -32,7 +32,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const themeInit = `(function(){try{var k='nq-theme',v=localStorage.getItem(k);if(v==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');}catch(e){}})()`
+  const themeInit = `(function(){try{document.documentElement.classList.remove('dark');}catch(e){}})()`
 
   return (
     <html lang="en" className="min-h-full" suppressHydrationWarning>
@@ -40,13 +40,13 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body
-        className={`${dmSans.variable} ${dmSans.className} min-h-full antialiased font-sans bg-brand-cream text-brand-charcoal dark:bg-darkaccent-bg dark:text-slate-100`}
+        className={`${dmSans.variable} font-body min-h-full antialiased bg-millennial-bg text-millennial-text font-normal`}
       >
         <a href="#main-content" className="skip-link">
           Skip to main content

@@ -443,7 +443,7 @@ export default function JourneyCompassAssistant({
                     className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg p-3 border border-blue-500/30"
                   >
                     <p className="text-sm text-gray-200">
-                      Hey {userData.name || 'there'}! 👋 I'm NQ, your personal homebuying guide. 
+                      Hey {userData.name || 'there'}! 👋 I'm NQ, your personal home buying guide. 
                       {userData.zipCode && ` I see you're looking in the ${userData.zipCode} area.`}
                       {userData.creditScore && ` With your credit profile, I've got some great options for you!`}
                       {' '}Let's make this journey smooth! 🏠✨

@@ -23,8 +23,8 @@ const CAT_THEME: Record<MoneyCategory, { wrap: string; chip: string; copy: strin
     copy: 'Most buyers miss this — but you will not.',
   },
   funds: {
-    wrap: 'border-sky-200/80 bg-sky-50/50',
-    chip: 'bg-sky-100 text-sky-900',
+    wrap: 'border-teal-200/80 bg-teal-50/50',
+    chip: 'bg-teal-100 text-teal-900',
     copy: 'You just unlocked a new funding source.',
   },
   alternative: {
@@ -69,7 +69,7 @@ export default function OpportunityCard({
       <button
         type="button"
         onClick={onCta}
-        className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-slate-800 underline decoration-slate-300 underline-offset-2 hover:text-sky-900 hover:decoration-sky-400"
+        className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-slate-800 underline decoration-slate-300 underline-offset-2 hover:text-teal-900 hover:decoration-teal-400"
       >
         {ctaLabel}
         <ArrowRight className="h-4 w-4" aria-hidden />

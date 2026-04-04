@@ -315,7 +315,7 @@ export default function UnifiedResultsView({
               className="text-center mb-12"
             >
               <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-[#f5f5f5] to-[#06b6d4] bg-clip-text text-transparent">
-                Your Homebuying Journey
+                Your home buying Journey
               </h1>
               <p className="text-xl text-gray-400 max-w-2xl mx-auto">
                 Track your progress and see exactly where every dollar goes

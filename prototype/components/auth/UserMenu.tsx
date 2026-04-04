@@ -82,8 +82,8 @@ export function UserMenu({ className = '' }: UserMenuProps) {
     const tierConfig: Record<UserTier, { label: string; color: string }> = {
       foundations: { label: 'Foundations', color: 'bg-slate-100 text-slate-800' },
       momentum: { label: 'Momentum', color: 'bg-cyan-100 text-cyan-800' },
-      navigator: { label: 'Navigator', color: 'bg-orange-100 text-orange-900' },
-      navigator_plus: { label: 'Navigator+', color: 'bg-amber-100 text-amber-900' },
+      navigator: { label: 'Navigator+', color: 'bg-orange-100 text-orange-900' },
+      navigator_plus: { label: 'Concierge+', color: 'bg-amber-100 text-amber-900' },
     };
 
     return tierConfig[normalizeUserTier(user?.subscriptionTier)];

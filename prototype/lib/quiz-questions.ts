@@ -278,7 +278,7 @@ export const firstTimeQuestions: Question[] = [
   {
     id: 'eduQuiz_1',
     title: 'Which step typically comes BEFORE making an offer on a home?',
-    tooltip: 'The order of steps matters in the homebuying process.',
+    tooltip: 'The order of steps matters in the home buying process.',
     type: 'knowledge-check',
     options: [
       { value: '0', label: 'Home inspection' },

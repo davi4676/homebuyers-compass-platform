@@ -2,23 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Display headlines (Gen Z / Millennial): Plus Jakarta Sans */
+@layer base {
+  h1 {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 800;
+  }
+  h2 {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+  }
+  h3 {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+  }
+}
+
+body,
+p,
+span,
+label,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-dm-sans), 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+}
+
 /* Light mode default — brand cream/forest; dark: class overrides below */
 /* Omio-style palette: navy, light blue, white, coral accent */
 :root {
   --navy: 15, 23, 42;
   --navy-dark: 30, 58, 95;
-  --sky-light: 240, 249, 255;
-  --sky-mid: 224, 242, 254;
+  /* Soft teal wash (NestQuest / millennial shell — replaces legacy sky tints) */
+  --millennial-tint-light: 240, 253, 250;
+  --millennial-tint-mid: 204, 251, 241;
   --coral: 225, 29, 72;
   --coral-hover: 244, 63, 94;
-  --foreground-rgb: 45, 45, 45;
-  --background-rgb: 250, 247, 242;
+  --foreground-rgb: 28, 25, 23;
+  --background-rgb: 250, 250, 245;
   --card-bg: 30, 41, 59;
   --muted-bg: 51, 65, 85;
   --border: 71, 85, 105;
   --accent: 34, 211, 238;
   --accent-foreground: 15, 23, 42;
-  --text-dark: 15, 23, 42;
+  --text-dark: 28, 25, 23;
   --text-muted: 100, 116, 139;
   /* Omio-style type scale — bumped for readability across the app */
   --text-nav: 1.0625rem;   /* ~17px - nav links */
@@ -54,9 +83,19 @@ body {
   background: rgb(var(--background-rgb));
 }
 
+@layer components {
+  /**
+   * Full-page wrapper — Phase 2 millennial shell (landing + hubs).
+   * Use on route root divs so main tabs and tools share one visual language.
+   */
+  .app-page-shell {
+    @apply min-h-screen bg-gradient-to-b from-millennial-bg via-millennial-bg to-[#f0f4f0] text-millennial-text font-sans antialiased;
+  }
+}
+
 @layer utilities {
   .font-display {
-    font-family: 'Lora', Georgia, serif;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
   }
   .scrollbar-hide {
     -ms-overflow-style: none;

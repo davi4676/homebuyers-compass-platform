@@ -25,7 +25,7 @@ export default function MoneyTracker({ totals, compact = false, className = '' }
           ·
         </span>
         <span className="tabular-nums">
-          <span className="text-sky-800">Funds</span>{' '}
+          <span className="text-teal-800">Funds</span>{' '}
           <span className="text-slate-900">{formatCurrency(totals.fundsFoundSoFar)}</span>
         </span>
         <span className="hidden text-slate-300 sm:inline" aria-hidden>
@@ -50,9 +50,9 @@ export default function MoneyTracker({ totals, compact = false, className = '' }
           {formatCurrency(totals.savingsFoundSoFar)}
         </p>
       </div>
-      <div className="rounded-2xl border border-sky-200/80 bg-sky-50/50 px-4 py-3 shadow-sm">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-sky-900/90">Funds found so far</p>
-        <p className="mt-1 text-xl font-bold tabular-nums text-sky-950 sm:text-2xl">
+      <div className="rounded-2xl border border-teal-200/80 bg-teal-50/50 px-4 py-3 shadow-sm">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-teal-900/90">Funds found so far</p>
+        <p className="mt-1 text-xl font-bold tabular-nums text-teal-950 sm:text-2xl">
           {formatCurrency(totals.fundsFoundSoFar)}
         </p>
       </div>

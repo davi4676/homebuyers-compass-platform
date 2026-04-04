@@ -79,7 +79,7 @@ export function AuthModal({
           benefits: [
             "Save and access your results anytime",
             "Get personalized recommendations",
-            "Track your homebuying progress",
+            "Track your home buying progress",
             "Unlock advanced tools and calculators"
           ]
         };
@@ -107,10 +107,10 @@ export function AuthModal({
         };
       default:
         return {
-          title: "Get Started Free",
+          title: "Find My Savings →",
           subtitle: "Join thousands of smart homebuyers saving money",
           benefits: [
-            "Complete homebuying cost analysis",
+            "Complete home buying cost analysis",
             "Personalized savings opportunities",
             "Step-by-step action plan",
             "Expert guidance and tools"
@@ -460,7 +460,7 @@ function SignUpForm({
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <h3 className="text-2xl font-bold mb-2">Create Your Free Account</h3>
-        <p className="text-gray-600 text-sm">Sign up to get started</p>
+        <p className="text-gray-600 text-sm">Sign up to save your plan and find your savings</p>
       </div>
 
       {error && (
@@ -653,7 +653,7 @@ function SignUpForm({
               className="mt-1"
             />
             <label htmlFor="marketing" className="text-sm text-gray-600">
-              Send me tips and updates about homebuying (optional)
+              Send me tips and updates about home buying (optional)
             </label>
           </div>
 
@@ -913,7 +913,7 @@ function VerifyEmailView({ email, onClose }: VerifyEmailViewProps) {
           We've sent a verification link to <strong>{email}</strong>
         </p>
         <p className="text-sm text-gray-500">
-          Click the link in the email to verify your account and get started.
+          Click the link in the email to verify your account — then you can open your full journey.
         </p>
       </div>
       <button

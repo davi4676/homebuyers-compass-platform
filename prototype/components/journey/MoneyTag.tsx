@@ -27,7 +27,7 @@ export default function MoneyTag({ variant, amount, className = '' }: MoneyTagPr
       amount != null && amount > 0 ? `Finds ${formatCurrency(amount)}` : 'Finds funds'
     return (
       <span
-        className={`inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-900 ${className}`}
+        className={`inline-flex items-center rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-teal-900 ${className}`}
       >
         {label}
       </span>

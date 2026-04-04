@@ -67,7 +67,7 @@ export default function LockedMoneyCard({
           <p className="mt-2 text-xs font-medium text-slate-700">{upsell}</p>
           <Link
             href={href}
-            className="mt-3 inline-flex text-sm font-bold text-sky-700 underline decoration-sky-400/60 underline-offset-2 hover:text-sky-900"
+            className="mt-3 inline-flex text-sm font-bold text-teal-700 underline decoration-teal-400/60 underline-offset-2 hover:text-teal-900"
           >
             Unlock with {def.name}
           </Link>

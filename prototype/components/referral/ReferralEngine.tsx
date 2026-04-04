@@ -57,13 +57,20 @@ export default function ReferralEngine() {
         </div>
         <div className="p-4 rounded-lg bg-white/10 border border-white/20">
           <div className="text-sm text-gray-300 mb-1">Total Rewards</div>
-          <div className="text-2xl font-bold text-[#D4AF37]">$0</div>
+          <div className="text-2xl font-bold text-[#D4AF37] tabular-nums" title="Not tracked in this demo">
+            —
+          </div>
         </div>
         <div className="p-4 rounded-lg bg-white/10 border border-white/20">
           <div className="text-sm text-gray-300 mb-1">Friends Saved</div>
-          <div className="text-2xl font-bold text-[#50C878]">$0</div>
+          <div className="text-2xl font-bold text-[#50C878] tabular-nums" title="Not tracked in this demo">
+            —
+          </div>
         </div>
       </div>
+      <p className="text-xs text-center text-gray-400 mb-6">
+        Prototype: referral rewards and friends&apos; savings are not tracked here.
+      </p>
 
       {/* Referral Link */}
       <div className="mb-6">

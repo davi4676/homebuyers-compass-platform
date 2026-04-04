@@ -17,7 +17,7 @@ export default function AIChatbot() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm your NestQuest AI assistant. I can help you understand your results, answer questions about costs, savings opportunities, and guide you through the homebuying process. What would you like to know?",
+      content: "Hi! I'm your NestQuest AI assistant. I can help you understand your results, answer questions about costs, savings opportunities, and guide you through the home buying process. What would you like to know?",
       timestamp: new Date(),
     },
   ])
@@ -104,11 +104,11 @@ export default function AIChatbot() {
 
     // General help
     if (lowerInput.includes('help') || lowerInput.includes('what can you') || lowerInput.includes('how can you')) {
-      return "I can help you understand:\n• Your cost breakdown and what each fee means\n• Savings opportunities and how to negotiate\n• Escrow and maintenance costs\n• Affordability calculations\n• Readiness score components\n• General homebuying questions\n\nJust ask me anything about your results or the homebuying process!"
+      return "I can help you understand:\n• Your cost breakdown and what each fee means\n• Savings opportunities and how to negotiate\n• Escrow and maintenance costs\n• Affordability calculations\n• Readiness score components\n• General home buying questions\n\nJust ask me anything about your results or the home buying process!"
     }
 
     // Default response
-    return "That's a great question! I can help you understand your results, explain costs, identify savings opportunities, and guide you through the homebuying process. Try asking about:\n• Closing costs and fees\n• Monthly payments\n• Savings opportunities\n• Escrow and maintenance\n• Your readiness score\n\nOr check the detailed sections in your results for comprehensive information!"
+    return "That's a great question! I can help you understand your results, explain costs, identify savings opportunities, and guide you through the home buying process. Try asking about:\n• Closing costs and fees\n• Monthly payments\n• Savings opportunities\n• Escrow and maintenance\n• Your readiness score\n\nOr check the detailed sections in your results for comprehensive information!"
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

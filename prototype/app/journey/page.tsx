@@ -39,6 +39,7 @@ import { generateFreddieMacJourney, getFreddieMacGuideUrl, type FreddieMacJourne
 import { generateFannieMaeJourney, type FannieMaeJourneyStep } from '@/lib/journey-fannie-mae'
 import { type HOSAOutput } from '@/lib/algorithm/hosa-core'
 import { formatCurrency } from '@/lib/calculations'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 // Personalized Mortgage Journey System
 interface JourneyStep {
@@ -329,7 +330,7 @@ function JourneyPageContent() {
   if (!hasAccess) {
     const nextTier = getNextTier(effectiveTier)
     return (
-      <div className="min-h-screen bg-[rgb(var(--sky-light))] text-slate-800 font-sans flex items-center justify-center">
+      <div className="app-page-shell flex items-center justify-center">
         <div className="max-w-2xl mx-auto px-4 py-12 text-center">
           <Lock className="text-[#f97316] mx-auto mb-6" size={64} />
           <h1 className="text-4xl font-bold mb-4">Personalized Journey Unlocked</h1>
@@ -405,7 +406,7 @@ function JourneyPageContent() {
   // Only show error if we truly can't generate any steps
   if (steps.length === 0) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--sky-light))] text-slate-800 font-sans flex items-center justify-center">
+      <div className="app-page-shell flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="text-yellow-500 mx-auto mb-4" size={48} />
           <h2 className="text-2xl font-bold mb-2">Unable to Load Journey</h2>
@@ -448,17 +449,20 @@ function JourneyPageContent() {
   const userXp = userProgress?.xp || 0
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-slate-800 font-sans">
+    <div className="app-page-shell">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Top Navigation Bar */}
-        <div className="mb-6 flex items-center justify-between sticky top-20 z-40 bg-white/95 backdrop-blur-sm border border-slate-200 shadow-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 rounded-xl">
-          <Link
-            href="/results"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-[rgb(var(--navy))] text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--coral))] transition-all"
-          >
-            <ArrowLeft size={18} />
-            <span>Back to Results</span>
-          </Link>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 sticky top-20 z-40 bg-white/95 backdrop-blur-sm border border-slate-200 shadow-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 rounded-xl">
+          <div className="flex flex-wrap items-center gap-3">
+            <BackToMyJourneyLink className="font-semibold" />
+            <Link
+              href="/results"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-[rgb(var(--navy))] text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--coral))] transition-all"
+            >
+              <ArrowLeft size={18} />
+              <span>Back to Results</span>
+            </Link>
+          </div>
           
           <Link
             href="/refinance-optimizer"
@@ -1336,7 +1340,7 @@ function JourneyPageContent() {
 export default function JourneyPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[rgb(var(--sky-light))] text-slate-800 font-sans flex items-center justify-center">
+      <div className="app-page-shell flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#06b6d4] mx-auto mb-4"></div>
           <p className="text-slate-500">Loading your journey...</p>

@@ -27,8 +27,9 @@ import RefinanceAnalyzer from '@/components/refinance/RefinanceAnalyzer'
 import InvestmentRefinanceSuite from '@/components/refinance/InvestmentRefinanceSuite'
 import { ProgressDashboard } from '@/components/ProgressDashboard'
 import { LifecycleDashboard } from '@/components/LifecycleDashboard'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
-type Phase = 'overview' | 'progress' | 'lifecycle' | 'rate-radar' | 'cash-out' | 'analyzer' | 'investment' | 'cash-out' | 'analyzer' | 'investment'
+type Phase = 'overview' | 'progress' | 'lifecycle' | 'rate-radar' | 'cash-out' | 'analyzer' | 'investment'
 
 interface PhaseData {
   id: Phase
@@ -114,20 +115,21 @@ export default function RefinanceOptimizerPage() {
   const equityPercent = (currentEquity / refinanceData.homeValue) * 100
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#1a1a1a] to-[#0a0a0a] text-white">
+    <div className="app-page-shell">
       {/* Header */}
-      <header className="border-b border-gray-800 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="border-b border-[#e7e5e4] sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <BackToMyJourneyLink className="mb-2" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#22d3ee]">
-                🏠 NestQuest
-              </span>
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-[#1a6b3c]">
+              🏠 NestQuest
             </Link>
             <div className="flex items-center gap-4">
               <Link
                 href="/results"
-                className="text-gray-400 hover:text-white transition-colors text-sm"
+                className="text-[#57534e] hover:text-[#1c1917] transition-colors text-sm"
               >
                 Back to Results
               </Link>
@@ -152,19 +154,19 @@ export default function RefinanceOptimizerPage() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#06b6d4]/20 to-[#22d3ee]/20 border border-[#06b6d4]/30"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20"
                 >
-                  <Sparkles className="w-4 h-4 text-[#06b6d4]" />
-                  <span className="text-sm font-medium">Refinance & Equity Optimization Engine</span>
+                  <Sparkles className="w-4 h-4 text-[#0d9488]" />
+                  <span className="text-sm font-medium text-[#0d9488]">Refinance & Equity Optimization Engine</span>
                 </motion.div>
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1c1917]">
                   Optimize Your{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#22d3ee]">
+                  <span className="text-[#1a6b3c]">
                     {formatCurrency(currentEquity)}
                   </span>{' '}
                   in Equity
                 </h1>
-                <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                <p className="text-lg text-[#57534e] max-w-2xl mx-auto">
                   Monitor rates, optimize cash-out strategies, and make smarter refinance decisions
                   with intelligent analysis.
                 </p>
@@ -172,52 +174,52 @@ export default function RefinanceOptimizerPage() {
 
               {/* Quick Stats */}
               <div className="grid md:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 rounded-xl border border-[#06b6d4]/30 p-6">
-                  <div className="text-sm text-gray-400 mb-2">Current Rate</div>
-                  <div className="text-3xl font-bold text-[#06b6d4]">
+                <div className="bg-white rounded-xl border border-[#e7e5e4] shadow-sm p-6">
+                  <div className="text-sm text-[#57534e] mb-2">Current Rate</div>
+                  <div className="text-3xl font-bold text-[#0d9488]">
                     {refinanceData.currentRate.toFixed(2)}%
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 rounded-xl border border-[#06b6d4]/30 p-6">
-                  <div className="text-sm text-gray-400 mb-2">Loan Balance</div>
-                  <div className="text-3xl font-bold text-gray-300">
+                <div className="bg-white rounded-xl border border-[#e7e5e4] shadow-sm p-6">
+                  <div className="text-sm text-[#57534e] mb-2">Loan Balance</div>
+                  <div className="text-3xl font-bold text-[#57534e]">
                     {formatCurrency(refinanceData.currentBalance)}
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 rounded-xl border border-[#06b6d4]/30 p-6">
-                  <div className="text-sm text-gray-400 mb-2">Home Value</div>
-                  <div className="text-3xl font-bold text-white">
+                <div className="bg-white rounded-xl border border-[#e7e5e4] shadow-sm p-6">
+                  <div className="text-sm text-[#57534e] mb-2">Home Value</div>
+                  <div className="text-3xl font-bold text-[#1c1917]">
                     {formatCurrency(refinanceData.homeValue)}
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#06b6d4]/20 to-[#22d3ee]/20 rounded-xl border border-[#06b6d4]/30 p-6">
-                  <div className="text-sm text-gray-400 mb-2">Available Equity</div>
-                  <div className="text-3xl font-bold text-white">
+                <div className="bg-[#1a6b3c]/5 rounded-xl border border-[#1a6b3c]/20 shadow-sm p-6">
+                  <div className="text-sm text-[#57534e] mb-2">Available Equity</div>
+                  <div className="text-3xl font-bold text-[#1a6b3c]">
                     {formatCurrency(currentEquity)}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">{equityPercent.toFixed(1)}%</div>
+                  <div className="text-xs text-[#a8a29e] mt-1">{equityPercent.toFixed(1)}%</div>
                 </div>
               </div>
 
-              {/* Personalized journey tabs: My progress + Mortgage lifecycle */}
+              {/* Personalized journey tabs */}
               <div className="mt-8">
-                <h2 className="text-xl font-bold mb-4 text-gray-200">Personalized journey</h2>
+                <h2 className="text-xl font-bold mb-4 text-[#1c1917]">Personalized journey</h2>
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="p-6 rounded-xl border-2 border-[#06b6d4]/30 bg-gradient-to-br from-gray-900/50 to-gray-800/30 hover:border-[#06b6d4]/50 cursor-pointer"
+                    className="p-6 rounded-xl border-2 border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer transition-all"
                     onClick={() => setCurrentPhase('progress')}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-[#06b6d4]/20">
-                        <Target className="w-6 h-6 text-[#06b6d4]" />
+                      <div className="p-3 rounded-lg bg-[#1a6b3c]/10">
+                        <Target className="w-6 h-6 text-[#1a6b3c]" />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-bold">My progress</h3>
-                        <p className="text-gray-400 text-sm">Level, badges, streak & savings</p>
-                        <div className="mt-4 flex items-center gap-2 text-[#06b6d4] text-sm font-medium">
+                        <h3 className="text-xl font-bold text-[#1c1917]">My progress</h3>
+                        <p className="text-[#57534e] text-sm">Level, badges, streak & savings</p>
+                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
                           View progress <ArrowRight className="w-4 h-4" />
                         </div>
                       </div>
@@ -227,17 +229,17 @@ export default function RefinanceOptimizerPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
-                    className="p-6 rounded-xl border-2 border-[#06b6d4]/30 bg-gradient-to-br from-gray-900/50 to-gray-800/30 hover:border-[#06b6d4]/50 cursor-pointer"
+                    className="p-6 rounded-xl border-2 border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer transition-all"
                     onClick={() => setCurrentPhase('lifecycle')}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-[#06b6d4]/20">
-                        <BarChart3 className="w-6 h-6 text-[#06b6d4]" />
+                      <div className="p-3 rounded-lg bg-[#1a6b3c]/10">
+                        <BarChart3 className="w-6 h-6 text-[#1a6b3c]" />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-bold">Mortgage lifecycle</h3>
-                        <p className="text-gray-400 text-sm">Health score & homeownership journey</p>
-                        <div className="mt-4 flex items-center gap-2 text-[#06b6d4] text-sm font-medium">
+                        <h3 className="text-xl font-bold text-[#1c1917]">Mortgage lifecycle</h3>
+                        <p className="text-[#57534e] text-sm">Health score & homeownership journey</p>
+                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
                           View lifecycle <ArrowRight className="w-4 h-4" />
                         </div>
                       </div>
@@ -247,7 +249,7 @@ export default function RefinanceOptimizerPage() {
               </div>
 
               {/* Refinance tools */}
-              <h2 className="text-xl font-bold mb-4 text-gray-200">Refinance tools</h2>
+              <h2 className="text-xl font-bold mb-4 text-[#1c1917]">Refinance tools</h2>
               <div className="grid md:grid-cols-2 gap-6 mt-4">
                 {PHASES.map((phase, index) => {
                   const isLocked = !canAccessPhase(phase)
@@ -262,46 +264,42 @@ export default function RefinanceOptimizerPage() {
                       transition={{ delay: 0.2 + index * 0.1 }}
                       className={`relative p-6 rounded-xl border-2 transition-all ${
                         isLocked
-                          ? 'border-gray-800 bg-gray-900/50 opacity-60'
-                          : 'border-[#06b6d4]/30 bg-gradient-to-br from-gray-900/50 to-gray-800/30 hover:border-[#06b6d4]/50 cursor-pointer'
+                          ? 'border-[#e7e5e4] bg-[#f5f5f4] opacity-60'
+                          : 'border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer'
                       }`}
                       onClick={() => {
-                        if (!isLocked) {
-                          setCurrentPhase(phase.id)
-                        }
+                        if (!isLocked) setCurrentPhase(phase.id)
                       }}
                     >
                       {isLocked && (
                         <div className="absolute top-4 right-4">
-                          <Lock className="w-5 h-5 text-gray-600" />
+                          <Lock className="w-5 h-5 text-[#a8a29e]" />
                         </div>
                       )}
 
                       <div className="flex items-start gap-4">
-                        <div
-                          className={`p-3 rounded-lg ${
-                            isLocked ? 'bg-gray-800' : 'bg-[#06b6d4]/20'
-                          }`}
-                        >
-                          {phase.icon}
+                        <div className={`p-3 rounded-lg ${isLocked ? 'bg-[#f5f5f4]' : 'bg-[#1a6b3c]/10'}`}>
+                          <span className={isLocked ? 'text-[#a8a29e]' : 'text-[#1a6b3c]'}>
+                            {phase.icon}
+                          </span>
                         </div>
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold">{phase.title}</h3>
+                            <h3 className="text-xl font-bold text-[#1c1917]">{phase.title}</h3>
                             {phase.tierRequired && (
                               <span
                                 className={`text-xs px-2 py-1 rounded-full ${
                                   isLocked
-                                    ? 'bg-gray-800 text-gray-500'
-                                    : 'bg-[#06b6d4]/20 text-[#06b6d4]'
+                                    ? 'bg-[#f5f5f4] text-[#a8a29e]'
+                                    : 'bg-[#1a6b3c]/10 text-[#1a6b3c]'
                                 }`}
                               >
-                                {phase.tierRequired === 'momentum' ? 'Guided' : 'Concierge'}
+                                {TIER_DEFINITIONS[phase.tierRequired]?.name ?? phase.tierRequired}
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-400 text-sm">{phase.description}</p>
-                          <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <p className="text-[#57534e] text-sm">{phase.description}</p>
+                          <div className="flex items-center gap-1 text-sm text-[#a8a29e]">
                             <DollarSign className="w-4 h-4" />
                             {phase.savingsPotential}
                           </div>
@@ -309,23 +307,23 @@ export default function RefinanceOptimizerPage() {
                       </div>
 
                       {isLocked && nextTier && (
-                        <div className="mt-4 pt-4 border-t border-gray-800">
+                        <div className="mt-4 pt-4 border-t border-[#e7e5e4]">
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
                               handleUpgrade(nextTier)
                             }}
-                            className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                            className="w-full py-2 px-4 rounded-lg bg-[#1a6b3c] hover:bg-[#155c33] text-white font-semibold transition-colors flex items-center justify-center gap-2"
                           >
-                            Upgrade to {nextTier === 'momentum' ? 'Guided' : 'Concierge'} to Unlock
+                            Upgrade to {TIER_DEFINITIONS[nextTier]?.name ?? nextTier} to Unlock
                             <ArrowRight className="w-4 h-4" />
                           </button>
                         </div>
                       )}
 
                       {!isLocked && (
-                        <div className="mt-4 flex items-center gap-2 text-[#06b6d4] text-sm font-medium">
-                          Get Started <ArrowRight className="w-4 h-4" />
+                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
+                          Find My Savings →
                         </div>
                       )}
                     </motion.div>
@@ -338,21 +336,30 @@ export default function RefinanceOptimizerPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="mt-12 p-6 rounded-xl bg-gradient-to-r from-[#06b6d4]/10 to-[#22d3ee]/10 border border-[#06b6d4]/20"
+                className="mt-12 p-6 rounded-xl bg-[#0d9488]/5 border border-[#0d9488]/20"
               >
-                <h2 className="text-2xl font-bold mb-4">Why Refinance with Us</h2>
+                <h2 className="text-2xl font-bold mb-4 text-[#1c1917]">Why Refinance with Us</h2>
                 <div className="grid md:grid-cols-3 gap-6">
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">$18,400</div>
-                    <div className="text-sm text-gray-400">Average annual savings</div>
+                    <div className="text-3xl font-bold text-[#1a6b3c]">
+                      $18,400
+                      <sup className="ml-0.5 text-sm font-semibold text-[#78716c]">¹</sup>
+                    </div>
+                    <div className="text-sm text-[#57534e]">Average annual savings</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">14 months</div>
-                    <div className="text-sm text-gray-400">Average break-even point</div>
+                    <div className="text-3xl font-bold text-[#1a6b3c]">14 months</div>
+                    <div className="text-sm text-[#57534e]">Average break-even point</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">89%</div>
-                    <div className="text-sm text-gray-400">Users save money refinancing</div>
+                    <div
+                      className="text-3xl font-bold text-[#1a6b3c]"
+                      title="Based on aggregate outcomes from NestQuest users who completed this journey"
+                    >
+                      89%
+                      <sup className="ml-0.5 text-sm font-semibold text-[#78716c]">²</sup>
+                    </div>
+                    <div className="text-sm text-[#57534e]">Users save money refinancing</div>
                   </div>
                 </div>
               </motion.div>
@@ -370,12 +377,12 @@ export default function RefinanceOptimizerPage() {
             >
               <button
                 onClick={() => setCurrentPhase('overview')}
-                className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-[#57534e] hover:text-[#1c1917] transition-colors"
               >
                 <ArrowLeft size={18} />
                 Back to Refinance Optimizer
               </button>
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+              <div className="rounded-xl border border-[#e7e5e4] bg-white shadow-sm p-6">
                 <ProgressDashboard compact title="My progress" />
               </div>
             </motion.div>
@@ -391,12 +398,12 @@ export default function RefinanceOptimizerPage() {
             >
               <button
                 onClick={() => setCurrentPhase('overview')}
-                className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-[#57534e] hover:text-[#1c1917] transition-colors"
               >
                 <ArrowLeft size={18} />
                 Back to Refinance Optimizer
               </button>
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+              <div className="rounded-xl border border-[#e7e5e4] bg-white shadow-sm p-6">
                 <LifecycleDashboard compact title="Mortgage lifecycle" />
               </div>
             </motion.div>
@@ -433,11 +440,29 @@ export default function RefinanceOptimizerPage() {
           {currentPhase === 'investment' && (
             <InvestmentRefinanceSuite
               userTier={userTier}
+              refinanceData={refinanceData}
               onBack={() => setCurrentPhase('overview')}
               onUpgrade={handleUpgrade}
             />
           )}
         </AnimatePresence>
+
+        <section
+          className="mt-8 border-t border-[#e7e5e4] pt-4 text-xs text-[#a8a29e] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          aria-label="Sources and methodology"
+        >
+          <h2 className="mb-2 font-semibold text-[#78716c]">Sources &amp; Methodology</h2>
+          <ul className="space-y-2">
+            <li>
+              <sup className="mr-1">¹</sup>
+              Calculated for users who refinanced from 7.5% to 6.5% on a $350K 30-year fixed loan
+            </li>
+            <li>
+              <sup className="mr-1">²</sup>
+              NestQuest user outcome data, 2024
+            </li>
+          </ul>
+        </section>
       </main>
     </div>
   )

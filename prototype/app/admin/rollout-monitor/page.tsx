@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { RefreshCw, AlertCircle, Download } from 'lucide-react'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 interface RolloutMonitorResponse {
   generatedAt: string
@@ -154,11 +155,14 @@ export default function RolloutMonitorPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="app-page-shell">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold">Rollout Monitor</h1>
+            <div className="mb-2">
+              <BackToMyJourneyLink className="font-medium" />
+            </div>
+            <h1 className="font-display text-xl font-bold">Rollout Monitor</h1>
             <p className="text-sm text-slate-500">Reminders, push, and experiment telemetry</p>
           </div>
           <div className="flex items-center gap-2">

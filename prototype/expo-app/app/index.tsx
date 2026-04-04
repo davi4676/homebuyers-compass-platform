@@ -8,7 +8,7 @@ export default function HomeScreen() {
         <Text style={styles.emoji}>🧭</Text>
         <Text style={styles.title}>Homebuyer&apos;s Compass</Text>
         <Text style={styles.subtitle}>
-          Your homebuying journey, all in one place. Get your free guide, compare options, and track your progress.
+          Your home buying journey, all in one place. Get your free guide, compare options, and track your progress.
         </Text>
       </View>
       <View style={styles.actions}>

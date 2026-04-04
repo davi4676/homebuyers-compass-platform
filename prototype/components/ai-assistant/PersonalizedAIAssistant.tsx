@@ -28,7 +28,7 @@ interface PersonalizedAIAssistantProps {
   currentStep?: number
 }
 
-const HOMEBUYING_STEPS = [
+const homeBuyingSteps = [
   { id: 1, name: 'Get Pre-Approved', icon: '📋' },
   { id: 2, name: 'Find Your Home', icon: '🏠' },
   { id: 3, name: 'Make an Offer', icon: '💰' },
@@ -184,7 +184,7 @@ export default function PersonalizedAIAssistant({ userProfile, currentStep = 1 }
     const name = userProfile.name || 'there'
     const location = userProfile.location || 'your area'
     
-    return `👋 Hi ${name}! I'm NestQuest, your homebuying guide! I'm here to help you navigate every step of your journey to homeownership in ${location}. What can I help you with today?`
+    return `👋 Hi ${name}! I'm NestQuest, your home buying guide! I'm here to help you navigate every step of your journey to homeownership in ${location}. What can I help you with today?`
   }
 
   const generateAIResponse = (userMessage: string) => {
@@ -208,7 +208,7 @@ export default function PersonalizedAIAssistant({ userProfile, currentStep = 1 }
     }
     
     // Default helpful response
-    return `I'm here to guide you! 🧭 I can help with:\n\n• Understanding each step of homebuying\n• Explaining confusing terms\n• Connecting you with resources\n• Keeping you on track\n\nWhat specific aspect of homebuying would you like to explore? Feel free to ask about pre-approval, home search, offers, inspections, or closing!`
+    return `I'm here to guide you! 🧭 I can help with:\n\n• Understanding each step of home buying\n• Explaining confusing terms\n• Connecting you with resources\n• Keeping you on track\n\nWhat specific aspect of home buying would you like to explore? Feel free to ask about pre-approval, home search, offers, inspections, or closing!`
   }
 
   const handleSendMessage = async () => {
@@ -314,7 +314,7 @@ export default function PersonalizedAIAssistant({ userProfile, currentStep = 1 }
               <div className="flex-1">
                 <h3 className="text-white font-bold text-lg">NestQuest - Your AI Guide</h3>
                 <p className="text-cyan-100 text-xs">
-                  Step {currentStep} of 8: {HOMEBUYING_STEPS[currentStep - 1]?.name}
+                  Step {currentStep} of 8: {homeBuyingSteps[currentStep - 1]?.name}
                 </p>
               </div>
             </div>
@@ -322,7 +322,7 @@ export default function PersonalizedAIAssistant({ userProfile, currentStep = 1 }
             {/* Progress Bar */}
             <div className="bg-gray-800 px-4 py-2">
               <div className="flex gap-1">
-                {HOMEBUYING_STEPS.map((step, idx) => (
+                {homeBuyingSteps.map((step, idx) => (
                   <div
                     key={step.id}
                     className={`flex-1 h-2 rounded-full ${
@@ -461,7 +461,7 @@ export default function PersonalizedAIAssistant({ userProfile, currentStep = 1 }
                 </div>
                 <h3 className="text-2xl font-bold text-white">Unlock NestQuest AI Guide!</h3>
                 <p className="text-gray-300">
-                  Get 24/7 personalized guidance through every step of your homebuying journey.
+                  Get 24/7 personalized guidance through every step of your home buying journey.
                 </p>
                 <div className="space-y-2 text-left">
                   <div className="flex items-center gap-2 text-sm text-gray-300">

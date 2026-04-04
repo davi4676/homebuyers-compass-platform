@@ -55,8 +55,8 @@ interface PersonalizedAIAssistantProps {
   onStepChange?: (step: number) => void
 }
 
-// Homebuying process steps with detailed guidance
-const HOMEBUYING_STEPS = [
+// home buying process steps with detailed guidance
+const homeBuyingSteps = [
   {
     id: 1,
     title: 'Pre-Approval',
@@ -260,10 +260,10 @@ export default function PersonalizedAIAssistant({
 
   // Generate personalized welcome message
   const generateWelcomeMessage = (): Message => {
-    const step = HOMEBUYING_STEPS[activeStep - 1]
+    const step = homeBuyingSteps[activeStep - 1]
     const name = userProfile.name || 'there'
     
-    let content = `👋 Hi ${name}! I'm your personal homebuying guide.\n\n`
+    let content = `👋 Hi ${name}! I'm your personal home buying guide.\n\n`
     
     if (userProfile.buyerType === 'first-time') {
       content += `I see you're a first-time homebuyer - exciting! I'm here to make this process clear and manageable.\n\n`
@@ -295,7 +295,7 @@ export default function PersonalizedAIAssistant({
   // Generate AI response based on user input
   const generateAIResponse = (userMessage: string): Message => {
     const lowerMessage = userMessage.toLowerCase()
-    const step = HOMEBUYING_STEPS[activeStep - 1]
+    const step = homeBuyingSteps[activeStep - 1]
     
     let content = ''
     let suggestions: string[] = []
@@ -320,8 +320,8 @@ export default function PersonalizedAIAssistant({
     }
     // Show all steps
     else if (lowerMessage.includes('all step') || lowerMessage.includes('process') || lowerMessage.includes('overview')) {
-      content = `**Complete Homebuying Process (8 Steps):**\n\n`
-      HOMEBUYING_STEPS.forEach(s => {
+      content = `**Complete home buying Process (8 Steps):**\n\n`
+      homeBuyingSteps.forEach(s => {
         const checkmark = s.id < activeStep ? '✅' : s.id === activeStep ? '🔄' : '⭕'
         content += `${checkmark} **Step ${s.id}: ${s.title}** (${s.duration})\n`
         content += `   ${s.description}\n\n`
@@ -335,7 +335,7 @@ export default function PersonalizedAIAssistant({
     }
     // Timeline questions
     else if (lowerMessage.includes('long') || lowerMessage.includes('time') || lowerMessage.includes('timeline')) {
-      const totalWeeks = HOMEBUYING_STEPS.reduce((sum, s) => {
+      const totalWeeks = homeBuyingSteps.reduce((sum, s) => {
         const weeks = s.duration.includes('week') 
           ? parseInt(s.duration.split('-')[1] || s.duration.split(' ')[0]) 
           : s.duration.includes('day')
@@ -345,7 +345,7 @@ export default function PersonalizedAIAssistant({
       }, 0)
       
       content = `**Timeline Overview:**\n\n`
-      content += `The complete homebuying process typically takes **${totalWeeks} weeks** (about ${Math.round(totalWeeks / 4)} months).\n\n`
+      content += `The complete home buying process typically takes **${totalWeeks} weeks** (about ${Math.round(totalWeeks / 4)} months).\n\n`
       content += `**Current Step:** ${step.title} - ${step.duration}\n\n`
       content += `**Remaining Steps:** ${8 - activeStep} steps\n\n`
       
@@ -428,7 +428,7 @@ export default function PersonalizedAIAssistant({
     // Next step
     else if (lowerMessage.includes('next') || lowerMessage.includes('move forward')) {
       if (activeStep < 8) {
-        const nextStep = HOMEBUYING_STEPS[activeStep]
+        const nextStep = homeBuyingSteps[activeStep]
         content = `Great! Let's move to **Step ${nextStep.id}: ${nextStep.title}**\n\n`
         content += `${nextStep.description}\n\n`
         content += `**Duration:** ${nextStep.duration}\n\n`
@@ -592,7 +592,7 @@ export default function PersonalizedAIAssistant({
                 </div>
                 <div>
                   <h3 className="font-bold text-white">Your AI Guide</h3>
-                  <p className="text-xs text-white/80">Step {activeStep} of 8: {HOMEBUYING_STEPS[activeStep - 1].title}</p>
+                  <p className="text-xs text-white/80">Step {activeStep} of 8: {homeBuyingSteps[activeStep - 1].title}</p>
                 </div>
               </div>
               <button
@@ -690,7 +690,7 @@ export default function PersonalizedAIAssistant({
                   <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-lg p-4 mb-3">
                     <Lock className="mx-auto mb-2 text-orange-400" size={24} />
                     <p className="text-sm text-gray-300 mb-3">
-                      Upgrade to <strong className="text-[#06b6d4]">Guided</strong> or higher to unlock your personal AI assistant
+                      Upgrade to <strong className="text-[#06b6d4]">Momentum</strong> or higher to unlock your personal AI assistant
                     </p>
                     <ul className="text-xs text-gray-400 text-left mb-3 space-y-1">
                       <li>✓ 24/7 step-by-step guidance</li>
@@ -715,7 +715,7 @@ export default function PersonalizedAIAssistant({
                       You've reached your daily limit of <strong>{dailyLimit} messages</strong>
                     </p>
                     <p className="text-xs text-gray-400 mb-3">
-                      Upgrade to <strong className="text-[#06b6d4]">{userTier === 'momentum' ? 'Concierge' : 'Concierge+'}</strong> for {userTier === 'momentum' ? '50 messages/day' : 'unlimited access'}
+                      Upgrade to <strong className="text-[#06b6d4]">Concierge+</strong> for {userTier === 'momentum' ? '50 messages/day' : 'unlimited access'}
                     </p>
                     <Link
                       href="/upgrade?feature=aiAssistant"
@@ -785,7 +785,7 @@ export default function PersonalizedAIAssistant({
                 <p className="text-gray-400 mb-6">
                   {hasAccess 
                     ? `You've used all ${dailyLimit} messages for today. Upgrade for more!`
-                    : 'Get 24/7 guidance through every step of your homebuying journey'
+                    : 'Get 24/7 guidance through every step of your home buying journey'
                   }
                 </p>
 
@@ -796,11 +796,11 @@ export default function PersonalizedAIAssistant({
                       <>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="text-green-400 flex-shrink-0 mt-0.5" size={16} />
-                          <span><strong>20 messages/day</strong> with Guided ($29 one-time)</span>
+                          <span><strong>20 messages/day</strong> with Momentum ($29/mo)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="text-green-400 flex-shrink-0 mt-0.5" size={16} />
-                          <span>Step-by-step homebuying guidance</span>
+                          <span>Step-by-step home buying guidance</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="text-green-400 flex-shrink-0 mt-0.5" size={16} />

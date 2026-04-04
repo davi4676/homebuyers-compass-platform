@@ -12,7 +12,7 @@ import { ChatInput } from './ChatInput'
 const OPENING_GREETING: { role: 'assistant'; content: string } = {
   role: 'assistant',
   content:
-    "Hi! I'm NQ, your homebuying guide for NestQuest. Are you just starting to explore, or is there a specific question I can help with today?",
+    "Hi! I'm NQ, your home buying guide for NestQuest. Are you just starting to explore, or is there a specific question I can help with today?",
 }
 
 export function HomebuyerChatbotWidget() {
@@ -46,7 +46,7 @@ export function HomebuyerChatbotWidget() {
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-[#06b6d4] to-[#0891b2] rounded-full shadow-lg flex items-center justify-center text-white z-[45] hover:shadow-xl transition-shadow"
-        aria-label={isOpen ? 'Close chat' : 'Open NQ homebuying guide'}
+        aria-label={isOpen ? 'Close chat' : 'Open NQ home buying guide'}
       >
         {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
       </motion.button>
@@ -67,7 +67,7 @@ export function HomebuyerChatbotWidget() {
                 </div>
                 <div>
                   <h2 className="font-bold text-white text-base">NQ</h2>
-                  <p className="text-xs text-white/90">Homebuying guide · NestQuest</p>
+                  <p className="text-xs text-white/90">home buying guide · NestQuest</p>
                 </div>
               </div>
               <button
@@ -79,13 +79,13 @@ export function HomebuyerChatbotWidget() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[rgb(var(--sky-light))] p-4 space-y-4 min-h-0">
+            <div className="flex-1 overflow-y-auto bg-[rgb(var(--millennial-tint-light))] p-4 space-y-4 min-h-0">
               {!isAuthenticated && !authLoading ? (
                 <div className="flex flex-col items-center justify-center h-full text-center px-6 -mt-8">
                   <Bot className="w-12 h-12 text-[#06b6d4] mb-4" />
                   <h3 className="font-semibold text-slate-800 mb-2">Log in to chat with NQ</h3>
                   <p className="text-sm text-slate-600 mb-4 max-w-[240px]">
-                    NQ is your homebuying guide. Sign in to get personalized answers about pre-approval, mortgages, offers, and more.
+                    NQ is your home buying guide. Sign in to get personalized answers about pre-approval, mortgages, offers, and more.
                   </p>
                   <Link
                     href="/auth"

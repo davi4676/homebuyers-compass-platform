@@ -20,6 +20,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { trackActivity } from '@/lib/track-activity'
 import { TIER_DEFINITIONS, type UserTier, formatTierPrice } from '@/lib/tiers'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 /* ─── Question definitions ──────────────────────────────────────────────── */
 
@@ -143,8 +144,8 @@ function getRecommendation(answers: Record<string, number>): TierRec {
   }
   return {
     tier: 'momentum',
-    headline: 'Guided — Smart tools + on-demand support',
-    why: "You have a solid base and mainly need the right tools and a plan to stay organized. The Guided plan gives you exactly that — without paying for support you don't need.",
+    headline: 'Momentum — Smart tools + on-demand support',
+    why: "You have a solid base and mainly need the right tools and a plan to stay organized. The Momentum plan gives you exactly that — without paying for support you don't need.",
     highlights: [
       'AI assistant for when you have questions (20/day)',
       'Personalized action plan + mortgage savings roadmap',
@@ -166,11 +167,11 @@ const TIER_CONFIG: Record<UserTier, { icon: React.ReactNode; color: string; badg
     border: 'border-slate-200',
   },
   momentum: {
-    icon: <Zap className="w-6 h-6 text-indigo-600" />,
-    color: 'text-indigo-700',
-    badge: 'bg-indigo-100 text-indigo-700',
-    bg: 'bg-indigo-50',
-    border: 'border-indigo-200',
+    icon: <Zap className="w-6 h-6 text-teal-600" />,
+    color: 'text-teal-700',
+    badge: 'bg-teal-100 text-teal-700',
+    bg: 'bg-teal-50',
+    border: 'border-teal-200',
   },
   navigator: {
     icon: <Shield className="w-6 h-6 text-violet-600" />,
@@ -234,7 +235,7 @@ export default function FindMyPlanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="app-page-shell">
       {/* Header */}
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
@@ -254,6 +255,9 @@ export default function FindMyPlanPage() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-10 sm:py-14">
+        <div className="mb-6">
+          <BackToMyJourneyLink />
+        </div>
         <AnimatePresence mode="wait">
 
           {/* ── Intro ── */}
@@ -275,7 +279,7 @@ export default function FindMyPlanPage() {
                 5 quick questions about your experience and how much help you want — we'll match you to the plan that's actually worth paying for.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-slate-500">
-                <span className="inline-flex items-center gap-1.5"><BookOpen className="h-4 w-4 text-indigo-400" /> Financial education level</span>
+                <span className="inline-flex items-center gap-1.5"><BookOpen className="h-4 w-4 text-teal-400" /> Financial education level</span>
                 <span className="hidden sm:inline text-slate-300">·</span>
                 <span className="inline-flex items-center gap-1.5"><Home className="h-4 w-4 text-emerald-400" /> Process understanding</span>
                 <span className="hidden sm:inline text-slate-300">·</span>
@@ -430,8 +434,8 @@ export default function FindMyPlanPage() {
                       rec.tier === 'navigator_plus'
                         ? 'bg-gradient-to-r from-amber-500 to-orange-500'
                         : rec.tier === 'navigator'
-                          ? 'bg-gradient-to-r from-violet-600 to-indigo-600'
-                          : 'bg-gradient-to-r from-indigo-500 to-blue-500'
+                          ? 'bg-gradient-to-r from-millennial-cta-secondary to-teal-700'
+                          : 'bg-gradient-to-r from-millennial-cta-primary to-teal-500'
                     }`}
                   >
                     <span className="absolute inset-0 rounded-xl animate-ping opacity-20 bg-white pointer-events-none" style={{ animationDuration: '2.5s' }} />

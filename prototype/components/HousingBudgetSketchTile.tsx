@@ -121,7 +121,7 @@ function AssumptionHint({ fieldKey }: { fieldKey: keyof LineState }) {
     <span ref={wrapRef} className="relative inline-flex align-middle">
       <button
         type="button"
-        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-1"
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-1"
         aria-expanded={open}
         aria-controls={tipId}
         aria-label={`Assumption for ${shortLabel}`}
@@ -409,10 +409,10 @@ export default function HousingBudgetSketchTile({
                 [id]: Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0,
               }))
             }}
-            className={`w-full rounded-lg border py-2 pl-7 pr-2 text-right text-base font-semibold text-slate-900 shadow-inner outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-300/50 ${
+            className={`w-full rounded-lg border py-2 pl-7 pr-2 text-right text-base font-semibold text-slate-900 shadow-inner outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-300/50 ${
               edited
                 ? 'border-amber-300/90 bg-amber-50/50 ring-2 ring-amber-200/70'
-                : 'border-slate-200 bg-white ring-sky-200'
+                : 'border-slate-200 bg-white ring-teal-200'
             }`}
           />
         </div>
@@ -421,7 +421,7 @@ export default function HousingBudgetSketchTile({
   }
 
   return (
-    <div className="relative mt-5 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-sky-50/40 p-4 shadow-md ring-1 ring-emerald-100/60 sm:p-5">
+    <div className="relative mt-5 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/40 p-4 shadow-md ring-1 ring-emerald-100/60 sm:p-5">
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-wide text-emerald-900">Monthly budget sketch</h3>

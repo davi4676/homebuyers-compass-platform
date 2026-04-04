@@ -27,7 +27,7 @@ function getNextBestActionForReminder(userId: string): {
   const message = getSnapshotOneLiner(snapshot)
   const title = snapshot
     ? `Hey${user?.firstName ? ` ${user.firstName}` : ''} — your roadmap nudge`
-    : 'Your next best homebuying action'
+    : 'Your next best home buying action'
   return {
     title,
     message,

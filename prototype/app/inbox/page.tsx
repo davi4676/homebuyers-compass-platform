@@ -11,6 +11,7 @@ import PlainEnglishText from '@/components/PlainEnglishText'
 import { useExperiment } from '@/lib/hooks/useExperiment'
 import { usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
 import { applyPlainEnglishCopy } from '@/lib/plain-english'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 type PhaseStatus = 'not-started' | 'in-progress' | 'complete'
 
@@ -94,8 +95,11 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-slate-800 font-sans">
+    <div className="app-page-shell">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4">
+        <div className="mb-4">
+          <BackToMyJourneyLink />
+        </div>
         <div className="relative h-24 sm:h-28 overflow-hidden rounded-2xl mb-6">
           <div
             className="absolute inset-0 bg-cover bg-center"

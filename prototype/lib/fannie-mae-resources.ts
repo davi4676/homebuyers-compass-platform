@@ -28,7 +28,7 @@ export const FANNIE_MAE_RESOURCES: Record<string, FannieMaeResource[]> = {
     {
       id: '7-steps',
       title: '7 Steps to Homeownership',
-      description: 'Comprehensive guide covering each step of the homebuying process from preparation to closing.',
+      description: 'Comprehensive guide covering each step of the home buying process from preparation to closing.',
       url: 'https://yourhome.fanniemae.com/buy/all-homebuyer-resources',
       category: 'guide',
       applicableTo: ['first-time', 'repeat-buyer']
@@ -96,7 +96,7 @@ export const FANNIE_MAE_RESOURCES: Record<string, FannieMaeResource[]> = {
     {
       id: 'housing-counselor',
       title: 'Contact a Housing Counselor',
-      description: 'Get free, expert guidance from HUD-approved housing counselors to help with your homebuying journey.',
+      description: 'Get free, expert guidance from HUD-approved housing counselors to help with your home buying journey.',
       url: 'https://yourhome.fanniemae.com/calculators-tools/contact-housing-counselor',
       category: 'tool',
       applicableTo: ['first-time', 'repeat-buyer', 'refinance']

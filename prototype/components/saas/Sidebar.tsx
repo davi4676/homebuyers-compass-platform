@@ -14,8 +14,8 @@ import {
 const navItems = [
   { href: '/saas', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/saas/chatbots', label: 'Chatbots', icon: Bot },
-  { href: '/saas/knowledge', label: 'Knowledge Base', icon: BookOpen },
-  { href: '/analytics-dashboard', label: 'Analytics', icon: BarChart3 },
+  { href: '/saas/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
+  { href: '/saas/analytics', label: 'Analytics', icon: BarChart3 },
 ]
 
 export default function Sidebar() {

@@ -73,9 +73,9 @@ export default function SoloAdvocateChecklist({ neighborhoodPriority }: Props) {
   const neighLabel = neighborhoodPriority ? NEIGHBORHOOD_LABEL[neighborhoodPriority] : null
 
   return (
-    <div className="mt-6 rounded-2xl border border-sky-200/90 bg-gradient-to-br from-sky-50/95 to-white p-5 sm:p-6 shadow-sm dark:border-slate-600 dark:from-slate-900 dark:to-slate-900/80">
+    <div className="mt-6 rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50/95 to-white p-5 sm:p-6 shadow-sm dark:border-slate-600 dark:from-slate-900 dark:to-slate-900/80">
       <div className="flex items-center gap-2">
-        <UserRound className="h-6 w-6 text-sky-700 dark:text-sky-300" aria-hidden />
+        <UserRound className="h-6 w-6 text-teal-700 dark:text-teal-300" aria-hidden />
         <h3 className="text-lg font-bold text-brand-forest dark:text-white">What Every Solo Buyer Should Know</h3>
       </div>
       {neighLabel ? (

@@ -173,12 +173,12 @@ export default function JourneyOnboardingWizard({
   )
 
   return (
-    <div className="mb-8 overflow-hidden rounded-3xl border-2 border-sky-200/70 bg-gradient-to-br from-white via-sky-50/40 to-indigo-50/30 p-5 shadow-xl shadow-sky-900/10 sm:p-8">
+    <div className="mb-8 overflow-hidden rounded-3xl border-2 border-teal-200/70 bg-gradient-to-br from-white via-teal-50/40 to-teal-50/30 p-5 shadow-xl shadow-teal-900/10 sm:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-800/90">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800/90">
           Welcome · step {step} of {STEPS}
         </p>
-        <MindsetTag mindset={def.mindset} className="border-sky-100 bg-white/90" />
+        <MindsetTag mindset={def.mindset} className="border-teal-100 bg-white/90" />
       </div>
 
       {step === 1 ? (
@@ -187,22 +187,22 @@ export default function JourneyOnboardingWizard({
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          <TierBadge tier={effectiveTier} className="max-w-md border-sky-100 bg-white/95" />
+          <TierBadge tier={effectiveTier} className="max-w-md border-teal-100 bg-white/95" />
           <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Welcome to your NestQuest journey</h2>
           <p className="text-slate-700 sm:text-lg">{welcomeCopy}</p>
           <div className="rounded-2xl border border-emerald-200/70 bg-white/95 p-4 shadow-sm sm:p-5">
             <p className="text-sm font-bold text-slate-900">Three money pillars</p>
             <p className="mt-1 text-sm text-slate-600">
               NestQuest helps you <span className="font-semibold text-emerald-800">save money</span>,{' '}
-              <span className="font-semibold text-sky-800">find money</span>, and{' '}
+              <span className="font-semibold text-teal-800">find money</span>, and{' '}
               <span className="font-semibold text-violet-800">unlock creative solutions</span> — without the noise.
             </p>
             <ul className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-3">
               <li className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2">
                 <span className="font-bold text-emerald-900">Save</span> — lower payments, fees, and lifetime cost.
               </li>
-              <li className="rounded-xl border border-sky-100 bg-sky-50/50 px-3 py-2">
-                <span className="font-bold text-sky-900">Find</span> — grants, credits, and programs you may qualify for.
+              <li className="rounded-xl border border-teal-100 bg-teal-50/50 px-3 py-2">
+                <span className="font-bold text-teal-900">Find</span> — grants, credits, and programs you may qualify for.
               </li>
               <li className="rounded-xl border border-violet-100 bg-violet-50/50 px-3 py-2">
                 <span className="font-bold text-violet-900">Unlock</span> — loan structures and strategies that fit your life.
@@ -254,7 +254,7 @@ export default function JourneyOnboardingWizard({
                 savings as you work the roadmap.
               </li>
               <li>
-                You may qualify for <span className="font-bold tabular-nums text-sky-900">{formatCurrency(moneyEst.fundsFoundSoFar)}</span> in funding
+                You may qualify for <span className="font-bold tabular-nums text-teal-900">{formatCurrency(moneyEst.fundsFoundSoFar)}</span> in funding
                 and assistance programs.
               </li>
               <li>
@@ -299,7 +299,7 @@ export default function JourneyOnboardingWizard({
             {phase1MoneyCards}
           </div>
           <div className="h-2 w-full max-w-xl overflow-hidden rounded-full bg-slate-200/90">
-            <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-indigo-500" style={{ width: `${progressPct}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-millennial-cta-primary to-teal-600" style={{ width: `${progressPct}%` }} />
           </div>
           {!tierAtLeast(userTier, 'momentum') ? (
             <p className="text-sm text-slate-600">
@@ -338,11 +338,11 @@ export default function JourneyOnboardingWizard({
                 optimized.
               </p>
             </div>
-            <div className="rounded-2xl border border-sky-200/80 bg-sky-50/50 p-4">
-              <p className="text-xs font-bold uppercase text-sky-900">Funding matches</p>
+            <div className="rounded-2xl border border-teal-200/80 bg-teal-50/50 p-4">
+              <p className="text-xs font-bold uppercase text-teal-900">Funding matches</p>
               <p className="mt-1 text-sm text-slate-700">
                 We map programs to your income and location — on track for about{' '}
-                <span className="font-bold tabular-nums text-sky-950">{formatCurrency(moneyEst.fundsFoundSoFar)}</span> in illustrative funding
+                <span className="font-bold tabular-nums text-teal-950">{formatCurrency(moneyEst.fundsFoundSoFar)}</span> in illustrative funding
                 pathways.
               </p>
             </div>
@@ -354,8 +354,8 @@ export default function JourneyOnboardingWizard({
               </p>
             </div>
           </div>
-          <div className="rounded-2xl border border-sky-200/80 bg-white/90 p-4 shadow-sm">
-            <p className="text-sm font-bold text-sky-900">Navigator unlocks a personalized affordability review.</p>
+          <div className="rounded-2xl border border-teal-200/80 bg-white/90 p-4 shadow-sm">
+            <p className="text-sm font-bold text-teal-900">Navigator+ unlocks a personalized affordability review.</p>
             <p className="mt-1 text-sm text-slate-600">&ldquo;{TIER_DEFINITIONS.navigator.mindset}&rdquo;</p>
           </div>
           <button
@@ -377,16 +377,16 @@ export default function JourneyOnboardingWizard({
         >
           <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Learning path</h2>
           <ul className="space-y-2 text-sm text-slate-700">
-            <li className="flex gap-2 rounded-xl border border-sky-100 bg-white/90 p-3">
-              <span className="font-bold text-sky-700">Foundations</span>
+            <li className="flex gap-2 rounded-xl border border-teal-100 bg-white/90 p-3">
+              <span className="font-bold text-teal-700">Foundations</span>
               <span>Basic money lessons: payment building blocks, myth cards, and “Saves Money” highlights on Learn.</span>
             </li>
-            <li className="flex gap-2 rounded-xl border border-sky-100 bg-white/90 p-3">
-              <span className="font-bold text-sky-700">Momentum</span>
+            <li className="flex gap-2 rounded-xl border border-teal-100 bg-white/90 p-3">
+              <span className="font-bold text-teal-700">Momentum</span>
               <span>Full money library — Money Finder, savings strategies, and alternative solution filters.</span>
             </li>
-            <li className="flex gap-2 rounded-xl border border-sky-100 bg-white/90 p-3">
-              <span className="font-bold text-sky-700">Navigator+</span>
+            <li className="flex gap-2 rounded-xl border border-teal-100 bg-white/90 p-3">
+              <span className="font-bold text-teal-700">Navigator+</span>
               <span>Premium strategies and partner-led Q&amp;A so no savings lever or program goes unnoticed.</span>
             </li>
           </ul>
@@ -415,7 +415,7 @@ export default function JourneyOnboardingWizard({
                 onComplete()
                 goTab('overview')
               }}
-              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-md"
+              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-6 py-3 text-sm font-bold text-white shadow-md"
             >
               Start your journey
             </button>
@@ -437,7 +437,7 @@ export default function JourneyOnboardingWizard({
       ) : null}
 
       {step < STEPS ? (
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-sky-100/90 pt-6">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-teal-100/90 pt-6">
           <button
             type="button"
             disabled={step <= 1}

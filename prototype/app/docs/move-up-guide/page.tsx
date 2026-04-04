@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function MoveUpGuidePage() {
   const [savingsBridge, setSavingsBridge] = useState<boolean | null>(null)
@@ -18,10 +19,13 @@ export default function MoveUpGuidePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 text-slate-800">
-      <Link href="/" className="text-sm font-semibold text-sky-700 hover:underline">
-        ← Home
-      </Link>
-      <h1 className="mt-4 text-3xl font-bold text-brand-forest">Sell First or Buy First?</h1>
+      <div className="flex flex-wrap items-center gap-4">
+        <BackToMyJourneyLink className="font-semibold" />
+        <Link href="/" className="text-sm font-semibold text-teal-700 hover:underline">
+          ← Home
+        </Link>
+      </div>
+      <h1 className="font-display mt-4 text-3xl font-bold text-brand-forest">Sell First or Buy First?</h1>
       <p className="mt-2 text-slate-600">
         A simple decision tree for move-up buyers. This is educational only — not financial advice.
       </p>
@@ -85,7 +89,7 @@ export default function MoveUpGuidePage() {
               </p>
             ) : null}
             {sellerMarket === false ? (
-              <p className="mt-4 rounded-lg bg-sky-50 p-3 text-sm font-medium text-sky-950">
+              <p className="mt-4 rounded-lg bg-teal-50 p-3 text-sm font-medium text-teal-950">
                 Consider a <strong>bridge loan</strong> or longer contingency — talk to a lender about timing risk.
               </p>
             ) : null}

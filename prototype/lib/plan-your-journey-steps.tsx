@@ -43,7 +43,7 @@ export const PLAN_YOUR_JOURNEY_STEPS: PlanYourJourneyStep[] = [
   { id: 4, title: 'Make an Offer', duration: '1-3 days', color: 'from-green-500 to-emerald-500', borderColor: 'border-green-500/50', phaseId: 'house-hunting', icon: DollarSign },
   { id: 5, title: 'Inspection', duration: '1-2 weeks', color: 'from-orange-500 to-red-500', borderColor: 'border-orange-500/50', phaseId: 'negotiation', icon: Eye },
   { id: 6, title: 'Appraisal', duration: '1-2 weeks', color: 'from-yellow-500 to-amber-500', borderColor: 'border-yellow-500/50', phaseId: 'underwriting', icon: TrendingUp },
-  { id: 7, title: 'Underwriting', duration: '2-4 weeks', color: 'from-indigo-500 to-purple-500', borderColor: 'border-indigo-500/50', phaseId: 'underwriting', icon: Shield },
+  { id: 7, title: 'Underwriting', duration: '2-4 weeks', color: 'from-millennial-cta-primary to-purple-500', borderColor: 'border-teal-500/50', phaseId: 'underwriting', icon: Shield },
   { id: 8, title: 'Closing', duration: '1 day', color: 'from-green-600 to-emerald-600', borderColor: 'border-green-600/50', phaseId: 'closing', icon: CheckCircle },
   {
     id: 9,

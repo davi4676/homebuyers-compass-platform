@@ -26,7 +26,7 @@ export default function FirstGenHub() {
           <Landmark className="h-8 w-8 text-brand-sage" aria-hidden />
           <span className="mt-3 font-semibold text-brand-forest dark:text-white">HUD-Approved Housing Counselors</span>
           <span className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-            Free, certified help with budgets, credit, and homebuying steps (HUD.gov).
+            Free, certified help with budgets, credit, and home buying steps (HUD.gov).
           </span>
           <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-brand-terracotta">
             Find a counselor <ExternalLink className="h-3.5 w-3.5" />
@@ -45,14 +45,17 @@ export default function FirstGenHub() {
           <span className="mt-3 text-sm font-bold text-brand-terracotta">Search programs →</span>
         </Link>
 
-        <div className="flex flex-col rounded-xl border border-dashed border-slate-300 bg-brand-mist/60 p-4 dark:border-slate-600 dark:bg-slate-800/50">
+        <Link
+          href="/customized-journey?tab=learn"
+          className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-sage hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
+        >
           <MessagesSquare className="h-8 w-8 text-brand-sage" aria-hidden />
-          <span className="mt-3 font-semibold text-brand-forest dark:text-white">Community Forum</span>
+          <span className="mt-3 font-semibold text-brand-forest dark:text-white">Guided Q&amp;A &amp; tips</span>
           <span className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-            Connect with other first-gen buyers — launching soon.
+            Short explainers and checklists in your journey — same trusted voice as your roadmap.
           </span>
-          <span className="mt-3 text-sm font-semibold text-slate-500">Coming soon</span>
-        </div>
+          <span className="mt-3 text-sm font-bold text-brand-terracotta">Open Learn tab →</span>
+        </Link>
       </div>
 
       <p className="mt-5 text-center text-sm font-medium text-brand-forest dark:text-emerald-200/90">

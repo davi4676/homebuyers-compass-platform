@@ -111,7 +111,7 @@ const COMPARISON_ROWS: {
 const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: 'Can I change plans later?',
-    a: 'Yes. Start on Foundations at no cost and move to Momentum, Navigator, or Navigator+ whenever you want — your journey saves between visits.',
+    a: 'Yes. Start on Foundations at no cost and move to Momentum, Navigator+, or Concierge+ whenever you want — your journey saves between visits.',
   },
   {
     q: 'What if I only need one feature?',
@@ -196,13 +196,13 @@ export default function TierPreviewSwitcher({
       className="mb-12"
       aria-labelledby="tier-support-heading"
     >
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-indigo-50/50 p-5 shadow-lg shadow-slate-200/50 ring-1 ring-white/90 sm:p-8">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-teal-50/50 p-5 shadow-lg shadow-slate-200/50 ring-1 ring-white/90 sm:p-8">
         <div
-          className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-indigo-200/20 blur-3xl"
+          className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-teal-200/20 blur-3xl"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-sky-200/15 blur-3xl"
+          className="pointer-events-none absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-teal-200/15 blur-3xl"
           aria-hidden
         />
 
@@ -221,14 +221,9 @@ export default function TierPreviewSwitcher({
 
         <div className="relative -mx-1">
           <p className="mb-3 text-center text-xs font-medium text-slate-500 sm:text-left">
-            <span className="sm:hidden">Swipe to compare</span>
-            <span className="hidden sm:inline">Select a plan to preview</span>
-            <ChevronRight className="ml-1 inline h-3.5 w-3.5 opacity-60 sm:hidden" aria-hidden />
+            Select a plan to preview — all tiers shown below.
           </p>
-          <div
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 pt-1 [scrollbar-width:thin] sm:gap-5"
-            style={{ scrollPaddingInline: '1rem' }}
-          >
+          <div className="grid grid-cols-2 gap-2.5 pt-1 pb-1 min-[1100px]:grid-cols-4 min-[1100px]:gap-4">
             {tiers.map((tier) => {
               const tierDef = TIER_DEFINITIONS[tier]
               const isCurrentTier = currentTier === tier
@@ -240,74 +235,76 @@ export default function TierPreviewSwitcher({
                 <motion.div
                   key={tier}
                   role="group"
-                  whileHover={{ y: -3 }}
-                  className={`relative flex w-[min(100%,300px)] shrink-0 snap-center flex-col rounded-2xl border-2 p-5 text-left shadow-sm transition-all duration-200 sm:min-w-[280px] ${styles.card} ${
+                  whileHover={{ y: -2 }}
+                  className={`relative flex min-h-0 min-w-0 flex-col rounded-2xl border-2 p-3 text-left shadow-sm transition-all duration-200 sm:p-4 md:p-5 ${styles.card} ${
                     isPreviewing ? styles.ringActive : ''
                   }`}
                 >
                   {tierDef.badge === 'most_popular' ? (
-                    <span className="absolute -top-2.5 right-3 z-10 whitespace-nowrap rounded-full bg-cyan-600 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-md">
+                    <span className="absolute -top-2 right-1.5 z-10 max-w-[calc(100%-0.5rem)] truncate rounded-full bg-cyan-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white shadow-md sm:-top-2.5 sm:right-2 sm:px-2 sm:text-[9px]">
                       Most Popular
                     </span>
                   ) : null}
                   {tierDef.badge === 'premium' ? (
-                    <span className="absolute -top-2.5 right-3 z-10 whitespace-nowrap rounded-full bg-amber-600 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-md">
+                    <span className="absolute -top-2 right-1.5 z-10 rounded-full bg-amber-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white shadow-md sm:-top-2.5 sm:right-2 sm:px-2 sm:text-[9px]">
                       Premium
                     </span>
                   ) : null}
                   {isCurrentTier ? (
-                    <span className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md shadow-emerald-900/20">
+                    <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-md shadow-emerald-900/20 sm:px-3 sm:text-[10px]">
                       Your plan
                     </span>
                   ) : null}
 
-                  <div className="mb-4 flex items-start justify-between gap-2 pt-1">
+                  <div className="mb-2 flex items-start justify-between gap-1.5 pt-1 sm:mb-3 sm:gap-2">
                     <span
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ring-black/5 ${styles.iconWrap}`}
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ring-black/5 sm:h-11 sm:w-11 ${styles.iconWrap}`}
                     >
                       {getTierIcon(tier)}
                     </span>
                     {isPreviewing ? (
-                      <span className="rounded-full bg-slate-900/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                        Previewing
+                      <span className="rounded-full bg-slate-900/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white sm:px-2 sm:text-[10px]">
+                        Preview
                       </span>
                     ) : null}
                   </div>
 
-                  <span className="text-lg font-bold text-slate-900 sm:text-xl">{tierDef.name}</span>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">{tierDef.positioning}</p>
-                  <p className="mt-1 text-xs font-medium italic leading-snug text-slate-600">
+                  <span className="text-sm font-bold leading-tight text-slate-900 sm:text-lg md:text-xl">{tierDef.name}</span>
+                  <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:mt-1 sm:text-xs">
+                    {tierDef.positioning}
+                  </p>
+                  <p className="mt-1 line-clamp-3 text-[10px] font-medium italic leading-snug text-slate-600 sm:line-clamp-none sm:text-xs">
                     Mindset: &ldquo;{tierDef.mindset}&rdquo;
                   </p>
-                  <span className="mt-2 text-sm font-semibold text-slate-800">{formatTierPrice(tierDef)}</span>
-                  <p className="mt-2 text-sm leading-snug text-slate-600">{tierDef.microcopy}</p>
+                  <span className="mt-1.5 text-xs font-semibold text-slate-800 sm:mt-2 sm:text-sm">{formatTierPrice(tierDef)}</span>
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-slate-600 sm:line-clamp-none sm:text-sm">{tierDef.microcopy}</p>
 
-                  <ul className="mt-4 flex flex-col gap-2 border-t border-slate-100/90 pt-4" role="list">
+                  <ul className="mt-2 flex flex-col gap-1.5 border-t border-slate-100/90 pt-2 sm:mt-4 sm:gap-2 sm:pt-4" role="list">
                     {highlights.map((line) => (
-                      <li key={line} className="flex gap-2 text-left text-sm leading-snug text-slate-700">
+                      <li key={line} className="flex gap-1.5 text-left text-[11px] leading-snug text-slate-700 sm:gap-2 sm:text-sm">
                         <Check
-                          className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 sm:h-4 sm:w-4"
                           strokeWidth={2.5}
                           aria-hidden
                         />
-                        <span>{line}</span>
+                        <span className="min-w-0 break-words">{line}</span>
                       </li>
                     ))}
                   </ul>
 
-                  <div className="mt-4 flex flex-col gap-2">
+                  <div className="mt-auto flex flex-col gap-1.5 pt-3 sm:mt-4 sm:gap-2">
                     <button
                       type="button"
                       onClick={() => onPreviewChange(tier)}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-center text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-center text-[10px] font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3 sm:py-2 sm:text-xs"
                     >
-                      {isPreviewing ? 'Previewing' : 'Preview in app'}
+                      {isPreviewing ? 'Previewing' : 'Preview'}
                     </button>
                     <Link
                       href={`/upgrade?source=journey-upgrades&tier=${tier}`}
-                      className="inline-flex w-full items-center justify-center rounded-xl bg-[rgb(var(--navy))] px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-95"
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-[rgb(var(--navy))] px-2 py-2 text-[11px] font-bold text-white shadow-md transition hover:opacity-95 sm:px-4 sm:py-2.5 sm:text-sm"
                     >
-                      Choose {tierDef.name}
+                      <span className="truncate">Choose {tierDef.name}</span>
                     </Link>
                   </div>
                 </motion.div>
@@ -335,7 +332,7 @@ export default function TierPreviewSwitcher({
                       <span className="font-semibold text-emerald-800">Savings:</span> {u.savings}
                     </li>
                     <li>
-                      <span className="font-semibold text-sky-800">Funds:</span> {u.funds}
+                      <span className="font-semibold text-teal-800">Funds:</span> {u.funds}
                     </li>
                     <li>
                       <span className="font-semibold text-violet-800">Alternatives:</span> {u.alternative}
@@ -355,13 +352,19 @@ export default function TierPreviewSwitcher({
           <p className="border-b border-slate-100 bg-slate-50/80 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-slate-600">
             Compare plans
           </p>
-          <div className="max-h-[min(70vh,520px)] overflow-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
+          <div className="max-h-[min(70vh,520px)] overflow-y-auto overflow-x-hidden">
+            <table className="w-full min-w-0 table-fixed border-collapse text-xs sm:text-sm">
+              <colgroup>
+                <col className="w-[28%] min-[1100px]:w-[22%]" />
+                {tiers.map((t) => (
+                  <col key={t} className="w-[18%] min-[1100px]:w-[19.5%]" />
+                ))}
+              </colgroup>
               <thead className="sticky top-0 z-[2] shadow-sm">
                 <tr className="border-b border-slate-200 bg-slate-50/95 backdrop-blur-sm">
                   <th
                     scope="col"
-                    className="sticky left-0 z-[3] bg-slate-50/95 px-4 py-3 text-left font-semibold text-slate-700"
+                    className="sticky left-0 z-[3] bg-slate-50/95 px-2 py-2.5 text-left font-semibold text-slate-700 sm:px-4 sm:py-3"
                   >
                     Feature
                   </th>
@@ -372,17 +375,17 @@ export default function TierPreviewSwitcher({
                       <th
                         key={tier}
                         scope="col"
-                        className={`whitespace-nowrap px-3 py-3 text-center font-bold ${
+                        className={`px-1 py-2.5 text-center align-top font-bold leading-tight sm:px-2 sm:py-3 ${
                           isYours
                             ? 'bg-emerald-50/90 text-emerald-900 ring-1 ring-emerald-200/80'
                             : 'bg-slate-50/50 text-slate-800'
                         }`}
                       >
-                        <span className="flex flex-col items-center gap-1">
-                          {def.name}
+                        <span className="flex flex-col items-center gap-0.5 sm:gap-1">
+                          <span className="break-words text-[10px] sm:text-sm">{def.name}</span>
                           {isYours ? (
-                            <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
-                              Your plan
+                            <span className="rounded-full bg-emerald-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white sm:px-2 sm:text-[9px]">
+                              Yours
                             </span>
                           ) : null}
                         </span>
@@ -396,9 +399,9 @@ export default function TierPreviewSwitcher({
                   <tr key={row.label} className="border-b border-slate-100 last:border-0">
                     <th
                       scope="row"
-                      className="sticky left-0 z-[1] bg-white px-4 py-2.5 text-left font-medium text-slate-600"
+                      className="sticky left-0 z-[1] bg-white px-2 py-2 text-left font-medium text-slate-600 sm:px-4 sm:py-2.5"
                     >
-                      {row.label}
+                      <span className="break-words leading-snug">{row.label}</span>
                     </th>
                     {tiers.map((tier) => {
                       const v = row.cell(tier)
@@ -407,16 +410,18 @@ export default function TierPreviewSwitcher({
                       return (
                         <td
                           key={`${row.label}-${tier}`}
-                          className={`max-w-[200px] px-3 py-2.5 text-center text-xs font-semibold sm:text-sm ${
+                          className={`px-1 py-2 text-center align-top text-[10px] font-semibold sm:px-2 sm:py-2.5 sm:text-xs md:text-sm ${
                             isYours ? 'bg-emerald-50/40 text-emerald-950' : 'text-slate-800'
                           }`}
                         >
                           {empty ? (
-                            <Minus className="mx-auto h-4 w-4 text-slate-300" aria-label="Not included" />
+                            <Minus className="mx-auto h-3.5 w-3.5 text-slate-300 sm:h-4 sm:w-4" aria-label="Not included" />
                           ) : row.label === 'Mindset' ? (
-                            <span className="text-left font-normal italic leading-snug text-slate-700">&ldquo;{v}&rdquo;</span>
+                            <span className="block break-words text-left font-normal italic leading-snug text-slate-700">
+                              &ldquo;{v}&rdquo;
+                            </span>
                           ) : (
-                            <span className="tabular-nums">{v}</span>
+                            <span className="break-words tabular-nums">{v}</span>
                           )}
                         </td>
                       )
@@ -440,7 +445,7 @@ export default function TierPreviewSwitcher({
           <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative mt-6 rounded-xl border border-dashed border-sky-300/80 bg-sky-50/60 px-4 py-3.5 text-center text-base text-slate-700"
+            className="relative mt-6 rounded-xl border border-dashed border-teal-300/80 bg-teal-50/60 px-4 py-3.5 text-center text-base text-slate-700"
           >
             You&apos;re previewing{' '}
             <span className="font-bold text-slate-900">{TIER_DEFINITIONS[previewTier].name}</span>
@@ -458,7 +463,7 @@ export default function TierPreviewSwitcher({
           </div>
           <Link
             href="/upgrade?source=tier-preview&tier=momentum"
-            className="inline-flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-md transition hover:opacity-95"
+            className="inline-flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-6 py-3 text-sm font-bold text-white shadow-md transition hover:opacity-95"
           >
             Compare upgrades
             <ChevronRight className="ml-1 h-4 w-4" aria-hidden />

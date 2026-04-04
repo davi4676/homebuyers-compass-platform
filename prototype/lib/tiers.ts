@@ -148,7 +148,7 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       'Start your journey with confidence. Get your readiness score, savings snapshot, and the tools to begin.',
     badge: null,
     price: { displayMonthly: 'Free' },
-    description: 'Explore and get grounded with core readiness tools.',
+    description: 'Explore your options and see where you can save.',
     journeyHighlights: [
       'Readiness score',
       'Savings snapshot',
@@ -244,8 +244,8 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     microcopy:
       'Move forward with clarity. Unlock the full roadmap, scripts, checklists, and weekly action plans.',
     badge: 'most_popular',
-    price: { monthly: 1900, displayMonthly: '$19/mo' },
-    description: 'Full roadmap and weekly rhythm.',
+    price: { monthly: 2900, displayMonthly: '$29/mo' },
+    description: 'Actively preparing to buy in 3–12 months.',
     journeyHighlights: [
       'Everything in Foundations',
       'Full 7-phase roadmap',
@@ -326,7 +326,7 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
   },
   navigator: {
     id: 'navigator',
-    name: 'Navigator',
+    name: 'Navigator+',
     positioning: 'Get Expert Eyes',
     mindset: 'Guide me through the complexity with expert support.',
     differentiators: {
@@ -338,8 +338,8 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     microcopy:
       'Expert guidance to help you get offer-ready faster. Personalized reviews, plans, and human support.',
     badge: null,
-    price: { monthly: 9900, displayMonthly: '$99/mo' },
-    description: 'Expert support and personalized prep.',
+    price: { monthly: 5900, displayMonthly: '$59/mo' },
+    description: 'Ready to make offers and close.',
     journeyHighlights: [
       'Everything in Momentum',
       '1:1 onboarding call',
@@ -430,7 +430,7 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
   },
   navigator_plus: {
     id: 'navigator_plus',
-    name: 'Navigator+',
+    name: 'Concierge+',
     positioning: 'Get a Partner',
     mindset: 'Walk with me every step — I want a partner.',
     differentiators: {
@@ -440,10 +440,10 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       serviceLevel: 'Full concierge partnership',
     },
     microcopy:
-      'Your homebuying partner. Full concierge support, strategy sessions, and unlimited expert access.',
+      'Your home buying partner. Full concierge support, strategy sessions, and unlimited expert access.',
     badge: 'premium',
-    price: { monthly: 29900, displayMonthly: '$299/mo' },
-    description: 'Full concierge and unlimited expert access.',
+    price: { monthly: 14900, displayMonthly: '$149/mo' },
+    description: 'Full-service, hands-on guidance to close.',
     journeyHighlights: [
       'Everything in Navigator',
       'Full journey concierge',

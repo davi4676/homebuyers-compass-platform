@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { getUserTier } from '@/lib/user-tracking'
 import { TIER_DEFINITIONS, type UserTier, TIER_ORDER } from '@/lib/tiers'
 import { EDUCATIONAL_VIDEO_IDS } from '@/lib/educational-videos'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 type ResourceCategory = {
   id: string
@@ -312,7 +313,7 @@ const RESOURCES: ResourceCategory[] = [
     id: 'underwriting',
     title: 'Phase 5 — Underwriting & Appraisal',
     icon: <ClipboardCheck className="w-6 h-6" />,
-    color: 'text-indigo-600',
+    color: 'text-teal-600',
     resources: [
       {
         id: 'underwriting-checklist',
@@ -490,7 +491,7 @@ export default function ResourcesPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-slate-800 font-sans">
+    <div className="app-page-shell">
       {/* Background strip */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4">
         <div className="relative h-24 sm:h-28 overflow-hidden rounded-2xl mb-6">
@@ -511,6 +512,9 @@ export default function ResourcesPage() {
       </div>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
+        <div className="mb-4">
+          <BackToMyJourneyLink />
+        </div>
         <div className="bg-white border border-slate-200 rounded-xl px-4 sm:px-6 py-3 mb-4 flex flex-wrap items-center gap-2">
           <Link href="/results" className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 ${
             pathname === '/results'
@@ -600,7 +604,7 @@ export default function ResourcesPage() {
                         href={`/upgrade?source=resources-${resource.id}`}
                         className="shrink-0 inline-flex items-center gap-1.5 bg-[rgb(var(--coral))] text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap"
                       >
-                        Upgrade to Guided <ChevronRight className="w-3 h-3" />
+                        Upgrade to Momentum <ChevronRight className="w-3 h-3" />
                       </Link>
                     </div>
                   ) : (

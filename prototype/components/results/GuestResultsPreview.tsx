@@ -47,7 +47,7 @@ export default function GuestResultsPreview({ results }: { results: Record<strin
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl shadow-xl border border-gray-100 bg-white p-6 md:p-8"
         >
-          <div className="mb-4 flex w-full items-center gap-2 rounded-xl bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-3 shadow-sm sm:py-3.5">
+          <div className="mb-4 flex w-full items-center gap-2 rounded-xl bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-3 shadow-sm sm:py-3.5">
             <Lightbulb className="h-5 w-5 shrink-0 text-white/90" aria-hidden />
             <p className="text-base font-bold uppercase tracking-wide text-white">Protect your buying power now</p>
           </div>

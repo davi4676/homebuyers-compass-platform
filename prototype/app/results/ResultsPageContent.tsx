@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useRef, Suspense, type ReactNode } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense, type ReactNode } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -56,7 +56,7 @@ import { getUserTier, getUserProgress, saveUserProgress, awardXpForAction, getUs
 import { useAuth } from '@/lib/hooks/useAuth'
 import { trackActivity } from '@/lib/track-activity'
 import { syncProgressToApi } from '@/lib/sync-progress'
-import { useNotifications, NotificationSystem } from '@/components/NotificationSystem'
+import { useNotifications, NotificationSystem, type Notification } from '@/components/NotificationSystem'
 import AIChatbot from '@/components/AIChatBot'
 import { BADGES } from '@/lib/gamification'
 import TrustSignals from '@/components/trust/TrustSignals'
@@ -66,6 +66,8 @@ import { analyzeRefinance, type RefinanceData } from '@/lib/calculations-refinan
 import { getFannieMaeResources, getResourcesForReadinessScore, type FannieMaeResource } from '@/lib/fannie-mae-resources'
 import { getCachedFreddieMacRates } from '@/lib/freddie-mac-rates'
 import { computeEducationScoreFromQuiz } from '@/lib/quiz-questions'
+import { getShareQueryString, storeShareQueryString } from '@/lib/results-share'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 type TransactionType = 'first-time' | 'repeat-buyer' | 'refinance'
 
@@ -92,28 +94,46 @@ function ChooseYourPlanSection({
 
   const getTierIcon = (tier: UserTier) => {
     switch (tier) {
-      case 'free': return <Sparkles className="w-6 h-6" />
-      case 'premium': return <Zap className="w-6 h-6" />
-      case 'pro': return <Shield className="w-6 h-6" />
-      case 'proplus': return <Crown className="w-6 h-6" />
+      case 'foundations':
+        return <Sparkles className="w-6 h-6" />
+      case 'momentum':
+        return <Zap className="w-6 h-6" />
+      case 'navigator':
+        return <Shield className="w-6 h-6" />
+      case 'navigator_plus':
+        return <Crown className="w-6 h-6" />
+      default:
+        return <Sparkles className="w-6 h-6" />
     }
   }
 
   const getTierColor = (tier: UserTier) => {
     switch (tier) {
-      case 'free': return 'text-slate-500'
-      case 'premium': return 'text-[#06b6d4]'
-      case 'pro': return 'text-[#f97316]'
-      case 'proplus': return 'text-[#D4AF37]'
+      case 'foundations':
+        return 'text-slate-500'
+      case 'momentum':
+        return 'text-[#0d9488]'
+      case 'navigator':
+        return 'text-[#f97316]'
+      case 'navigator_plus':
+        return 'text-[#D4AF37]'
+      default:
+        return 'text-slate-500'
     }
   }
 
   const getTierBgColor = (tier: UserTier) => {
     switch (tier) {
-      case 'free': return 'bg-slate-100'
-      case 'premium': return 'bg-[#06b6d4]/10 border-[#06b6d4]'
-      case 'pro': return 'bg-[#f97316]/10 border-[#f97316]'
-      case 'proplus': return 'bg-[#D4AF37]/10 border-[#D4AF37]'
+      case 'foundations':
+        return 'bg-slate-100'
+      case 'momentum':
+        return 'bg-[#0d9488]/10 border-[#0d9488]'
+      case 'navigator':
+        return 'bg-[#f97316]/10 border-[#f97316]'
+      case 'navigator_plus':
+        return 'bg-[#D4AF37]/10 border-[#D4AF37]'
+      default:
+        return 'bg-slate-100'
     }
   }
 
@@ -126,8 +146,8 @@ function ChooseYourPlanSection({
     >
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Choose Your Plan</h2>
-          <p className="text-xl text-slate-500 max-w-2xl mx-auto">
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 text-[#1c1917]">Choose Your Plan</h2>
+          <p className="text-xl text-[#57534e] max-w-2xl mx-auto">
             Unlock powerful tools and insights to save thousands on your home purchase
           </p>
         </div>
@@ -196,7 +216,9 @@ function ChooseYourPlanSection({
                   ) : (
                     <>
                       <div className="text-3xl font-bold">{priceLabel}</div>
-                      <p className="text-sm text-slate-500 mt-1">Placeholder pricing range</p>
+                      <p className="text-sm text-[#57534e] mt-1">
+                        Shown as a typical range; final price at checkout may vary by promotion or billing cycle.
+                      </p>
                     </>
                   )}
                 </div>
@@ -230,7 +252,7 @@ function ChooseYourPlanSection({
                       </span>
                     </li>
                   )}
-                  {tier === 'proplus' && tierDef.features.crowdsourcedDownPayment.enabled && (
+                  {tier === 'navigator_plus' && tierDef.features.crowdsourcedDownPayment.enabled && (
                     <li className="flex items-center gap-2 text-sm">
                       <CheckCircle className="w-4 h-4 text-[#06b6d4]" />
                       <span>Crowdsourced Down Payment</span>
@@ -268,9 +290,29 @@ import { ResultsPageStateContext } from './ResultsPageStateContext'
 import ResultsPageBody from './ResultsPageBody'
 import GuestResultsPreview from '@/components/results/GuestResultsPreview'
 
-function ResultsPageLayout({ children }: { children: ReactNode }) {
+function ResultsPageLayout({
+  children,
+  topBar,
+  notifications = [],
+  onRemoveNotification,
+}: {
+  children: ReactNode
+  topBar?: ReactNode
+  notifications?: Notification[]
+  onRemoveNotification?: (id: string) => void
+}) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#e8eef9] via-[#f2f6fc] to-[#f8fafc] text-slate-800 font-sans antialiased">
+    <div className="app-page-shell">
+      <NotificationSystem
+        notifications={notifications}
+        onRemove={onRemoveNotification ?? (() => {})}
+      />
+      {topBar}
+      <div className="border-b border-[#e7e5e4] bg-white/95 px-4 py-2">
+        <div className="mx-auto max-w-7xl">
+          <BackToMyJourneyLink />
+        </div>
+      </div>
       {children}
     </div>
   )
@@ -284,22 +326,21 @@ function ResultsPageContent() {
   // Check authentication status
   const { isAuthenticated, user } = useAuth()
   
-  // Get user tier from storage with validation - default to 'free' if not authenticated
-  const [userTier, setUserTier] = useState<UserTier>('free')
-  
+  // Get user tier from storage with validation - default to foundations if not authenticated
+  const [userTier, setUserTier] = useState<UserTier>('foundations')
+
   // Preview tier for comparing plans (defaults to user's actual tier)
-  const [previewTier, setPreviewTier] = useState<UserTier>('free')
+  const [previewTier, setPreviewTier] = useState<UserTier>('foundations')
   
   // Update tier based on authentication status and tier changes
   useEffect(() => {
     const updateTier = () => {
       if (!isAuthenticated) {
-        setUserTier('free')
-        setPreviewTier('free')
+        setUserTier('foundations')
+        setPreviewTier('foundations')
       } else {
         const tier = getUserTier()
-        // Validate tier exists in TIER_DEFINITIONS, default to 'free' if invalid
-        const validTier = tier && TIER_DEFINITIONS[tier] ? tier : 'free'
+        const validTier = tier && TIER_DEFINITIONS[tier] ? tier : 'foundations'
         setUserTier(validTier)
         setPreviewTier(validTier)
       }
@@ -345,12 +386,25 @@ function ResultsPageContent() {
     return data
   }, [searchParams, transactionType])
 
+  // Resolve shareable link: /results?id=… → full query string from localStorage
+  useEffect(() => {
+    const id = searchParams.get('id')
+    if (!id || typeof window === 'undefined') return
+    const qs = getShareQueryString(id)
+    if (qs) {
+      router.replace(`/results?${qs}`, { scroll: false })
+    }
+  }, [searchParams, router])
+
   // When URL has no params, try to restore from localStorage (from a previous results view)
   const [hasTriedRestore, setHasTriedRestore] = useState(false)
   useEffect(() => {
     if (hasTriedRestore || typeof window === 'undefined') return
     const paramCount = Array.from(searchParams.keys()).length
-    if (paramCount > 0) return // Already have params
+    if (paramCount > 0) {
+      setHasTriedRestore(true)
+      return
+    }
     try {
       const stored = localStorage.getItem('quizData')
       if (!stored) {
@@ -415,7 +469,25 @@ function ResultsPageContent() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // If no quiz params in URL, show "complete the quiz" immediately instead of hanging on calculations
+    if (!hasTriedRestore) return
+
+    const shareId = searchParams.get('id')
+    const paramKeysNoMeta = Array.from(searchParams.keys()).filter(
+      (k) => k !== 'transactionType' && k !== 'id'
+    )
+
+    // /results?id=… only: wait for hydrate effect or show empty if unknown id
+    if (shareId && paramKeysNoMeta.length === 0) {
+      const qs =
+        typeof window !== 'undefined' ? getShareQueryString(shareId) : null
+      if (qs) {
+        return
+      }
+      setLoading(false)
+      setResults(null)
+      return
+    }
+
     const paramKeys = Array.from(searchParams.keys()).filter((k) => k !== 'transactionType')
     if (paramKeys.length === 0) {
       setLoading(false)
@@ -558,9 +630,7 @@ function ResultsPageContent() {
           // Initialize user progress if first time and award XP for completing quiz
           try {
             if (!userProgress) {
-              // Ensure valid tier for initializeProgress (defaults to 'pro' if 'proplus')
-              const validTier: 'free' | 'premium' | 'pro' = userTier === 'proplus' ? 'pro' : (userTier as 'free' | 'premium' | 'pro')
-              const progress = getUserProgress() || initializeProgress(getUserId(), validTier)
+              const progress = getUserProgress() || initializeProgress(getUserId(), userTier)
               // Award XP for completing quiz
               const { newProgress, leveledUp, newLevel, badgesUnlocked } = awardXpForAction('quiz-complete', 50)
               setUserProgress(newProgress)
@@ -806,7 +876,7 @@ function ResultsPageContent() {
       cancelled = true
       clearTimeout(timeoutId)
     }
-  }, [transactionType, formData])
+  }, [transactionType, formData, hasTriedRestore, searchParams])
 
   // Track results_viewed for productivity (once per page load)
   const hasTrackedResults = useRef(false)
@@ -816,6 +886,41 @@ function ResultsPageContent() {
       trackActivity('results_viewed', { transactionType })
     }
   }, [results, loading, transactionType])
+
+  const handleSaveShare = useCallback(() => {
+    const sp = new URLSearchParams(searchParams.toString())
+    sp.delete('id')
+    const qs = sp.toString()
+    if (!qs) return
+    const id = storeShareQueryString(qs)
+    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/results?id=${id}`
+    void navigator.clipboard.writeText(url).catch(() => {})
+    addNotification({
+      type: 'achievement',
+      title: 'Copied',
+      message: 'Link copied! Share your results with anyone.',
+      duration: 4500,
+    })
+    trackActivity('tool_used', { tool: 'results_share_link' })
+  }, [searchParams, addNotification])
+
+  const showSaveShareBar =
+    !loading &&
+    results &&
+    typeof results === 'object' &&
+    (results as { type?: string }).type !== 'error'
+
+  const resultsTopBar = showSaveShareBar ? (
+    <div className="sticky top-0 z-30 flex justify-end border-b border-[#e7e5e4] bg-[#fafaf9]/95 px-4 py-3 backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={handleSaveShare}
+        className="inline-flex items-center gap-2 rounded-xl border border-[#0d9488] bg-white px-4 py-2 text-sm font-semibold text-[#0d9488] shadow-sm transition hover:bg-[#0d9488]/10"
+      >
+        Save & Share
+      </button>
+    </div>
+  ) : null
 
   // Build context state (must be before any conditional return — rules of hooks)
   const state = useMemo(() => {
@@ -845,6 +950,9 @@ function ResultsPageContent() {
     return (
       <div className="min-h-screen bg-brand-cream text-slate-800 font-sans antialiased">
         <div className="mx-auto max-w-3xl px-4 py-16">
+          <div className="mb-4">
+            <BackToMyJourneyLink />
+          </div>
           <div className="mb-6 h-10 w-48 animate-pulse rounded-lg bg-brand-mist" />
           <div className="mb-4 h-64 animate-pulse rounded-2xl bg-brand-mist" />
           <div className="grid gap-4 sm:grid-cols-3">
@@ -861,7 +969,10 @@ function ResultsPageContent() {
   // Check if results is an error object
   if (results && typeof results === 'object' && 'type' in results && (results as any).type === 'error') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#e8eef9] via-[#f2f6fc] to-[#f8fafc] text-slate-800 font-sans antialiased flex items-center justify-center">
+      <div className="app-page-shell flex flex-col items-center justify-center px-4 py-10">
+        <div className="mb-6 w-full max-w-lg">
+          <BackToMyJourneyLink />
+        </div>
         <div className="text-center max-w-lg mx-auto px-4">
           <AlertCircle className="text-red-500 mx-auto mb-4" size={48} />
           <h2 className="text-2xl font-bold mb-2">Calculation Error</h2>
@@ -937,36 +1048,43 @@ function ResultsPageContent() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#e8eef9] via-[#f2f6fc] to-[#f8fafc] text-slate-800 font-sans antialiased flex items-center justify-center p-4">
+      <div className="app-page-shell flex flex-col items-center justify-center p-4">
+        <div className="mb-6 w-full max-w-lg">
+          <BackToMyJourneyLink />
+        </div>
         <div className="text-center max-w-lg mx-auto">
           <div className="mb-6">
             <span className="text-6xl" aria-hidden>📋</span>
           </div>
-          <h1 className="text-3xl font-bold mb-2">Your results aren&apos;t here yet</h1>
-          <p className="text-lg text-slate-500 mb-8">
+          <h1 className="font-display text-3xl font-bold text-[#1c1917] mb-3">
+            {hasFormData ? 'We couldn&apos;t load these results' : 'Your personalized results will appear here'}
+          </h1>
+          <p className="text-lg text-[#57534e] mb-8 leading-relaxed">
             {hasFormData
-              ? 'Something went wrong while calculating your results. Try again or restore from your last quiz.'
-              : 'Complete the quiz to see your personalized cost breakdown and savings opportunities.'}
+              ? 'Something went wrong while calculating your results. Try the assessment again or restore from your last quiz.'
+              : 'Complete the 3-question assessment to see how much you could save.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
             <Link
               href="/quiz"
-              className="inline-flex items-center gap-2 bg-[#06b6d4] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#0891b2] transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#1a6b3c] px-6 py-3 text-white font-semibold shadow-sm transition hover:bg-[#155c33]"
             >
               <ArrowRight size={20} />
-              Start quiz
+              Take the Assessment →
             </Link>
             <button
               type="button"
               onClick={tryRestoreFromStorage}
-              className="inline-flex items-center gap-2 bg-slate-200 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-200 transition"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#e7e5e4] bg-white px-6 py-3 text-sm font-semibold text-[#57534e] shadow-sm transition hover:bg-[#fafaf9]"
             >
               <RefreshCw size={18} />
               Restore from last quiz
             </button>
           </div>
-          <p className="mt-8 text-sm text-slate-500">
-            <Link href="/" className="text-[#06b6d4] hover:underline">← Back to home</Link>
+          <p className="mt-8 text-sm text-[#78716c]">
+            <Link href="/" className="text-[#0d9488] hover:text-[#0b7a72] hover:underline">
+              ← Back to home
+            </Link>
           </p>
         </div>
       </div>
@@ -981,7 +1099,11 @@ function ResultsPageContent() {
 
   if (!isAuthenticated && isFirstTimeResults) {
     return React.createElement(ResultsPageStateContext.Provider, { value: state },
-      React.createElement(ResultsPageLayout, null,
+      React.createElement(ResultsPageLayout, {
+        topBar: resultsTopBar,
+        notifications,
+        onRemoveNotification: removeNotification,
+      },
         React.createElement(UserJourneyTracker),
         React.createElement('div', { className: 'bg-white border-b border-slate-200 shadow-sm' },
           React.createElement('div', { className: 'max-w-7xl mx-auto' }, React.createElement(TrustSignals))),
@@ -991,7 +1113,11 @@ function ResultsPageContent() {
   }
 
   return React.createElement(ResultsPageStateContext.Provider, { value: state },
-    React.createElement(ResultsPageLayout, null,
+    React.createElement(ResultsPageLayout, {
+      topBar: resultsTopBar,
+      notifications,
+      onRemoveNotification: removeNotification,
+    },
       React.createElement(UserJourneyTracker),
       React.createElement('div', { className: 'bg-white border-b border-slate-200 shadow-sm' },
         React.createElement('div', { className: 'max-w-7xl mx-auto' }, React.createElement(TrustSignals))),
@@ -1002,7 +1128,7 @@ function ResultsPageContent() {
 
 
 const resultsPageFallback = (
-  <div className="min-h-screen bg-gradient-to-b from-[#e8eef9] via-[#f2f6fc] to-[#f8fafc] text-slate-800 font-sans antialiased flex items-center justify-center">
+  <div className="app-page-shell flex items-center justify-center">
     <div className="text-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[rgb(var(--coral))] mx-auto mb-4" />
       <p className="text-lg font-semibold">Loading your results...</p>

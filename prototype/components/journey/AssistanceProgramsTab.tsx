@@ -120,7 +120,7 @@ export default function AssistanceProgramsTab() {
             </div>
             <button
               type="button"
-              className="inline-flex shrink-0 items-center justify-center rounded-xl border-2 border-slate-200 px-4 py-2 text-sm font-bold text-slate-800 hover:border-sky-300 hover:bg-sky-50"
+              className="inline-flex shrink-0 items-center justify-center rounded-xl border-2 border-slate-200 px-4 py-2 text-sm font-bold text-slate-800 hover:border-teal-300 hover:bg-teal-50"
             >
               {applyPlainEnglishCopy('Check Eligibility', plainEnglish)}
             </button>
@@ -128,11 +128,11 @@ export default function AssistanceProgramsTab() {
         ))}
       </ul>
 
-      <div className="rounded-2xl border border-sky-200 bg-sky-50/80 p-5">
+      <div className="rounded-2xl border border-teal-200 bg-teal-50/80 p-5">
         <PlainEnglishText as="p" className="text-sm font-semibold text-slate-800" text="Want the full scan?" />
         <Link
           href="/down-payment-optimizer"
-          className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-sky-800 underline"
+          className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-teal-800 underline"
         >
           {applyPlainEnglishCopy('Open full down payment optimizer →', plainEnglish)}
         </Link>

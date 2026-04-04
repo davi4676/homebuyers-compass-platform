@@ -9,7 +9,28 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        display: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        body: ['var(--font-dm-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         sans: ['var(--font-dm-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+      keyframes: {
+        savingsPulse: {
+          '0%': {
+            transform: 'scale(1)',
+            boxShadow: '0 0 0 0 rgba(13, 148, 136, 0.4)',
+          },
+          '70%': {
+            transform: 'scale(1.02)',
+            boxShadow: '0 0 0 20px rgba(13, 148, 136, 0)',
+          },
+          '100%': {
+            transform: 'scale(1)',
+            boxShadow: '0 0 0 0 rgba(13, 148, 136, 0)',
+          },
+        },
+      },
+      animation: {
+        'savings-pulse': 'savingsPulse 1s ease-out 0.5s 1 both',
       },
       fontSize: {
         'nav': ['0.9375rem', { lineHeight: '1.25rem', fontWeight: '500' }],
@@ -17,6 +38,24 @@ module.exports = {
         'logo-md': ['1.5rem', { lineHeight: '1.75rem', fontWeight: '700' }],
       },
       colors: {
+        /** Phase 2 “Millennial Sweet Spot” tokens (use as bg-millennial-* / text-millennial-*) */
+        millennial: {
+          bg: '#fafaf5',
+          surface: '#ffffff',
+          border: '#e7e5e4',
+          primary: '#0d9488',
+          'primary-hover': '#0b7a72',
+          'primary-light': '#ccfbf1',
+          accent: '#c0622a',
+          'accent-light': '#fed7aa',
+          text: '#1c1917',
+          'text-muted': '#57534e',
+          'text-subtle': '#a8a29e',
+          'cta-primary': '#0d9488',
+          'cta-hover': '#0b7a72',
+          'cta-secondary': '#1a6b3c',
+          'cta-gold': '#d4a017',
+        },
         brand: {
           cream: '#FAF7F2',
           forest: '#1B4332',
@@ -25,6 +64,21 @@ module.exports = {
           gold: '#D4A017',
           charcoal: '#2D2D2D',
           mist: '#EAF0EC',
+        },
+        /** Unified design system tokens */
+        unified: {
+          bg: '#fafaf9',
+          surface: '#ffffff',
+          primary: '#1a6b3c',
+          'primary-hover': '#155c33',
+          accent: '#0d9488',
+          highlight: '#c0622a',
+          'text-primary': '#1c1917',
+          'text-secondary': '#57534e',
+          'text-muted': '#a8a29e',
+          border: '#e7e5e4',
+          success: '#16a34a',
+          warning: '#d97706',
         },
         /** Dark theme accent (legacy crypto/teal) — use with dark: */
         darkaccent: {

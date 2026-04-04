@@ -248,7 +248,7 @@ export default function JourneyMapView({
       color: 'from-[#06b6d4] to-[#0891b2]',
       position: 0,
       unlocked: true,
-      description: 'You\'ve started your homebuying journey!',
+      description: 'You\'ve started your home buying journey!',
       stats: { label: 'Readiness Score', value: `${readinessScore}/100` },
       freddieMacInsight: 'Before shopping for a home, determine how much you can afford based on your spending plan and comfort level. Talk to a homeownership education counselor (call 800-569-4287) to learn the basics and evaluate your financial readiness.',
     },
@@ -385,7 +385,7 @@ export default function JourneyMapView({
     },
     {
       id: 'expert',
-      title: 'Homebuying Expert',
+      title: 'home buying Expert',
       icon: Crown,
                   description: 'Achieved 90+ readiness score',
                   unlocked: readinessScore >= 90,
@@ -406,7 +406,7 @@ export default function JourneyMapView({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <MapPin className="text-[#06b6d4]" size={24} />
-                <h1 className="text-3xl font-bold">Your Homebuying Journey</h1>
+                <h1 className="text-3xl font-bold">Your home buying Journey</h1>
               </div>
             </div>
             <div className="flex items-center gap-4">

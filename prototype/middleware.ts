@@ -28,6 +28,17 @@ function isPublicPath(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const session = request.cookies.get(SESSION_COOKIE)?.value
+
+  // Product analytics — require sign-in even when tier-review / dev bypass is on
+  if (pathname === '/analytics-dashboard' || pathname.startsWith('/analytics-dashboard/')) {
+    if (!session) {
+      const redirectUrl = new URL('/auth', request.url)
+      redirectUrl.searchParams.set('redirect', pathname + request.nextUrl.search)
+      return NextResponse.redirect(redirectUrl)
+    }
+    return NextResponse.next()
+  }
 
   if (isTierReviewBrowsing()) {
     return NextResponse.next()
@@ -37,7 +48,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const session = request.cookies.get(SESSION_COOKIE)?.value
   if (session) {
     return NextResponse.next()
   }

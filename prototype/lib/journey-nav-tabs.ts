@@ -53,8 +53,31 @@ export function parseJourneyTabParam(v: string | null | undefined): JourneyTab {
 
 export const JOURNEY_PAGE_PATH = '/customized-journey'
 
+/** True on the hub or any nested route (e.g. detail pages). */
+export function isCustomizedJourneyPath(pathname: string | null | undefined): boolean {
+  if (!pathname) return false
+  return pathname === JOURNEY_PAGE_PATH || pathname.startsWith(`${JOURNEY_PAGE_PATH}/`)
+}
+
+/**
+ * Base path for `?tab=` links. Nested customized-journey routes must still link to the hub,
+ * otherwise URLs like `/customized-journey/detail/...?tab=library` break.
+ */
+export function journeyTabLinkBasePath(pathname: string | null | undefined): string {
+  if (isCustomizedJourneyPath(pathname)) return JOURNEY_PAGE_PATH
+  return pathname || JOURNEY_PAGE_PATH
+}
+
 export function journeyTabHref(tab: JourneyTab): string {
   return `${JOURNEY_PAGE_PATH}?tab=${tab}`
+}
+
+/** Same path + `tab=`, preserving any other query keys (e.g. `view=today`). */
+export function journeyTabHrefPreservingSearch(pathname: string, currentSearch: string, tab: JourneyTab): string {
+  const params = new URLSearchParams(currentSearch || undefined)
+  params.set('tab', tab)
+  const qs = params.toString()
+  return qs ? `${pathname}?${qs}` : journeyTabHref(tab)
 }
 
 export const JOURNEY_TAB_STORAGE_KEY = 'nq_journey_tab'

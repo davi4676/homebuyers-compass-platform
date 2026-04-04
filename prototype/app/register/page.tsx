@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { UserPlus, ArrowLeft } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { SIGNUP_DISABLED } from '@/lib/auth-flags'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -27,19 +28,22 @@ export default function RegisterPage() {
 
   if (SIGNUP_DISABLED) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--sky-light))] flex items-center justify-center">
+      <div className="app-page-shell flex items-center justify-center">
         <p className="text-slate-500 text-sm">Redirecting…</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-[rgb(var(--text-dark))] flex flex-col items-center justify-center p-8">
+    <div className="app-page-shell flex flex-col items-center justify-center p-8">
       <div className="max-w-md w-full text-center">
+        <div className="mb-4 flex justify-center">
+          <BackToMyJourneyLink className="font-medium" />
+        </div>
         <div className="flex justify-center mb-6">
           <UserPlus className="w-12 h-12 text-[rgb(var(--navy))]" />
         </div>
-        <h1 className="text-2xl font-bold mb-2 text-[rgb(var(--navy))]">Sign up</h1>
+        <h1 className="font-display text-2xl font-bold mb-2 text-[rgb(var(--navy))]">Sign up</h1>
         <p className="text-slate-600 mb-6">
           Create an account to save your progress and access personalized features.
         </p>

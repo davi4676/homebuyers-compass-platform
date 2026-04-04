@@ -25,6 +25,7 @@ import { useExperiment } from '@/lib/hooks/useExperiment'
 import { getCachedFreddieMacRates } from '@/lib/freddie-mac-rates'
 import { formatNumberForInput, parseFormattedNumber } from '@/lib/number-format'
 import { JOURNEY_PHASES_DATA } from '@/lib/journey-phases-data'
+import ResultsAchievementBadgesRow from '@/components/results/ResultsAchievementBadgesRow'
 
 // Difficulty badge colours
 const difficultyColor: Record<string, string> = {
@@ -199,7 +200,7 @@ export default function ResultsPageBody() {
     resType === 'repeat-buyer' || resType === 'refinance' ? resType : 'first-time'
   const journeyHomeHrefByType: Record<'first-time' | 'repeat-buyer' | 'refinance', string> = {
     'first-time': '/customized-journey',
-    'repeat-buyer': '/homebuyer/buy-sell-journey',
+    'repeat-buyer': '/customized-journey',
     'refinance': '/homebuyer/refinance-journey',
   }
 
@@ -641,6 +642,8 @@ export default function ResultsPageBody() {
         </Link>
       </div>
 
+      <ResultsAchievementBadgesRow />
+
       {/* ═══════════════════════════════════════════════════════════════
           ABOVE FOLD: 3 core sections only
       ════════════════════════════════════════════════════════════════ */}
@@ -666,7 +669,7 @@ export default function ResultsPageBody() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-6 rounded-2xl shadow-xl border border-gray-100 bg-white p-6 md:p-8"
             >
-              <div className="mb-4 flex w-full items-center gap-2 rounded-xl bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-3 shadow-sm sm:py-3.5">
+              <div className="mb-4 flex w-full items-center gap-2 rounded-xl bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-3 shadow-sm sm:py-3.5">
                 <Lightbulb className="h-5 w-5 shrink-0 text-white/90" aria-hidden />
                 <p className="text-base font-bold uppercase tracking-wide text-white">Protect your buying power now</p>
               </div>
@@ -703,8 +706,8 @@ export default function ResultsPageBody() {
                         <p className="font-semibold text-slate-900">{prog.n}</p>
                         <p className="mt-1 text-lg font-bold text-emerald-700">{formatCurrency(prog.a)}</p>
                         <p className="text-xs text-slate-500">Income &amp; occupancy rules apply</p>
-                        <Link href="/down-payment-optimizer" className="mt-2 inline-block text-sm font-bold text-sky-700 hover:underline">
-                          Learn More
+                        <Link href="/down-payment-optimizer" className="mt-2 inline-block text-sm font-bold text-teal-700 hover:underline">
+                          See How It Works
                         </Link>
                         {userTier === 'foundations' && idx > 0 ? (
                           <div className="absolute inset-0 flex items-center justify-center bg-white/40">
@@ -1045,14 +1048,14 @@ export default function ResultsPageBody() {
                 </div>
 
                 {/* Card 2: Monthly payment */}
-                <div className="snap-start shrink-0 w-[min(280px,85vw)] sm:w-auto sm:flex-1 group relative overflow-hidden rounded-2xl p-6 border border-sky-200/50 bg-gradient-to-br from-sky-50/80 to-[#f8fafc] shadow-sm hover:shadow-md transition-shadow">
+                <div className="snap-start shrink-0 w-[min(280px,85vw)] sm:w-auto sm:flex-1 group relative overflow-hidden rounded-2xl p-6 border border-teal-200/50 bg-gradient-to-br from-teal-50/80 to-[#f8fafc] shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-sky-500/20 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-sky-700" />
+                    <div className="w-10 h-10 rounded-lg bg-teal-500/20 flex items-center justify-center">
+                      <DollarSign className="h-5 w-5 text-teal-700" />
                     </div>
                     <h3 className="text-lg font-bold text-[#1e293b]">Monthly payment</h3>
                   </div>
-                  <p className="text-2xl font-bold text-sky-700 mb-2">{formatCurrency(adjustedMonthlyScenario)}</p>
+                  <p className="text-2xl font-bold text-teal-700 mb-2">{formatCurrency(adjustedMonthlyScenario)}</p>
                   <p className="text-sm text-slate-600 mb-2">
                     All-in estimate (PITI + PMI + maintenance)
                   </p>
@@ -1070,22 +1073,22 @@ export default function ResultsPageBody() {
                 <div className={`snap-start shrink-0 w-[min(280px,85vw)] sm:w-auto sm:flex-1 group relative overflow-hidden rounded-2xl p-6 border shadow-sm hover:shadow-md transition-shadow ${
                   cashAtCloseOk ? 'border-emerald-200/50 bg-gradient-to-br from-emerald-50/80 to-[#f8fafc]' :
                   cashAtCloseWarn ? 'border-amber-200/50 bg-gradient-to-br from-amber-50/80 to-[#f8fafc]' :
-                  'border-indigo-200/50 bg-gradient-to-br from-indigo-50/80 to-[#f8fafc]'
+                  'border-teal-200/50 bg-gradient-to-br from-millennial-primary-light/40 to-[#f8fafc]'
                 }`}>
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                       cashAtCloseOk ? 'bg-emerald-500/20' :
                       cashAtCloseWarn ? 'bg-amber-500/20' :
-                      'bg-indigo-500/20'
+                      'bg-teal-500/20'
                     }`}>
                       <BarChart2 className={`h-5 w-5 ${
-                        cashAtCloseOk ? 'text-emerald-700' : cashAtCloseWarn ? 'text-amber-700' : 'text-indigo-700'
+                        cashAtCloseOk ? 'text-emerald-700' : cashAtCloseWarn ? 'text-amber-700' : 'text-teal-700'
                       }`} />
                     </div>
                     <h3 className="text-lg font-bold text-[#1e293b]">Cash to close</h3>
                   </div>
                   <p className={`text-2xl font-bold mb-2 ${
-                    cashAtCloseOk ? 'text-emerald-700' : cashAtCloseWarn ? 'text-amber-700' : 'text-indigo-700'
+                    cashAtCloseOk ? 'text-emerald-700' : cashAtCloseWarn ? 'text-amber-700' : 'text-teal-700'
                   }`}>{formatCurrency(totalFundsCommitted)}</p>
                   <p className="text-sm text-slate-600 mb-2">Target: 20% down + closing costs</p>
                   {/* Stacked progress bar: committed vs target */}
@@ -1094,14 +1097,14 @@ export default function ResultsPageBody() {
                       <div className="relative h-3 rounded-full bg-slate-200 overflow-hidden">
                         <div
                           className={`h-3 rounded-full transition-all duration-500 ${
-                            cashAtCloseOk ? 'bg-emerald-500' : cashAtCloseWarn ? 'bg-amber-500' : 'bg-indigo-400'
+                            cashAtCloseOk ? 'bg-emerald-500' : cashAtCloseWarn ? 'bg-amber-500' : 'bg-teal-400'
                           }`}
                           style={{ width: `${Math.min(100, (totalFundsCommitted / targetCashAtClose) * 100)}%` }}
                         />
                       </div>
                       <div className="flex justify-between mt-1 text-xs font-semibold">
                         <span className={
-                          cashAtCloseOk ? 'text-emerald-600' : cashAtCloseWarn ? 'text-amber-600' : 'text-indigo-600'
+                          cashAtCloseOk ? 'text-emerald-600' : cashAtCloseWarn ? 'text-amber-600' : 'text-teal-600'
                         }>
                           You have: {formatCurrency(totalFundsCommitted)}
                         </span>
@@ -1165,7 +1168,7 @@ export default function ResultsPageBody() {
 
             {/* ── Verdict section: two main bullets with explanations ── */}
             <div className="mt-6">
-              <div className="mb-4 flex w-full items-center rounded-xl bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-3 shadow-sm sm:py-3.5">
+              <div className="mb-4 flex w-full items-center rounded-xl bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-3 shadow-sm sm:py-3.5">
                 <p className="text-base font-bold uppercase tracking-wide text-white">Your Position</p>
               </div>
 
@@ -1229,7 +1232,7 @@ export default function ResultsPageBody() {
                     fillPct: eduScoreNum,
                     explanation: {
                       title: 'What is process understanding?',
-                      summary: 'This measures how well you understand key homebuying concepts: DTI, PMI, closing costs, rate locks, and the offer-to-close process. Strong process understanding helps you avoid costly mistakes and negotiate confidently.',
+                      summary: 'This measures how well you understand key home buying concepts: DTI, PMI, closing costs, rate locks, and the offer-to-close process. Strong process understanding helps you avoid costly mistakes and negotiate confidently.',
                       bullets: [
                         '80%+ suggests strong familiarity with the process.',
                         '60–79% is a good baseline — a few gaps to close.',
@@ -1296,7 +1299,7 @@ export default function ResultsPageBody() {
                                         ? 'You\'re close — small adjustments could strengthen your position.'
                                         : 'Building more savings will reduce risk.'
                                     : eduOk
-                                      ? 'You understand key homebuying concepts well.'
+                                      ? 'You understand key home buying concepts well.'
                                       : eduWarn
                                         ? 'Good baseline — a few concepts to reinforce.'
                                         : eduScore != null
@@ -1313,7 +1316,7 @@ export default function ResultsPageBody() {
                               onClick={() => setDecisionExplanation(explanation)}
                               className="text-sm font-semibold text-slate-600 underline underline-offset-2 hover:text-slate-900"
                             >
-                              Learn more
+                              See How It Works
                             </button>
                           </div>
                         </div>
@@ -1519,7 +1522,7 @@ export default function ResultsPageBody() {
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </span>
           </Link>
-          <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-3.5">
+          <div className="rounded-lg border border-teal-200 bg-teal-50/60 p-3.5">
             <Link
               href="/find-my-plan"
               onClick={() => trackActivity('tool_used', { tool: 'results_find_my_plan_cta' })}
@@ -2192,7 +2195,7 @@ export default function ResultsPageBody() {
             <div className="space-y-3">
               {lockedSavingsCount > 0 && (
                 <p className="text-sm text-slate-600">
-                  {lockedSavingsCount} more opportunity{lockedSavingsCount !== 1 ? 's' : ''} unlocked with Guided.
+                  {lockedSavingsCount} more opportunity{lockedSavingsCount !== 1 ? 's' : ''} unlocked with Momentum.
                 </p>
               )}
               {visibleSavings.map((item, index) => {
@@ -2235,7 +2238,7 @@ export default function ResultsPageBody() {
             </div>
           ) : (
             <p className="text-sm text-slate-600">
-              Unlock Guided to see ranked opportunities, scripts, and step-by-step guidance.
+              Unlock Momentum to see ranked opportunities, scripts, and step-by-step guidance.
             </p>
           )}
         </motion.section>
@@ -2319,7 +2322,7 @@ export default function ResultsPageBody() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
           <div className="rounded-2xl border-2 border-[rgb(var(--coral))] bg-[rgb(var(--coral))]/5 p-5 sm:p-6">
             <p className="text-sm font-bold text-[#1e293b] mb-2">
-              Unlock Guided: protect an estimated additional {totalSavings > 0 ? formatCurrency(Math.round(totalSavings * 0.4)) + '–' + formatCurrency(Math.round(totalSavings * 0.7)) : '$2,000–$8,000'} in this phase
+              Unlock Momentum: protect an estimated additional {totalSavings > 0 ? formatCurrency(Math.round(totalSavings * 0.4)) + '–' + formatCurrency(Math.round(totalSavings * 0.7)) : '$2,000–$8,000'} in this phase
             </p>
             <p className="text-sm text-slate-600 mb-4">
               Ranked opportunities, negotiation scripts, and step-by-step guidance — so you know exactly what to do and when.

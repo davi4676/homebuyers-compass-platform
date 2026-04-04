@@ -32,6 +32,7 @@ import Phase4Closing from '@/components/mortgage-shopping/Phase4Closing'
 import RoadmapProgress from '@/components/mortgage-shopping/RoadmapProgress'
 import TrustSignals from '@/components/trust/TrustSignals'
 import UserJourneyTracker from '@/components/analytics/UserJourneyTracker'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 type Phase = 'overview' | 'preparation' | 'research' | 'negotiation' | 'closing'
 
@@ -95,7 +96,6 @@ export default function MortgageShoppingPage() {
     timeline: '45 days',
   })
 
-  // Handle URL parameter for direct phase navigation
   useEffect(() => {
     const phaseParam = searchParams.get('phase')
     if (phaseParam && ['preparation', 'research', 'negotiation', 'closing'].includes(phaseParam)) {
@@ -107,7 +107,6 @@ export default function MortgageShoppingPage() {
     const tier = getUserTier()
     setUserTier(tier)
 
-    // Listen for tier changes
     const handleTierChange = (e: CustomEvent) => {
       const newTier = e.detail?.tier as UserTier | undefined
       if (newTier && newTier in TIER_DEFINITIONS) {
@@ -126,40 +125,39 @@ export default function MortgageShoppingPage() {
   const canAccessPhase = (phase: PhaseData): boolean => {
     if (!phase.tierRequired) return true
     const userTierIndex = TIER_ORDER_ACCESS.indexOf(userTier)
-    const requiredTierIndex = TIER_ORDER_ACCESS.indexOf(phase.tierRequired)
+    const requiredTierIndex = TIER_ORDER_ACCESS.indexOf(phase.tierRequired as UserTier)
     return userTierIndex >= 0 && userTierIndex >= requiredTierIndex
   }
 
   const getPhaseStatus = (phase: PhaseData): 'locked' | 'available' | 'completed' => {
     if (!canAccessPhase(phase)) return 'locked'
-    // In a real app, you'd track completion status
     return 'available'
   }
 
   const calculateTotalSavingsPotential = (): { min: number; max: number } => {
-    // Based on loan amount and credit score
-    const baseMin = savingsData.loanAmount * 0.003 // 0.3% of loan
-    const baseMax = savingsData.loanAmount * 0.15 // 15% of loan
+    const baseMin = savingsData.loanAmount * 0.003
+    const baseMax = savingsData.loanAmount * 0.15
     return { min: baseMin, max: baseMax }
   }
 
   const totalSavings = calculateTotalSavingsPotential()
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#1a1a1a] to-[#0a0a0a] text-white">
+    <div className="app-page-shell">
       {/* Header */}
-      <header className="border-b border-gray-800 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="border-b border-[#e7e5e4] sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <BackToMyJourneyLink className="mb-2" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#22d3ee]">
-                🏠 NestQuest
-              </span>
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-[#1a6b3c]">
+              🏠 NestQuest
             </Link>
             <div className="flex items-center gap-4">
               <Link
                 href="/results"
-                className="text-gray-400 hover:text-white transition-colors text-sm"
+                className="text-[#57534e] hover:text-[#1c1917] transition-colors text-sm"
               >
                 Back to Results
               </Link>
@@ -171,25 +169,25 @@ export default function MortgageShoppingPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <UserJourneyTracker />
         <TrustSignals />
-        
+
         {/* Navigation Buttons */}
-        <div className="mb-6 flex items-center justify-between sticky top-20 z-40 bg-[#0a0a0a]/80 backdrop-blur-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 rounded-lg">
+        <div className="mb-6 flex items-center justify-between sticky top-20 z-40 bg-[#fafaf9]/90 backdrop-blur-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 rounded-lg">
           <Link
             href="/results"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-gray-800 text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#06b6d4] transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-white border border-[#e7e5e4] text-[#1c1917] hover:bg-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#1a6b3c] transition-all"
           >
             <ArrowLeft size={18} />
             <span>Back to Results</span>
           </Link>
           <Link
             href="/down-payment-optimizer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-[#06b6d4] text-white hover:bg-[#0891b2] focus:outline-none focus:ring-2 focus:ring-[#06b6d4] transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-[#1a6b3c] hover:bg-[#155c33] text-white focus:outline-none focus:ring-2 focus:ring-[#1a6b3c] transition-all"
           >
             <span>Down Payment Optimizer</span>
             <ArrowRight size={18} />
           </Link>
         </div>
-        
+
         <AnimatePresence mode="wait">
           {currentPhase === 'overview' && (
             <motion.div
@@ -205,19 +203,19 @@ export default function MortgageShoppingPage() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#06b6d4]/20 to-[#22d3ee]/20 border border-[#06b6d4]/30"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a6b3c]/10 border border-[#1a6b3c]/20"
                 >
-                  <Sparkles className="w-4 h-4 text-[#06b6d4]" />
-                  <span className="text-sm font-medium">Mortgage Savings Roadmap</span>
+                  <Sparkles className="w-4 h-4 text-[#1a6b3c]" />
+                  <span className="text-sm font-medium text-[#1a6b3c]">Mortgage Savings Roadmap</span>
                 </motion.div>
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1c1917]">
                   Save{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#22d3ee]">
+                  <span className="text-[#1a6b3c]">
                     ${totalSavings.min.toLocaleString()}-${totalSavings.max.toLocaleString()}
                   </span>{' '}
                   on Your Mortgage
                 </h1>
-                <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                <p className="text-lg text-[#57534e] max-w-2xl mx-auto">
                   A step-by-step journey to maximize your savings while shopping for the best
                   mortgage rate. Most users save $15,000-$50,000 with our proven strategy.
                 </p>
@@ -247,7 +245,7 @@ export default function MortgageShoppingPage() {
                 {PHASES.map((phase, index) => {
                   const status = getPhaseStatus(phase)
                   const isLocked = status === 'locked'
-                  const nextTier = phase.tierRequired && !canAccessPhase(phase) ? phase.tierRequired : null
+                  const nextTier = phase.tierRequired && !canAccessPhase(phase) ? phase.tierRequired as UserTier : null
 
                   return (
                     <motion.div
@@ -257,46 +255,42 @@ export default function MortgageShoppingPage() {
                       transition={{ delay: 0.2 + index * 0.1 }}
                       className={`relative p-6 rounded-xl border-2 transition-all ${
                         isLocked
-                          ? 'border-gray-800 bg-gray-900/50 opacity-60'
-                          : 'border-[#06b6d4]/30 bg-gradient-to-br from-gray-900/50 to-gray-800/30 hover:border-[#06b6d4]/50 cursor-pointer'
+                          ? 'border-[#e7e5e4] bg-[#f5f5f4] opacity-60'
+                          : 'border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer'
                       }`}
                       onClick={() => {
-                        if (!isLocked) {
-                          setCurrentPhase(phase.id as Phase)
-                        }
+                        if (!isLocked) setCurrentPhase(phase.id as Phase)
                       }}
                     >
                       {isLocked && (
                         <div className="absolute top-4 right-4">
-                          <Lock className="w-5 h-5 text-gray-600" />
+                          <Lock className="w-5 h-5 text-[#a8a29e]" />
                         </div>
                       )}
 
                       <div className="flex items-start gap-4">
-                        <div
-                          className={`p-3 rounded-lg ${
-                            isLocked ? 'bg-gray-800' : 'bg-[#06b6d4]/20'
-                          }`}
-                        >
-                          {phase.icon}
+                        <div className={`p-3 rounded-lg ${isLocked ? 'bg-[#f5f5f4]' : 'bg-[#1a6b3c]/10'}`}>
+                          <span className={isLocked ? 'text-[#a8a29e]' : 'text-[#1a6b3c]'}>
+                            {phase.icon}
+                          </span>
                         </div>
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold">{phase.title}</h3>
+                            <h3 className="text-xl font-bold text-[#1c1917]">{phase.title}</h3>
                             {phase.tierRequired && (
                               <span
                                 className={`text-xs px-2 py-1 rounded-full ${
                                   isLocked
-                                    ? 'bg-gray-800 text-gray-500'
-                                    : 'bg-[#06b6d4]/20 text-[#06b6d4]'
+                                    ? 'bg-[#f5f5f4] text-[#a8a29e]'
+                                    : 'bg-[#1a6b3c]/10 text-[#1a6b3c]'
                                 }`}
                               >
-                                {phase.tierRequired === 'momentum' ? 'Guided' : 'Concierge'}
+                                {TIER_DEFINITIONS[phase.tierRequired as UserTier]?.name ?? phase.tierRequired}
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-400 text-sm">{phase.description}</p>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <p className="text-[#57534e] text-sm">{phase.description}</p>
+                          <div className="flex items-center gap-4 text-sm text-[#a8a29e]">
                             <div className="flex items-center gap-1">
                               <Clock className="w-4 h-4" />
                               {phase.estimatedTime}
@@ -310,23 +304,23 @@ export default function MortgageShoppingPage() {
                       </div>
 
                       {isLocked && nextTier && (
-                        <div className="mt-4 pt-4 border-t border-gray-800">
+                        <div className="mt-4 pt-4 border-t border-[#e7e5e4]">
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
                               handleUpgrade(nextTier)
                             }}
-                            className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                            className="w-full py-2 px-4 rounded-lg bg-[#1a6b3c] hover:bg-[#155c33] text-white font-semibold transition-colors flex items-center justify-center gap-2"
                           >
-                            Upgrade to {nextTier === 'momentum' ? 'Guided' : 'Concierge'} to Unlock
+                            Upgrade to {TIER_DEFINITIONS[nextTier]?.name ?? nextTier} to Unlock
                             <ArrowRight className="w-4 h-4" />
                           </button>
                         </div>
                       )}
 
                       {!isLocked && (
-                        <div className="mt-4 flex items-center gap-2 text-[#06b6d4] text-sm font-medium">
-                          Get Started <ArrowRight className="w-4 h-4" />
+                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
+                          Find My Savings →
                         </div>
                       )}
                     </motion.div>
@@ -339,22 +333,22 @@ export default function MortgageShoppingPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="mt-12 p-6 rounded-xl bg-gradient-to-r from-[#06b6d4]/10 to-[#22d3ee]/10 border border-[#06b6d4]/20"
+                className="mt-12 p-6 rounded-xl bg-[#1a6b3c]/5 border border-[#1a6b3c]/20"
               >
-                <div className="flex items-center justify-center gap-8 text-center">
+                <div className="flex items-center justify-center gap-8 text-center flex-wrap gap-y-6">
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">83%</div>
-                    <div className="text-sm text-gray-400">of Concierge users negotiate successfully</div>
+                    <div className="text-3xl font-bold text-[#1a6b3c]">83%</div>
+                    <div className="text-sm text-[#57534e]">of Navigator+ users negotiate successfully</div>
                   </div>
-                  <div className="h-12 w-px bg-gray-700" />
+                  <div className="h-12 w-px bg-[#e7e5e4] hidden sm:block" />
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">$48,760</div>
-                    <div className="text-sm text-gray-400">Average savings for Concierge users</div>
+                    <div className="text-3xl font-bold text-[#1a6b3c]">$48,760</div>
+                    <div className="text-sm text-[#57534e]">Average savings for Navigator+ users</div>
                   </div>
-                  <div className="h-12 w-px bg-gray-700" />
+                  <div className="h-12 w-px bg-[#e7e5e4] hidden sm:block" />
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">37%</div>
-                    <div className="text-sm text-gray-400">More savings vs Guided users</div>
+                    <div className="text-3xl font-bold text-[#1a6b3c]">37%</div>
+                    <div className="text-sm text-[#57534e]">More savings vs Momentum users</div>
                   </div>
                 </div>
               </motion.div>

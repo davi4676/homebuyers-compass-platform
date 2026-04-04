@@ -2,24 +2,28 @@
 
 import Link from 'next/link'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function QuizStarterPage() {
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-[rgb(var(--text-dark))] font-sans">
+    <div className="app-page-shell">
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/98 backdrop-blur shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-[rgb(var(--navy))] transition-colors font-medium"
-          >
-            <ArrowLeft size={20} />
-            Back to home
-          </Link>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-4">
+            <BackToMyJourneyLink className="font-medium" />
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-slate-600 hover:text-[rgb(var(--navy))] transition-colors font-medium"
+            >
+              <ArrowLeft size={20} />
+              Back to home
+            </Link>
+          </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12 md:py-16">
-        <h1 className="text-3xl md:text-4xl font-bold text-center mb-2 text-[rgb(var(--navy))]">
+        <h1 className="font-display text-3xl md:text-4xl font-bold text-center mb-2 text-[rgb(var(--navy))]">
           Answer a few questions — get your free guide
         </h1>
         <p className="text-slate-600 text-center mb-10">

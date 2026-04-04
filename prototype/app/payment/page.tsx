@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { TIER_DEFINITIONS, type UserTier, formatTierPrice } from '@/lib/tiers'
 import { setUserTier } from '@/lib/user-tracking'
 import { trackActivity } from '@/lib/track-activity'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function PaymentPage() {
   const searchParams = useSearchParams()
@@ -107,11 +108,14 @@ export default function PaymentPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center">
+      <div className="app-page-shell flex flex-col items-center justify-center px-4">
+        <div className="mb-6 w-full max-w-md">
+          <BackToMyJourneyLink />
+        </div>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md mx-auto px-4"
+          className="text-center max-w-md mx-auto rounded-xl border border-[#e7e5e4] bg-white p-8 shadow-sm"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -119,30 +123,30 @@ export default function PaymentPage() {
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
             className="mb-6"
           >
-            <CheckCircle className="text-green-400 mx-auto" size={64} />
+            <CheckCircle className="text-[#16a34a] mx-auto" size={64} />
           </motion.div>
-          <h2 className="text-3xl font-bold mb-4">Payment Successful!</h2>
-          <p className="text-lg text-gray-400 mb-6">
+          <h2 className="font-display text-3xl font-bold mb-4">Payment successful</h2>
+          <p className="text-lg text-[#57534e] mb-6">
             Welcome to {tierDef.name}! Your plan access is now active.
           </p>
-          <p className="text-sm text-gray-500">
-            Redirecting to your journey...
-          </p>
+          <p className="text-sm text-[#78716c]">Redirecting to your journey…</p>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
+    <div className="app-page-shell">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-4">
+          <BackToMyJourneyLink />
+        </div>
         <Link
           href="/upgrade"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-[#57534e] hover:text-[#1c1917] mb-6 transition-colors"
         >
           <ArrowLeft size={20} />
-          Back to Plans
+          Back to plans
         </Link>
 
         <motion.div
@@ -150,25 +154,26 @@ export default function PaymentPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold mb-2">Complete Secure Checkout</h1>
-          <p className="text-gray-400">Upgrading to {tierDef.name}</p>
+          <h1 className="font-display text-4xl font-bold mb-2 text-[#1c1917]">Complete secure checkout</h1>
+          <p className="text-[#57534e]">Upgrading to {tierDef.name}</p>
         </motion.div>
 
-        {/* Order Summary */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-lg p-6 border border-gray-600 mb-6"
+          className="bg-white rounded-xl p-6 border border-[#e7e5e4] shadow-sm mb-6"
         >
-          <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+          <h2 className="font-display text-xl font-bold mb-4">Order summary</h2>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-400">{tierDef.name} Plan</span>
+              <span className="text-[#57534e]">{tierDef.name} plan</span>
               <span className="font-semibold">{priceLabel}</span>
             </div>
-            <div className="text-sm text-gray-500">Placeholder pricing range</div>
-            <div className="border-t border-gray-800 pt-3 mt-3">
+            <div className="text-sm text-[#78716c]">
+              Price reflects the billing cycle you selected; taxes may be added at checkout where applicable.
+            </div>
+            <div className="border-t border-[#e7e5e4] pt-3 mt-3">
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
                 <span>{priceLabel}</span>
@@ -177,17 +182,16 @@ export default function PaymentPage() {
           </div>
         </motion.div>
 
-        {/* Stripe Checkout */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800 rounded-lg p-6 border border-gray-600"
+          className="bg-white rounded-xl p-6 border border-[#e7e5e4] shadow-sm"
         >
-          <h2 className="text-xl font-bold mb-4">Stripe Checkout</h2>
-          <div className="mb-6 p-4 rounded-lg border border-cyan-500/30 bg-gray-700/50">
-            <h3 className="font-semibold text-gray-100 mb-2">Choose billing option</h3>
-            <p className="text-sm text-gray-400 mb-3">
+          <h2 className="font-display text-xl font-bold mb-4">Stripe checkout</h2>
+          <div className="mb-6 p-4 rounded-xl border border-[#0d9488]/30 bg-[#f0fdfa]">
+            <h3 className="font-semibold text-[#1c1917] mb-2">Choose billing option</h3>
+            <p className="text-sm text-[#57534e] mb-3">
               Secure checkout with card support. Subscriptions can be cancelled anytime.
             </p>
             <input
@@ -195,7 +199,7 @@ export default function PaymentPage() {
               placeholder="Email (optional)"
               value={customerEmail}
               onChange={(e) => setCustomerEmail(e.target.value)}
-              className="w-full mb-3 px-4 py-2 rounded-lg border border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
+              className="w-full mb-3 px-4 py-2 rounded-lg border border-[#e7e5e4] bg-white text-[#1c1917] placeholder:text-[#a8a29e]"
             />
             <div className="flex flex-wrap gap-2">
               {billingCycle === 'monthly' && (
@@ -204,7 +208,7 @@ export default function PaymentPage() {
                     type="button"
                     onClick={() => handleStripeCheckout('monthly')}
                     disabled={stripeRedirecting}
-                    className="px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] disabled:opacity-50"
                   >
                     {stripeRedirecting ? 'Redirecting...' : 'Stripe — Monthly'}
                   </button>
@@ -212,7 +216,7 @@ export default function PaymentPage() {
                     type="button"
                     onClick={() => handleStripeCheckout('yearly')}
                     disabled={stripeRedirecting}
-                    className="px-4 py-2 rounded-lg border-2 border-cyan-600 text-cyan-400 hover:bg-cyan-600/20 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg border-2 border-[#0d9488] text-[#0d9488] hover:bg-[#0d9488]/10 disabled:opacity-50"
                   >
                     Stripe — Yearly
                   </button>
@@ -222,7 +226,7 @@ export default function PaymentPage() {
                 type="button"
                 onClick={() => handleStripeCheckout('one-time')}
                 disabled={stripeRedirecting}
-                className="px-4 py-2 rounded-lg border-2 border-cyan-600 text-cyan-400 hover:bg-cyan-600/20 disabled:opacity-50"
+                className="px-4 py-2 rounded-lg border-2 border-[#0d9488] text-[#0d9488] hover:bg-[#0d9488]/10 disabled:opacity-50"
               >
                 Stripe — One-time
               </button>
@@ -230,28 +234,26 @@ export default function PaymentPage() {
           </div>
 
           {error && (
-            <div className="mt-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg flex items-center gap-2 text-red-400">
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-800">
               <AlertCircle size={20} />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Security Notice */}
-          <div className="mt-6 flex items-start gap-3 p-4 bg-gray-800/50 rounded-lg">
-            <Shield className="text-[#06b6d4] flex-shrink-0 mt-0.5" size={20} />
-            <div className="text-sm text-gray-400">
-              <p className="font-semibold text-white mb-1">Secure Payment</p>
-              <p>Your payment information is encrypted and secure. We never store your full card details.</p>
+          <div className="mt-6 flex items-start gap-3 p-4 bg-[#fafaf9] rounded-xl border border-[#e7e5e4]">
+            <Shield className="text-[#0d9488] flex-shrink-0 mt-0.5" size={20} />
+            <div className="text-sm text-[#57534e]">
+              <p className="font-semibold text-[#1c1917] mb-1">Secure payment</p>
+              <p>Your payment information is encrypted. We never store your full card details.</p>
             </div>
           </div>
 
-          <div className="w-full mt-6 px-6 py-4 bg-cyan-600/15 border border-cyan-500/30 text-cyan-200 rounded-lg font-semibold flex items-center justify-center gap-2">
+          <div className="w-full mt-6 px-6 py-4 bg-[#ecfdf5] border border-[#0d9488]/30 text-[#134e4a] rounded-xl font-semibold flex items-center justify-center gap-2">
             <Lock size={18} />
             Payments are processed through Stripe secure checkout.
           </div>
 
-          {/* Money Back Guarantee */}
-          <p className="text-center text-sm text-gray-500 mt-4">
+          <p className="text-center text-sm text-[#78716c] mt-4">
             30-day money-back guarantee • Cancel anytime
           </p>
         </motion.div>

@@ -1,146 +1,60 @@
-'use client'
-
 import Link from 'next/link'
-import { Star, ShieldCheck, Clock3 } from 'lucide-react'
+import { Clock, Bell, ArrowLeft } from 'lucide-react'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function MarketplacePage() {
-  const providers = [
-    {
-      id: 'inspection-abc',
-      service: 'Standard Home Inspection',
-      provider: 'ABC Inspection Services',
-      rating: 4.8,
-      reviews: 120,
-      price: 450,
-      turnaround: '24-48h',
-      verified: true,
-    },
-    {
-      id: 'title-first',
-      service: 'Enhanced Title Insurance',
-      provider: 'First Title Co.',
-      rating: 4.9,
-      reviews: 156,
-      price: 1150,
-      turnaround: '2-3 days',
-      verified: true,
-    },
-  ]
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <Link href="/" className="text-2xl font-bold text-compass-blue">
-              🧭 NestQuest
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Closing Cost Marketplace</h1>
-          <p className="text-gray-600">Compare and book services for your closing</p>
+    <div className="app-page-shell flex flex-col items-center justify-center px-4 py-10">
+      <div className="mb-6 w-full max-w-lg">
+        <BackToMyJourneyLink className="font-semibold" />
+      </div>
+      <div className="max-w-lg w-full text-center">
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-lg shadow-slate-200/60 ring-1 ring-slate-200/80">
+          <Clock className="h-10 w-10 text-[rgb(var(--navy))]" strokeWidth={1.5} />
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Get Personalized Estimates</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="Property Address"
-              className="px-4 py-2 border rounded-lg"
-            />
-            <input
-              type="text"
-              placeholder="Purchase Price"
-              className="px-4 py-2 border rounded-lg"
-            />
-            <button className="bg-compass-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-compass-dark">
-              Get Estimates
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-3">
-            Estimates are refreshed daily and include service fees + expected closing timeline.
-          </p>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          Coming Soon
+        </h1>
+        <p className="mt-4 text-lg text-slate-600 leading-relaxed">
+          The Closing Cost Marketplace is under construction. We&apos;re vetting and onboarding
+          providers so you get verified, transparent quotes — not commission-driven referrals.
+        </p>
+
+        <div className="mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm text-left space-y-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">What&apos;s coming</p>
+          <ul className="space-y-2 text-sm text-slate-700">
+            {[
+              'Compare title insurance, inspection, and closing attorney fees side-by-side',
+              'Verified provider ratings from real NestQuest buyers',
+              'One-click quote requests — no cold calls',
+              'Transparent pricing with no hidden add-ons',
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-            <h2 className="text-lg font-semibold">Compare Top Matches</h2>
-            <button className="bg-compass-blue text-white px-4 py-2 rounded-lg font-semibold hover:bg-compass-dark">
-              Request 3 Quotes
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 border-b">
-                  <th className="py-2 pr-4">Provider</th>
-                  <th className="py-2 pr-4">Service</th>
-                  <th className="py-2 pr-4">Price</th>
-                  <th className="py-2 pr-4">Turnaround</th>
-                  <th className="py-2 pr-4">Trust</th>
-                </tr>
-              </thead>
-              <tbody>
-                {providers.map((p) => (
-                  <tr key={p.id} className="border-b last:border-b-0">
-                    <td className="py-3 pr-4 font-medium text-gray-900">{p.provider}</td>
-                    <td className="py-3 pr-4 text-gray-700">{p.service}</td>
-                    <td className="py-3 pr-4 font-semibold text-compass-blue">${p.price.toLocaleString()}</td>
-                    <td className="py-3 pr-4 text-gray-700">{p.turnaround}</td>
-                    <td className="py-3 pr-4">
-                      {p.verified && (
-                        <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
-                          <ShieldCheck className="w-4 h-4" />
-                          Verified
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {providers.map((provider) => (
-          <div key={provider.id} className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-xl font-semibold mb-1">{provider.service}</h3>
-                <p className="text-sm text-gray-600 mb-2">{provider.provider}</p>
-                <div className="flex items-center">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  <span className="ml-1 font-medium">{provider.rating}</span>
-                  <span className="text-gray-500 text-sm ml-1">({provider.reviews} reviews)</span>
-                </div>
-                <div className="mt-2 inline-flex items-center gap-1 text-xs text-gray-600">
-                  <Clock3 className="w-3.5 h-3.5" />
-                  Typical turnaround: {provider.turnaround}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-compass-blue">${provider.price.toLocaleString()}</div>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button className="flex-1 bg-compass-blue text-white px-4 py-2 rounded-lg font-medium hover:bg-compass-dark">
-                View Details
-              </button>
-              <button className="flex-1 border border-compass-blue text-compass-blue px-4 py-2 rounded-lg font-medium hover:bg-blue-50">
-                Get Quote
-              </button>
-            </div>
-          </div>
-          ))}
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/resources"
+            className="inline-flex items-center gap-2 rounded-xl bg-[rgb(var(--navy))] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
+          >
+            <Bell className="h-4 w-4" />
+            Browse resources in the meantime
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to home
+          </Link>
         </div>
       </div>
     </div>
   )
 }
-

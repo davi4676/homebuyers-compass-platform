@@ -46,6 +46,7 @@ import {
   Tooltip,
 } from '@/components/journeys'
 import { getCachedFreddieMacRates } from '@/lib/freddie-mac-rates'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 const BUY_SELL_STORAGE_KEY = 'buy-sell-journey-v1'
 const BUY_SELL_STEPS: { id: string; label: string; shortLabel: string }[] = [
@@ -635,17 +636,20 @@ export default function BuySellJourneyPage() {
         : 'bg-red-500'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white text-[17px] [&_.text-xs]:text-base [&_.text-sm]:text-base [&_.text-base]:text-lg [&_.text-lg]:text-xl [&_.text-xl]:text-[22px] [&_.text-2xl]:text-[26px]">
+    <div className="app-page-shell text-[17px] [&_.text-xs]:text-base [&_.text-sm]:text-base [&_.text-base]:text-lg [&_.text-lg]:text-xl [&_.text-xl]:text-[22px] [&_.text-2xl]:text-[26px]">
       <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Home</span>
-          </Link>
-          <h1 className="text-xl font-bold text-green-600">Buy & Sell Journey</h1>
+        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <BackToMyJourneyLink className="font-semibold" />
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-sm font-medium text-[#57534e] hover:text-[#1c1917] transition"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>Home</span>
+            </Link>
+          </div>
+          <h1 className="font-display text-xl font-bold text-[#15803d]">Buy & Sell Journey</h1>
           <button
             type="button"
             onClick={() => window.print()}
@@ -668,12 +672,12 @@ export default function BuySellJourneyPage() {
         />
 
         {/* Main section divider - like "YOUR POSITION" */}
-        <div className="w-full rounded-lg bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-2.5 mb-4">
+        <div className="w-full rounded-lg bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-2.5 mb-4">
           <span className="text-sm font-bold tracking-wider text-white uppercase">Today&apos;s focus</span>
         </div>
 
         <section className="mb-4">
-          <div className="rounded-xl border-0 bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 p-4 shadow-lg">
+          <div className="rounded-xl border-0 bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 p-4 shadow-lg">
             <div className="flex items-center gap-2 mb-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20 text-white">
                 <Target className="h-5 w-5" strokeWidth={2} />
@@ -696,7 +700,7 @@ export default function BuySellJourneyPage() {
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.min(BUY_SELL_STEPS.length - 1, s + 1))}
-                className="inline-flex items-center gap-2 rounded-lg bg-white text-indigo-700 px-4 py-2 text-sm font-semibold hover:bg-white/90 transition"
+                className="inline-flex items-center gap-2 rounded-lg bg-white text-teal-700 px-4 py-2 text-sm font-semibold hover:bg-white/90 transition"
               >
                 Mark done & next
                 <ArrowRight className="h-4 w-4" />
@@ -853,7 +857,7 @@ export default function BuySellJourneyPage() {
                 <span className="text-sm font-bold text-white">New home vision</span>
               </div>
               <div className="flex items-center gap-3 mb-1 mt-2">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-600">
                   <Target className="h-5 w-5" strokeWidth={2} />
                 </span>
                 <h2 className="text-2xl font-bold text-gray-900">New Home Vision</h2>
@@ -983,7 +987,7 @@ export default function BuySellJourneyPage() {
                 {BRIDGE_OPTIONS.map((opt, idx) => {
                   const accentColors = [
                     'border-l-4 border-l-amber-400 bg-amber-50/50 hover:border-amber-300',
-                    'border-l-4 border-l-sky-400 bg-sky-50/50 hover:border-sky-300',
+                    'border-l-4 border-l-teal-400 bg-teal-50/50 hover:border-teal-300',
                     'border-l-4 border-l-emerald-400 bg-emerald-50/50 hover:border-emerald-300',
                   ]
                   return (
@@ -1023,7 +1027,7 @@ export default function BuySellJourneyPage() {
                 <span className="text-sm font-bold text-white">Financial waterfall analysis</span>
               </div>
               <div className="flex items-center gap-3 mb-1 mt-2">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-600">
                   <TrendingUp className="h-5 w-5" strokeWidth={2} />
                 </span>
                 <h2 className="text-2xl font-bold text-gray-900">Financial Waterfall Analysis</h2>
@@ -1101,7 +1105,7 @@ export default function BuySellJourneyPage() {
                   const accents = sc.recommended
                     ? 'border-l-4 border-l-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-200/40'
                     : idx === 0
-                      ? 'border-l-4 border-l-sky-400 bg-sky-50/40 hover:border-sky-300'
+                      ? 'border-l-4 border-l-teal-400 bg-teal-50/40 hover:border-teal-300'
                       : idx === 1
                         ? 'border-l-4 border-l-violet-400 bg-violet-50/40 hover:border-violet-300'
                         : 'border-l-4 border-l-amber-400 bg-amber-50/40 hover:border-amber-300'
@@ -1150,7 +1154,7 @@ export default function BuySellJourneyPage() {
               className="space-y-4"
             >
               {/* Main section divider - "YOUR POSITION" style */}
-              <div className="w-full rounded-lg bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-2.5 mb-4">
+              <div className="w-full rounded-lg bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-2.5 mb-4">
                 <span className="text-sm font-bold tracking-wider text-white uppercase">Your position</span>
               </div>
               <div className="flex items-center gap-3 mb-1">
@@ -1163,7 +1167,7 @@ export default function BuySellJourneyPage() {
                 <div className="rounded-t-lg bg-slate-800 px-5 py-2.5">
                   <span className="text-sm font-bold text-white">Savings & opportunity snapshot</span>
                 </div>
-                <div className="rounded-2xl rounded-t-none border-2 border-t-0 border-emerald-200/50 bg-gradient-to-br from-emerald-50/80 via-white to-sky-50/50 p-5 sm:p-6 shadow-emerald-100/30">
+                <div className="rounded-2xl rounded-t-none border-2 border-t-0 border-emerald-200/50 bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50 p-5 sm:p-6 shadow-emerald-100/30">
                 <div className="relative mb-4 -mx-5 -mt-2 sm:-mx-6 h-32 sm:h-40">
                   <img
                     src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80"
@@ -1454,7 +1458,7 @@ export default function BuySellJourneyPage() {
               className="space-y-4"
             >
               {/* Main section divider */}
-              <div className="w-full rounded-lg bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-2.5 mb-4">
+              <div className="w-full rounded-lg bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-2.5 mb-4">
                 <span className="text-sm font-bold tracking-wider text-white uppercase">Action plan</span>
               </div>
               <div className="flex items-center gap-3 mb-1">

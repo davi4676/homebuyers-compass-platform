@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 /**
  * Dashboard has been realigned into the personalized journey pages.
- * First-time homebuyer: /customized-journey (My progress section)
- * Refinance: /refinance-optimizer (My progress tab)
- * Repeat buyer: /repeat-buyer-suite (My progress tab)
+ * First-time & repeat buyer: /customized-journey (journey hub)
+ * Refinance: /homebuyer/refinance-journey (wizard)
  */
 export default function DashboardPage() {
   const router = useRouter()
@@ -29,14 +29,17 @@ export default function DashboardPage() {
 
     const routeByType: Record<typeof transactionType, string> = {
       'first-time': '/customized-journey',
-      'repeat-buyer': '/homebuyer/buy-sell-journey',
+      'repeat-buyer': '/customized-journey',
       'refinance': '/homebuyer/refinance-journey',
     }
     router.replace(routeByType[transactionType])
   }, [router])
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] flex flex-col items-center justify-center px-4">
+    <div className="app-page-shell flex flex-col items-center justify-center px-4 py-10">
+      <div className="mb-6">
+        <BackToMyJourneyLink />
+      </div>
       <div className="w-full max-w-sm space-y-4">
         <div className="h-10 rounded-xl bg-slate-200/80 animate-pulse" />
         <div className="h-24 rounded-2xl bg-white border border-slate-200 shadow-sm animate-pulse" />

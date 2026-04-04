@@ -43,7 +43,7 @@ export default function LearningCard({
           <MindsetTag compact mindset={def.mindset} className="max-w-[95%]" />
           <Link
             href={`/upgrade?source=learn-card&tier=${minTier}`}
-            className="mt-1 text-sm font-bold text-sky-700 underline underline-offset-2 hover:text-sky-900"
+            className="mt-1 text-sm font-bold text-teal-700 underline underline-offset-2 hover:text-teal-900"
           >
             Upgrade to {def.name}
           </Link>
@@ -60,7 +60,7 @@ export default function LearningCard({
   return (
     <Link
       href={href}
-      className={`group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md ${
+      className={`group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md ${
         isPremiumDeepDive ? 'border-amber-200/70 bg-gradient-to-br from-amber-50/40 to-white' : ''
       } ${className}`}
     >
@@ -73,7 +73,7 @@ export default function LearningCard({
       </span>
       <p className="mt-2 font-bold text-slate-900">{title}</p>
       <p className="mt-1 text-sm text-slate-600">{sub}</p>
-      <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-sky-700">
+      <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-teal-700">
         Open
         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
       </span>

@@ -44,18 +44,18 @@ export default function DynamicRoadmap({
                 type="button"
                 disabled={!accessible}
                 onClick={() => onSelectPhase(phaseOrder)}
-                className={`flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/50 ${
+                className={`flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50 ${
                   accessible
-                    ? 'border-slate-200/90 bg-white hover:border-sky-200 hover:bg-sky-50/40'
+                    ? 'border-slate-200/90 bg-white hover:border-teal-200 hover:bg-teal-50/40'
                     : 'cursor-not-allowed border-slate-100 bg-slate-50/80 opacity-90'
-                } ${current ? 'ring-2 ring-sky-300/80' : ''}`}
+                } ${current ? 'ring-2 ring-teal-300/80' : ''}`}
               >
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
                     complete
                       ? 'bg-emerald-100 text-emerald-800'
                       : current
-                        ? 'bg-sky-100 text-sky-800'
+                        ? 'bg-teal-100 text-teal-800'
                         : 'bg-slate-100 text-slate-600'
                   }`}
                 >

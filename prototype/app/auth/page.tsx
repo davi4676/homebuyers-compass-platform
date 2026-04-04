@@ -7,10 +7,11 @@ import { LogIn, UserPlus, ArrowLeft } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { SIGNUP_DISABLED } from '@/lib/auth-flags'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 /**
  * Authentication page: sign up or log in.
- * Used when user clicks "Get started" or "Get my free guide" — after success they are
+ * Used when user clicks "Find My Savings →" or similar CTAs — after success they are
  * sent to Results (if they have completed the quiz) or Quiz, with journey state in cookies/session.
  */
 export default function AuthPage() {
@@ -69,15 +70,18 @@ export default function AuthPage() {
 
   if (!showAuthForm) {
     return (
-      <div className="min-h-screen bg-[rgb(var(--sky-light))] flex items-center justify-center">
+      <div className="app-page-shell flex items-center justify-center">
         <p className="text-slate-500 text-sm">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-[rgb(var(--text-dark))] flex flex-col items-center justify-center p-8">
+    <div className="app-page-shell flex flex-col items-center justify-center p-8">
       <div className="max-w-md w-full text-center">
+        <div className="mb-6 flex justify-center">
+          <BackToMyJourneyLink className="font-medium" />
+        </div>
         <div className="flex justify-center mb-6">
           {initialView === 'login' ? (
             <LogIn className="w-12 h-12 text-[rgb(var(--navy))]" />
@@ -85,7 +89,7 @@ export default function AuthPage() {
             <UserPlus className="w-12 h-12 text-[rgb(var(--navy))]" />
           )}
         </div>
-        <h1 className="text-2xl font-bold mb-2 text-[rgb(var(--navy))]">
+        <h1 className="font-display text-2xl font-bold mb-2 text-[rgb(var(--navy))]">
           {initialView === 'login' ? 'Welcome Back' : 'Create Your Free Account'}
         </h1>
         <p className="text-slate-600 mb-6">

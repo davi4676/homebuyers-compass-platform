@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
@@ -486,17 +487,20 @@ export default function RefinanceJourneyPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white print:bg-white text-[17px] [&_.text-xs]:text-base [&_.text-sm]:text-base [&_.text-base]:text-lg [&_.text-lg]:text-xl [&_.text-xl]:text-[22px] [&_.text-2xl]:text-[26px]">
+    <div className="app-page-shell print:bg-white text-[17px] [&_.text-xs]:text-base [&_.text-sm]:text-base [&_.text-base]:text-lg [&_.text-lg]:text-xl [&_.text-xl]:text-[22px] [&_.text-2xl]:text-[26px]">
       <header className="bg-white shadow-sm sticky top-0 z-40 print:static">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition print:hidden"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Home</span>
-          </Link>
-          <h1 className="text-xl font-bold text-blue-600">Refinance Journey</h1>
+        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 print:hidden">
+            <BackToMyJourneyLink className="font-semibold" />
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-[#57534e] hover:text-[#1c1917] transition text-sm font-medium"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>Home</span>
+            </Link>
+          </div>
+          <h1 className="font-display text-xl font-bold text-[#0f766e]">Refinance Journey</h1>
           <button
             type="button"
             onClick={handlePrint}
@@ -519,12 +523,12 @@ export default function RefinanceJourneyPage() {
         />
 
         {/* Main section divider - like "YOUR POSITION" */}
-        <div className="w-full rounded-lg bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-2.5 mb-4 print:hidden">
+        <div className="w-full rounded-lg bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-2.5 mb-4 print:hidden">
           <span className="text-sm font-bold tracking-wider text-white uppercase">Today&apos;s focus</span>
         </div>
 
         <section className="mb-4 print:hidden">
-          <div className="rounded-xl border-0 bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 p-4 shadow-lg">
+          <div className="rounded-xl border-0 bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 p-4 shadow-lg">
             <div className="flex items-center gap-2 mb-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20 text-white">
                 <Target className="h-5 w-5" strokeWidth={2} />
@@ -547,7 +551,7 @@ export default function RefinanceJourneyPage() {
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.min(REFI_STEPS.length - 1, s + 1))}
-                className="inline-flex items-center gap-2 rounded-lg bg-white text-indigo-700 px-4 py-2 text-sm font-semibold hover:bg-white/90 transition"
+                className="inline-flex items-center gap-2 rounded-lg bg-white text-teal-700 px-4 py-2 text-sm font-semibold hover:bg-white/90 transition"
               >
                 Mark done & next
                 <ArrowRight className="h-4 w-4" />
@@ -687,9 +691,9 @@ export default function RefinanceJourneyPage() {
                 <div className="rounded-t-lg bg-slate-800 px-4 py-2.5">
                   <span className="text-sm font-bold text-white">Current loan snapshot</span>
                 </div>
-              <div className="rounded-b-lg border-2 border-t-0 border-sky-200/60 bg-gradient-to-br from-sky-50/80 to-blue-50/50 p-5 shadow-sm ring-1 ring-sky-100/50">
+              <div className="rounded-b-lg border-2 border-t-0 border-teal-200/60 bg-gradient-to-br from-teal-50/80 to-blue-50/50 p-5 shadow-sm ring-1 ring-teal-100/50">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 text-sky-600">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/20 text-teal-600">
                     <DollarSign className="h-4 w-4" strokeWidth={2.5} />
                   </span>
                   <h3 className="font-semibold text-gray-900">Summary</h3>
@@ -754,10 +758,10 @@ export default function RefinanceJourneyPage() {
                       onClick={() => toggleGoal(opt.id)}
                       className={`
                         flex items-start gap-4 rounded-xl border-2 p-4 text-left transition
-                        ${selected ? 'border-indigo-400 bg-indigo-50/80 ring-2 ring-indigo-200/50 shadow-sm' : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/30'}
+                        ${selected ? 'border-teal-400 bg-teal-50/80 ring-2 ring-teal-200/50 shadow-sm' : 'border-gray-200 bg-white hover:border-teal-200 hover:bg-teal-50/30'}
                       `}
                     >
-                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${selected ? 'bg-indigo-200/80 text-indigo-700' : 'bg-indigo-100/70 text-indigo-600'}`}>
+                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${selected ? 'bg-teal-200/80 text-teal-700' : 'bg-teal-100/70 text-teal-600'}`}>
                         {opt.icon}
                       </span>
                       <div>
@@ -766,7 +770,7 @@ export default function RefinanceJourneyPage() {
                       </div>
                       <span
                         className={`ml-auto h-6 w-6 shrink-0 rounded-full border-2 flex items-center justify-center ${
-                          selected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300'
+                          selected ? 'border-teal-600 bg-teal-600 text-white' : 'border-gray-300'
                         }`}
                       >
                         {selected && <span className="text-xs">✓</span>}
@@ -792,7 +796,7 @@ export default function RefinanceJourneyPage() {
                 <span className="text-sm font-bold text-white">Personalized rate scenarios</span>
               </div>
               <div className="flex items-center gap-3 mb-1 mt-2">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-600">
                   <BarChart3 className="h-5 w-5" strokeWidth={2} />
                 </span>
                 <h2 className="text-2xl font-bold text-gray-900">Personalized Rate Scenarios</h2>
@@ -805,8 +809,8 @@ export default function RefinanceJourneyPage() {
                 {scenarios.map((sc, idx) => {
                   const accents = [
                     'border-l-4 border-l-emerald-500 bg-emerald-50/40',
-                    'border-l-4 border-l-sky-500 bg-sky-50/40',
-                    'border-l-4 border-l-indigo-500 bg-indigo-50/40',
+                    'border-l-4 border-l-teal-500 bg-teal-50/40',
+                    'border-l-4 border-l-teal-500 bg-teal-50/40',
                   ][idx] ?? 'border-l-4 border-l-slate-400 bg-slate-50/40'
                   return (
                   <div
@@ -874,7 +878,7 @@ export default function RefinanceJourneyPage() {
               className="space-y-4"
             >
               {/* Main section divider - "YOUR POSITION" style */}
-              <div className="w-full rounded-lg bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-2.5 mb-4">
+              <div className="w-full rounded-lg bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-2.5 mb-4">
                 <span className="text-sm font-bold tracking-wider text-white uppercase">Your position</span>
               </div>
               <div className="flex items-center gap-3 mb-1">
@@ -887,7 +891,7 @@ export default function RefinanceJourneyPage() {
                 <div className="rounded-t-lg bg-slate-800 px-5 py-2.5">
                   <span className="text-sm font-bold text-white">Decision snapshot</span>
                 </div>
-                <div className="rounded-2xl rounded-t-none border-2 border-t-0 border-sky-200/50 bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/50 p-5 sm:p-6 shadow-sky-100/30">
+                <div className="rounded-2xl rounded-t-none border-2 border-t-0 border-teal-200/50 bg-gradient-to-br from-teal-50/80 via-white to-teal-50/50 p-5 sm:p-6 shadow-teal-100/30">
                 <div className="relative mb-4 -mx-5 -mt-2 sm:-mx-6 h-32 sm:h-40">
                   <img
                     src="https://images.unsplash.com/photo-1560185127-6a1896b4d133?w=800&q=80"
@@ -1243,7 +1247,7 @@ export default function RefinanceJourneyPage() {
               className="space-y-4"
             >
               {/* Main section divider */}
-              <div className="w-full rounded-lg bg-gradient-to-r from-blue-950 via-indigo-600 to-sky-400 px-4 py-2.5 mb-4">
+              <div className="w-full rounded-lg bg-gradient-to-r from-brand-forest via-millennial-cta-primary to-teal-400 px-4 py-2.5 mb-4">
                 <span className="text-sm font-bold tracking-wider text-white uppercase">Action plan</span>
               </div>
               <div className="flex items-center gap-3 mb-1">

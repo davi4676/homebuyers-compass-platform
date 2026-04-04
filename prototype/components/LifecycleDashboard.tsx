@@ -76,7 +76,7 @@ const LIFECYCLE_STAGES: LifecycleStageData[] = [
     icon: <BarChart3 className="w-6 h-6" />,
     recommendedAction: 'Portfolio optimization',
     link: '/repeat-buyer-suite?phase=portfolio',
-    color: 'from-indigo-600 to-purple-600',
+    color: 'from-millennial-cta-secondary to-purple-600',
   },
 ]
 
@@ -266,7 +266,7 @@ export function LifecycleDashboard({ compact = false, title = 'Mortgage lifecycl
                         href={stage.link}
                         className="px-3 py-1.5 rounded-lg bg-[#06b6d4] hover:bg-[#0891b2] transition-colors text-white text-sm font-semibold flex items-center gap-1"
                       >
-                        Get Started <ArrowRight className="w-3 h-3" />
+                        Find My Savings →
                       </Link>
                     </div>
                   </div>

@@ -13,7 +13,14 @@ export function SavingsOpportunitiesHeadline({
   totalDollars: number
 }) {
   if (count === 0) {
-    return <span className="text-base text-slate-800">Complete the quiz to see personalized opportunities.</span>
+    return (
+      <div className="space-y-2">
+        <span className="text-base text-slate-800">Complete the quiz to see personalized opportunities.</span>
+        <p className="text-[11px] leading-snug text-slate-500">
+          Savings totals on this page are modeled from your inputs—not guarantees from lenders or agencies.
+        </p>
+      </div>
+    )
   }
   const showMoney = totalDollars > 0
   const bigAmount = (
@@ -35,6 +42,10 @@ export function SavingsOpportunitiesHeadline({
           </div>
         ) : null}
         <p className="text-base font-semibold text-slate-700">Here&apos;s your top move.</p>
+        <p className="text-[11px] leading-snug text-slate-500">
+          Estimates use NestQuest rules of thumb from your quiz—confirm dollars and eligibility with lenders and housing
+          programs.
+        </p>
       </div>
     )
   }
@@ -53,6 +64,10 @@ export function SavingsOpportunitiesHeadline({
       ) : null}
       <p className="text-base font-semibold text-slate-700">
         Here are the top {top} of {count} moves.
+      </p>
+      <p className="text-[11px] leading-snug text-slate-500">
+        Estimates use NestQuest rules of thumb from your quiz—confirm dollars and eligibility with lenders and housing
+        programs.
       </p>
     </div>
   )

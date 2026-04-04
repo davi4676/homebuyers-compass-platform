@@ -48,7 +48,7 @@ export function generateFreddieMacJourney(
     {
       id: 'step-1',
       phase: 'preparation',
-      title: 'Get Started: Determine Affordability & Educate Yourself',
+      title: 'Step 1: Determine Affordability & Educate Yourself',
       description: 'Before shopping for a home, determine how much you can afford and educate yourself about the mortgage process.',
       estimatedDays: timeline === '3-months' ? 7 : timeline === '6-months' ? 14 : 21,
       order: 1,
@@ -163,7 +163,7 @@ export function generateFreddieMacJourney(
       ],
       resources: [
         {
-          title: 'Understanding Your Homebuying Team',
+          title: 'Understanding Your home buying Team',
           type: 'guide',
           freddieMacReference: 'Section 2: Complete section on professionals'
         },

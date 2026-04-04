@@ -22,7 +22,7 @@ export type DetailPreference = 'minimal' | 'moderate' | 'high'
 export interface UserProfile {
   /** How the user approaches decisions; influences tone and recommendation style. */
   buyerType: BuyerType
-  /** 0–100; self-reported or inferred confidence in the homebuying process. */
+  /** 0–100; self-reported or inferred confidence in the home buying process. */
   confidenceScore: number
   /** Willingness to take financial/process risk; affects suggested strategies. */
   riskTolerance: RiskTolerance

@@ -26,8 +26,10 @@ import { getCompletedSteps, JOURNEY_STEPS, type JourneyStep } from '@/lib/journe
 import { getAgentTriggerFlags, type AgentTriggerFlags } from '@/lib/agent-triggers'
 import { getUserProgress, getUserTier } from '@/lib/user-tracking'
 import { getStoredJourneyType } from '@/lib/journey-context'
+import { useAuth } from '@/lib/hooks/useAuth'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
-const JOURNEY_TITLE = "Let's Face It: The Homebuying Process Is Very Complicated"
+const JOURNEY_TITLE = "Let's Face It: The home buying Process Is Very Complicated"
 
 const FEATURE_SECTIONS = [
   {
@@ -64,7 +66,7 @@ const FEATURE_SECTIONS = [
     icon: MapPin,
     status: 'partial' as const,
     link: '/map',
-    detail: 'Location/zip in quiz and results; Zillow metro/zip APIs. /map placeholder for map view.',
+    detail: 'Location/zip in quiz and results; Zillow metro/zip APIs. /map for neighborhood walkability view.',
   },
   {
     id: 'push-notifications',
@@ -73,7 +75,7 @@ const FEATURE_SECTIONS = [
     icon: Bell,
     status: 'partial' as const,
     link: null,
-    detail: 'In-app: NotificationSystem (toasts). Browser push: not implemented.',
+    detail: 'In-app: NotificationSystem (toasts). Browser push: not wired in this prototype build.',
   },
   {
     id: 'calendar',
@@ -82,7 +84,7 @@ const FEATURE_SECTIONS = [
     icon: Calendar,
     status: 'implemented' as const,
     link: '/calendar',
-    detail: 'Timeline in journey/action-plan; /calendar placeholder for scheduling.',
+    detail: 'Timeline in journey/action-plan; /calendar for milestone month and Gantt views.',
   },
   {
     id: 'ratings-reviews',
@@ -91,7 +93,7 @@ const FEATURE_SECTIONS = [
     icon: Star,
     status: 'implemented' as const,
     link: '/ratings',
-    detail: 'Marketplace and professional pages; /ratings placeholder for reviews.',
+    detail: 'Marketplace (coming soon page) and professional pages; /ratings for experience feedback.',
   },
   {
     id: 'in-app-analytics',
@@ -106,9 +108,9 @@ const FEATURE_SECTIONS = [
 
 function StatusBadge({ status }: { status: 'implemented' | 'partial' | 'not-implemented' }) {
   const config = {
-    implemented: { label: 'Implemented', color: 'bg-green-500/20 text-green-400 border-green-500/50', Icon: CheckCircle },
-    partial: { label: 'Partial', color: 'bg-amber-500/20 text-amber-400 border-amber-500/50', Icon: AlertCircle },
-    'not-implemented': { label: 'Not implemented', color: 'bg-gray-500/20 text-gray-400 border-gray-500/50', Icon: AlertCircle },
+    implemented: { label: 'Implemented', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', Icon: CheckCircle },
+    partial: { label: 'Partial', color: 'bg-amber-100 text-amber-900 border-amber-200', Icon: AlertCircle },
+    'not-implemented': { label: 'Not implemented', color: 'bg-slate-100 text-slate-600 border-slate-200', Icon: AlertCircle },
   }
   const { label, color, Icon } = config[status]
   return (
@@ -157,12 +159,12 @@ function UserAnalyticsSection() {
   const stats = useUserStats()
   if (!stats) {
     return (
-      <div className="rounded-xl border border-gray-600 bg-gray-800 p-6">
-        <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-          <Users className="w-5 h-5 text-[#06b6d4]" />
+      <div className="rounded-xl border border-[#e7e5e4] bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-[#1c1917] mb-2 flex items-center gap-2">
+          <Users className="w-5 h-5 text-[#0d9488]" />
           User Analytics Dashboard
         </h2>
-        <p className="text-sm text-gray-400">Loading user statistics…</p>
+        <p className="text-sm text-[#57534e]">Loading user statistics…</p>
       </div>
     )
   }
@@ -177,75 +179,75 @@ function UserAnalyticsSection() {
   ].filter(Boolean).length
 
   return (
-    <div className="rounded-xl border border-gray-600 bg-gray-800 p-6 space-y-6">
-      <h2 className="text-lg font-bold text-white flex items-center gap-2">
-        <Users className="w-5 h-5 text-[#06b6d4]" />
+    <div className="rounded-xl border border-[#e7e5e4] bg-white p-6 space-y-6 shadow-sm">
+      <h2 className="text-lg font-bold text-[#1c1917] flex items-center gap-2">
+        <Users className="w-5 h-5 text-[#0d9488]" />
         User Analytics Dashboard
       </h2>
-      <p className="text-sm text-gray-400">
+      <p className="text-sm text-[#57534e]">
         Standard view of user statistics for this browser (from localStorage). App creator view only.
       </p>
 
       {/* Overview cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="rounded-lg border border-gray-600 bg-gray-800/50 p-4">
-          <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-wide mb-1">
+        <div className="rounded-lg border border-[#e7e5e4] bg-[#fafaf9] p-4">
+          <div className="flex items-center gap-2 text-[#57534e] text-xs uppercase tracking-wide mb-1">
             <Target className="w-3.5 h-3.5" />
             Buyer type
           </div>
-          <div className="text-white font-semibold capitalize">{profile.buyerType}</div>
+          <div className="text-[#1c1917] font-semibold capitalize">{profile.buyerType}</div>
         </div>
-        <div className="rounded-lg border border-gray-600 bg-gray-800/50 p-4">
-          <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-wide mb-1">
+        <div className="rounded-lg border border-[#e7e5e4] bg-[#fafaf9] p-4">
+          <div className="flex items-center gap-2 text-[#57534e] text-xs uppercase tracking-wide mb-1">
             <TrendingUp className="w-3.5 h-3.5" />
             Confidence
           </div>
-          <div className="text-white font-semibold">{profile.confidenceScore}</div>
+          <div className="text-[#1c1917] font-semibold">{profile.confidenceScore}</div>
         </div>
-        <div className="rounded-lg border border-gray-600 bg-gray-800/50 p-4">
-          <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-wide mb-1">
+        <div className="rounded-lg border border-[#e7e5e4] bg-[#fafaf9] p-4">
+          <div className="flex items-center gap-2 text-[#57534e] text-xs uppercase tracking-wide mb-1">
             <Activity className="w-3.5 h-3.5" />
             Steps done
           </div>
-          <div className="text-white font-semibold">{stepsComplete} / {stepsTotal}</div>
+          <div className="text-[#1c1917] font-semibold">{stepsComplete} / {stepsTotal}</div>
         </div>
-        <div className="rounded-lg border border-gray-600 bg-gray-800/50 p-4">
-          <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-wide mb-1">
+        <div className="rounded-lg border border-[#e7e5e4] bg-[#fafaf9] p-4">
+          <div className="flex items-center gap-2 text-[#57534e] text-xs uppercase tracking-wide mb-1">
             <Zap className="w-3.5 h-3.5" />
             Tier
           </div>
-          <div className="text-white font-semibold capitalize">{tier}</div>
+          <div className="text-[#1c1917] font-semibold capitalize">{tier}</div>
         </div>
-        <div className="rounded-lg border border-gray-600 bg-gray-800/50 p-4">
-          <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-wide mb-1">
+        <div className="rounded-lg border border-[#e7e5e4] bg-[#fafaf9] p-4">
+          <div className="flex items-center gap-2 text-[#57534e] text-xs uppercase tracking-wide mb-1">
             <Flag className="w-3.5 h-3.5" />
             Agent triggers
           </div>
-          <div className="text-white font-semibold">{agentFlagsCount}</div>
+          <div className="text-[#1c1917] font-semibold">{agentFlagsCount}</div>
         </div>
       </div>
 
       {/* User profile breakdown */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">User profile</h3>
+        <h3 className="text-sm font-semibold text-[#78716c] uppercase tracking-wide mb-2">User profile</h3>
         <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
-          <dt className="text-gray-500">Buyer type</dt>
-          <dd className="text-white capitalize">{profile.buyerType}</dd>
-          <dt className="text-gray-500">Risk tolerance</dt>
-          <dd className="text-white capitalize">{profile.riskTolerance}</dd>
-          <dt className="text-gray-500">Time horizon</dt>
-          <dd className="text-white capitalize">{profile.timeHorizon}</dd>
-          <dt className="text-gray-500">Detail preference</dt>
-          <dd className="text-white capitalize">{profile.detailPreference}</dd>
+          <dt className="text-[#78716c]">Buyer type</dt>
+          <dd className="text-[#1c1917] capitalize">{profile.buyerType}</dd>
+          <dt className="text-[#78716c]">Risk tolerance</dt>
+          <dd className="text-[#1c1917] capitalize">{profile.riskTolerance}</dd>
+          <dt className="text-[#78716c]">Time horizon</dt>
+          <dd className="text-[#1c1917] capitalize">{profile.timeHorizon}</dd>
+          <dt className="text-[#78716c]">Detail preference</dt>
+          <dd className="text-[#1c1917] capitalize">{profile.detailPreference}</dd>
         </dl>
         {storedJourneyType && (
-          <p className="text-xs text-gray-500 mt-2">Stored journey type (quiz): {storedJourneyType}</p>
+          <p className="text-xs text-[#78716c] mt-2">Stored journey type (quiz): {storedJourneyType}</p>
         )}
       </div>
 
       {/* Journey funnel */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">Journey funnel</h3>
+        <h3 className="text-sm font-semibold text-[#78716c] uppercase tracking-wide mb-2">Journey funnel</h3>
         <div className="flex flex-wrap gap-2">
           {JOURNEY_STEPS.map((step) => {
             const done = completedSteps.includes(step)
@@ -253,7 +255,7 @@ function UserAnalyticsSection() {
               <div
                 key={step}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm capitalize ${
-                  done ? 'border-green-500/50 bg-green-500/10 text-green-400' : 'border-gray-600 bg-gray-800/50 text-gray-400'
+                  done ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-[#e7e5e4] bg-[#fafaf9] text-[#57534e]'
                 }`}
               >
                 {done ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0 opacity-50" />}
@@ -266,18 +268,18 @@ function UserAnalyticsSection() {
 
       {/* Agent triggers */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">Agent trigger flags</h3>
+        <h3 className="text-sm font-semibold text-[#78716c] uppercase tracking-wide mb-2">Agent trigger flags</h3>
         <ul className="space-y-1 text-sm">
-          <li className={agentFlags.confidencePlateau ? 'text-amber-400' : 'text-gray-500'}>
+          <li className={agentFlags.confidencePlateau ? 'text-amber-800' : 'text-[#78716c]'}>
             Confidence plateau: {agentFlags.confidencePlateau ? 'Yes' : 'No'}
           </li>
-          <li className={agentFlags.firstStretchRisk ? 'text-amber-400' : 'text-gray-500'}>
+          <li className={agentFlags.firstStretchRisk ? 'text-amber-800' : 'text-[#78716c]'}>
             First stretch/risk: {agentFlags.firstStretchRisk ? 'Yes' : 'No'}
           </li>
-          <li className={agentFlags.repeatedHesitation ? 'text-amber-400' : 'text-gray-500'}>
+          <li className={agentFlags.repeatedHesitation ? 'text-amber-800' : 'text-[#78716c]'}>
             Repeated hesitation: {agentFlags.repeatedHesitation ? 'Yes' : 'No'}
           </li>
-          <li className={agentFlags.explicitHelpTap ? 'text-amber-400' : 'text-gray-500'}>
+          <li className={agentFlags.explicitHelpTap ? 'text-amber-800' : 'text-[#78716c]'}>
             Explicit help tap: {agentFlags.explicitHelpTap ? 'Yes' : 'No'}
           </li>
         </ul>
@@ -286,16 +288,16 @@ function UserAnalyticsSection() {
       {/* Progress (gamification) */}
       {progress && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">Progress</h3>
+          <h3 className="text-sm font-semibold text-[#78716c] uppercase tracking-wide mb-2">Progress</h3>
           <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
-            <dt className="text-gray-500">Level</dt>
-            <dd className="text-white">{progress.level}</dd>
-            <dt className="text-gray-500">XP</dt>
-            <dd className="text-white">{progress.xp}</dd>
-            <dt className="text-gray-500">Current streak</dt>
-            <dd className="text-white">{progress.streak} days</dd>
-            <dt className="text-gray-500">Badges</dt>
-            <dd className="text-white">{progress.badgesCount}</dd>
+            <dt className="text-[#78716c]">Level</dt>
+            <dd className="text-[#1c1917]">{progress.level}</dd>
+            <dt className="text-[#78716c]">XP</dt>
+            <dd className="text-[#1c1917]">{progress.xp}</dd>
+            <dt className="text-[#78716c]">Current streak</dt>
+            <dd className="text-[#1c1917]">{progress.streak} days</dd>
+            <dt className="text-[#78716c]">Badges</dt>
+            <dd className="text-[#1c1917]">{progress.badgesCount}</dd>
           </dl>
         </div>
       )}
@@ -304,17 +306,51 @@ function UserAnalyticsSection() {
 }
 
 export default function AnalyticsDashboardPage() {
+  const { isAuthenticated, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="app-page-shell flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#e7e5e4] border-t-[#0d9488]" />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="app-page-shell flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <BarChart3 className="w-14 h-14 text-[#a8a29e] mx-auto mb-4" />
+          <h1 className="font-display text-2xl font-bold text-[#1c1917] mb-2">Not authorized</h1>
+          <p className="text-[#57534e] mb-6">
+            This dashboard is only available to authenticated users. Please sign in to continue.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#0d9488] text-white rounded-xl font-semibold hover:bg-[#0f766e] transition-colors"
+          >
+            Sign in
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <p className="mt-4 text-sm text-[#78716c]">
+            <Link href="/" className="text-[#57534e] hover:text-[#1c1917] transition-colors">← Back to home</Link>
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
-      <header className="sticky top-0 z-10 border-b border-gray-700 bg-gray-900/95 backdrop-blur">
+    <div className="app-page-shell">
+      <header className="sticky top-0 z-10 border-b border-[#e7e5e4] bg-[#fafaf9]/95 backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <BarChart3 className="w-8 h-8 text-[#06b6d4]" />
-            <h1 className="text-xl font-bold">Analytics Dashboard</h1>
+            <BarChart3 className="w-8 h-8 text-[#0d9488]" />
+            <h1 className="font-display text-xl font-bold text-[#1c1917]">Analytics Dashboard</h1>
           </div>
           <Link
             href="/"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
+            className="text-sm text-[#57534e] hover:text-[#1c1917] transition-colors"
           >
             ← Back to app
           </Link>
@@ -322,7 +358,10 @@ export default function AnalyticsDashboardPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <p className="text-gray-400 mb-8">
+        <div className="mb-6">
+          <BackToMyJourneyLink />
+        </div>
+        <p className="text-[#57534e] mb-8">
           App creator view: feature status and links for registration, user profiles, databases, mapping, push notifications, calendar, ratings and reviews, and in-app analytics.
         </p>
 
@@ -336,21 +375,21 @@ export default function AnalyticsDashboardPage() {
             return (
               <div
                 key={section.id}
-                className="rounded-xl border border-gray-600 bg-gray-800 p-6 hover:border-gray-500 transition-colors"
+                className="rounded-xl border border-[#e7e5e4] bg-white p-6 shadow-sm hover:border-[#0d9488]/30 transition-colors"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="rounded-lg bg-[#06b6d4]/20 p-3">
-                      <Icon className="w-6 h-6 text-[#06b6d4]" />
+                    <div className="rounded-lg bg-[#0d9488]/10 p-3">
+                      <Icon className="w-6 h-6 text-[#0d9488]" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-white mb-1">
+                      <h2 className="text-lg font-bold text-[#1c1917] mb-1">
                         {section.title}
                       </h2>
-                      <p className="text-sm text-gray-400 mb-2">
+                      <p className="text-sm text-[#57534e] mb-2">
                         {section.description}
                       </p>
-                      <p className="text-xs text-gray-500 max-w-2xl">
+                      <p className="text-xs text-[#78716c] max-w-2xl">
                         {section.detail}
                       </p>
                     </div>
@@ -360,7 +399,7 @@ export default function AnalyticsDashboardPage() {
                     {section.link && (
                       <Link
                         href={section.link}
-                        className="inline-flex items-center gap-1 text-sm text-[#06b6d4] hover:underline"
+                        className="inline-flex items-center gap-1 text-sm text-[#0d9488] hover:underline font-medium"
                       >
                         Open
                         <ArrowRight className="w-4 h-4" />
@@ -373,18 +412,18 @@ export default function AnalyticsDashboardPage() {
           })}
         </div>
 
-        <div className="mt-12 p-6 rounded-xl border border-gray-600 bg-gray-800">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">
+        <div className="mt-12 p-6 rounded-xl border border-[#e7e5e4] bg-white shadow-sm">
+          <h3 className="text-sm font-semibold text-[#78716c] uppercase tracking-wide mb-2">
             Quick links (app creator)
           </h3>
           <div className="flex flex-wrap gap-4">
-            <Link href="/register" className="text-[#06b6d4] hover:underline text-sm">Registration</Link>
-            <Link href="/profile" className="text-[#06b6d4] hover:underline text-sm">User Profile</Link>
-            <Link href="/map" className="text-[#06b6d4] hover:underline text-sm">Mapping</Link>
-            <Link href="/calendar" className="text-[#06b6d4] hover:underline text-sm">Calendar</Link>
-            <Link href="/ratings" className="text-[#06b6d4] hover:underline text-sm">Ratings & Reviews</Link>
-            <Link href="/customized-journey" className="text-[#06b6d4] hover:underline text-sm">Journey</Link>
-            <Link href="/admin/rollout-monitor" className="text-[#06b6d4] hover:underline text-sm">Rollout Monitor</Link>
+            <Link href="/register" className="text-[#0d9488] hover:underline text-sm font-medium">Registration</Link>
+            <Link href="/profile" className="text-[#0d9488] hover:underline text-sm font-medium">User Profile</Link>
+            <Link href="/map" className="text-[#0d9488] hover:underline text-sm font-medium">Mapping</Link>
+            <Link href="/calendar" className="text-[#0d9488] hover:underline text-sm font-medium">Calendar</Link>
+            <Link href="/ratings" className="text-[#0d9488] hover:underline text-sm font-medium">Ratings & Reviews</Link>
+            <Link href="/customized-journey" className="text-[#0d9488] hover:underline text-sm font-medium">Journey</Link>
+            <Link href="/admin/rollout-monitor" className="text-[#0d9488] hover:underline text-sm font-medium">Rollout Monitor</Link>
           </div>
         </div>
       </main>

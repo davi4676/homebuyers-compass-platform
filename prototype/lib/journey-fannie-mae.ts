@@ -1,6 +1,6 @@
 /**
  * Journey System - 7 Steps to Homeownership
- * Based on industry-standard homebuying process
+ * Based on industry-standard home buying process
  */
 
 export interface FannieMaeJourneyStep {
@@ -123,7 +123,7 @@ export function generateFannieMaeJourney(
       stepNumber: 2,
       title: 'Save for homeownership',
       shortTitle: 'Save for homeownership',
-      description: 'Saving is essential to pay for required homebuying costs. In addition to a down payment, there are closing costs, other fees, and unexpected expenses to keep in mind.',
+      description: 'Saving is essential to pay for required home buying costs. In addition to a down payment, there are closing costs, other fees, and unexpected expenses to keep in mind.',
       estimatedDays: timeline === '3-months' ? 14 : timeline === '6-months' ? 30 : 60,
       xpReward: 400,
       badgeUnlock: 'savings-champion',

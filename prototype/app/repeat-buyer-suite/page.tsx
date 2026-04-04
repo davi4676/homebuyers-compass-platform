@@ -28,6 +28,7 @@ import MoveUpOptimizer from '@/components/repeat-buyer/MoveUpOptimizer'
 import PortfolioMortgageManager from '@/components/repeat-buyer/PortfolioMortgageManager'
 import { ProgressDashboard } from '@/components/ProgressDashboard'
 import { LifecycleDashboard } from '@/components/LifecycleDashboard'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 type Phase = 'overview' | 'progress' | 'lifecycle' | 'equity' | 'simultaneous' | 'move-up' | 'portfolio'
 
@@ -113,20 +114,21 @@ export default function RepeatBuyerSuitePage() {
   const availableEquity = equityData.currentHomeValue - equityData.mortgageBalance
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#1a1a1a] to-[#0a0a0a] text-white">
+    <div className="app-page-shell">
       {/* Header */}
-      <header className="border-b border-gray-800 sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="border-b border-[#e7e5e4] sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <BackToMyJourneyLink className="mb-2" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#22d3ee]">
-                🏠 NestQuest
-              </span>
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-[#1a6b3c]">
+              🏠 NestQuest
             </Link>
             <div className="flex items-center gap-4">
               <Link
                 href="/results"
-                className="text-gray-400 hover:text-white transition-colors text-sm"
+                className="text-[#57534e] hover:text-[#1c1917] transition-colors text-sm"
               >
                 Back to Results
               </Link>
@@ -151,19 +153,19 @@ export default function RepeatBuyerSuitePage() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#06b6d4]/20 to-[#22d3ee]/20 border border-[#06b6d4]/30"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a6b3c]/10 border border-[#1a6b3c]/20"
                 >
-                  <Sparkles className="w-4 h-4 text-[#06b6d4]" />
-                  <span className="text-sm font-medium">Repeat/Upgrade Buyer Suite</span>
+                  <Sparkles className="w-4 h-4 text-[#1a6b3c]" />
+                  <span className="text-sm font-medium text-[#1a6b3c]">Repeat/Upgrade Buyer Suite</span>
                 </motion.div>
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1c1917]">
                   Leverage Your{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#22d3ee]">
+                  <span className="text-[#1a6b3c]">
                     {formatCurrency(availableEquity)}
                   </span>{' '}
                   in Equity
                 </h1>
-                <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                <p className="text-lg text-[#57534e] max-w-2xl mx-auto">
                   Experienced buyers need different tools. Optimize your equity, coordinate
                   simultaneous transactions, and make smarter upgrade decisions.
                 </p>
@@ -171,45 +173,45 @@ export default function RepeatBuyerSuitePage() {
 
               {/* Quick Equity Overview */}
               <div className="grid md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 rounded-xl border border-[#06b6d4]/30 p-6">
-                  <div className="text-sm text-gray-400 mb-2">Current Home Value</div>
-                  <div className="text-3xl font-bold text-[#06b6d4]">
+                <div className="bg-white rounded-xl border border-[#e7e5e4] shadow-sm p-6">
+                  <div className="text-sm text-[#57534e] mb-2">Current Home Value</div>
+                  <div className="text-3xl font-bold text-[#1a6b3c]">
                     {formatCurrency(equityData.currentHomeValue)}
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 rounded-xl border border-[#06b6d4]/30 p-6">
-                  <div className="text-sm text-gray-400 mb-2">Mortgage Balance</div>
-                  <div className="text-3xl font-bold text-gray-300">
+                <div className="bg-white rounded-xl border border-[#e7e5e4] shadow-sm p-6">
+                  <div className="text-sm text-[#57534e] mb-2">Mortgage Balance</div>
+                  <div className="text-3xl font-bold text-[#57534e]">
                     {formatCurrency(equityData.mortgageBalance)}
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#06b6d4]/20 to-[#22d3ee]/20 rounded-xl border border-[#06b6d4]/30 p-6">
-                  <div className="text-sm text-gray-400 mb-2">Available Equity</div>
-                  <div className="text-3xl font-bold text-white">
+                <div className="bg-[#1a6b3c]/5 rounded-xl border border-[#1a6b3c]/20 shadow-sm p-6">
+                  <div className="text-sm text-[#57534e] mb-2">Available Equity</div>
+                  <div className="text-3xl font-bold text-[#1a6b3c]">
                     {formatCurrency(availableEquity)}
                   </div>
                 </div>
               </div>
 
-              {/* Personalized journey tabs: My progress + Mortgage lifecycle */}
+              {/* Personalized journey tabs */}
               <div className="mt-8">
-                <h2 className="text-xl font-bold mb-4 text-gray-200">Personalized journey</h2>
+                <h2 className="text-xl font-bold mb-4 text-[#1c1917]">Personalized journey</h2>
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="p-6 rounded-xl border-2 border-[#06b6d4]/30 bg-gradient-to-br from-gray-900/50 to-gray-800/30 hover:border-[#06b6d4]/50 cursor-pointer"
+                    className="p-6 rounded-xl border-2 border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer transition-all"
                     onClick={() => setCurrentPhase('progress')}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-[#06b6d4]/20">
-                        <Target className="w-6 h-6 text-[#06b6d4]" />
+                      <div className="p-3 rounded-lg bg-[#1a6b3c]/10">
+                        <Target className="w-6 h-6 text-[#1a6b3c]" />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-bold">My progress</h3>
-                        <p className="text-gray-400 text-sm">Level, badges, streak & savings</p>
-                        <div className="mt-4 flex items-center gap-2 text-[#06b6d4] text-sm font-medium">
+                        <h3 className="text-xl font-bold text-[#1c1917]">My progress</h3>
+                        <p className="text-[#57534e] text-sm">Level, badges, streak & savings</p>
+                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
                           View progress <ArrowRight className="w-4 h-4" />
                         </div>
                       </div>
@@ -219,17 +221,17 @@ export default function RepeatBuyerSuitePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
-                    className="p-6 rounded-xl border-2 border-[#06b6d4]/30 bg-gradient-to-br from-gray-900/50 to-gray-800/30 hover:border-[#06b6d4]/50 cursor-pointer"
+                    className="p-6 rounded-xl border-2 border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer transition-all"
                     onClick={() => setCurrentPhase('lifecycle')}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-[#06b6d4]/20">
-                        <BarChart3 className="w-6 h-6 text-[#06b6d4]" />
+                      <div className="p-3 rounded-lg bg-[#1a6b3c]/10">
+                        <BarChart3 className="w-6 h-6 text-[#1a6b3c]" />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-bold">Mortgage lifecycle</h3>
-                        <p className="text-gray-400 text-sm">Health score & homeownership journey</p>
-                        <div className="mt-4 flex items-center gap-2 text-[#06b6d4] text-sm font-medium">
+                        <h3 className="text-xl font-bold text-[#1c1917]">Mortgage lifecycle</h3>
+                        <p className="text-[#57534e] text-sm">Health score & homeownership journey</p>
+                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
                           View lifecycle <ArrowRight className="w-4 h-4" />
                         </div>
                       </div>
@@ -239,7 +241,7 @@ export default function RepeatBuyerSuitePage() {
               </div>
 
               {/* Repeat buyer tools */}
-              <h2 className="text-xl font-bold mb-4 text-gray-200">Repeat buyer tools</h2>
+              <h2 className="text-xl font-bold mb-4 text-[#1c1917]">Repeat buyer tools</h2>
               <div className="grid md:grid-cols-2 gap-6 mt-4">
                 {PHASES.map((phase, index) => {
                   const isLocked = !canAccessPhase(phase)
@@ -253,46 +255,42 @@ export default function RepeatBuyerSuitePage() {
                       transition={{ delay: 0.2 + index * 0.1 }}
                       className={`relative p-6 rounded-xl border-2 transition-all ${
                         isLocked
-                          ? 'border-gray-800 bg-gray-900/50 opacity-60'
-                          : 'border-[#06b6d4]/30 bg-gradient-to-br from-gray-900/50 to-gray-800/30 hover:border-[#06b6d4]/50 cursor-pointer'
+                          ? 'border-[#e7e5e4] bg-[#f5f5f4] opacity-60'
+                          : 'border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer'
                       }`}
                       onClick={() => {
-                        if (!isLocked) {
-                          setCurrentPhase(phase.id)
-                        }
+                        if (!isLocked) setCurrentPhase(phase.id)
                       }}
                     >
                       {isLocked && (
                         <div className="absolute top-4 right-4">
-                          <Lock className="w-5 h-5 text-gray-600" />
+                          <Lock className="w-5 h-5 text-[#a8a29e]" />
                         </div>
                       )}
 
                       <div className="flex items-start gap-4">
-                        <div
-                          className={`p-3 rounded-lg ${
-                            isLocked ? 'bg-gray-800' : 'bg-[#06b6d4]/20'
-                          }`}
-                        >
-                          {phase.icon}
+                        <div className={`p-3 rounded-lg ${isLocked ? 'bg-[#f5f5f4]' : 'bg-[#1a6b3c]/10'}`}>
+                          <span className={isLocked ? 'text-[#a8a29e]' : 'text-[#1a6b3c]'}>
+                            {phase.icon}
+                          </span>
                         </div>
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold">{phase.title}</h3>
+                            <h3 className="text-xl font-bold text-[#1c1917]">{phase.title}</h3>
                             {phase.tierRequired && (
                               <span
                                 className={`text-xs px-2 py-1 rounded-full ${
                                   isLocked
-                                    ? 'bg-gray-800 text-gray-500'
-                                    : 'bg-[#06b6d4]/20 text-[#06b6d4]'
+                                    ? 'bg-[#f5f5f4] text-[#a8a29e]'
+                                    : 'bg-[#1a6b3c]/10 text-[#1a6b3c]'
                                 }`}
                               >
-                                {phase.tierRequired === 'momentum' ? 'Guided' : 'Concierge'}
+                                {TIER_DEFINITIONS[phase.tierRequired]?.name ?? phase.tierRequired}
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-400 text-sm">{phase.description}</p>
-                          <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <p className="text-[#57534e] text-sm">{phase.description}</p>
+                          <div className="flex items-center gap-1 text-sm text-[#a8a29e]">
                             <DollarSign className="w-4 h-4" />
                             {phase.savingsPotential}
                           </div>
@@ -300,23 +298,23 @@ export default function RepeatBuyerSuitePage() {
                       </div>
 
                       {isLocked && nextTier && (
-                        <div className="mt-4 pt-4 border-t border-gray-800">
+                        <div className="mt-4 pt-4 border-t border-[#e7e5e4]">
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
                               handleUpgrade(nextTier)
                             }}
-                            className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                            className="w-full py-2 px-4 rounded-lg bg-[#1a6b3c] hover:bg-[#155c33] text-white font-semibold transition-colors flex items-center justify-center gap-2"
                           >
-                            Upgrade to {nextTier === 'momentum' ? 'Guided' : 'Concierge'} to Unlock
+                            Upgrade to {TIER_DEFINITIONS[nextTier]?.name ?? nextTier} to Unlock
                             <ArrowRight className="w-4 h-4" />
                           </button>
                         </div>
                       )}
 
                       {!isLocked && (
-                        <div className="mt-4 flex items-center gap-2 text-[#06b6d4] text-sm font-medium">
-                          Get Started <ArrowRight className="w-4 h-4" />
+                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
+                          Find My Savings →
                         </div>
                       )}
                     </motion.div>
@@ -329,21 +327,30 @@ export default function RepeatBuyerSuitePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="mt-12 p-6 rounded-xl bg-gradient-to-r from-[#06b6d4]/10 to-[#22d3ee]/10 border border-[#06b6d4]/20"
+                className="mt-12 p-6 rounded-xl bg-[#1a6b3c]/5 border border-[#1a6b3c]/20"
               >
-                <h2 className="text-2xl font-bold mb-4">Why Repeat Buyers Choose Us</h2>
+                <h2 className="text-2xl font-bold mb-4 text-[#1c1917]">Why Repeat Buyers Choose Us</h2>
                 <div className="grid md:grid-cols-3 gap-6">
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">68%</div>
-                    <div className="text-sm text-gray-400">Faster transaction time</div>
+                    <div className="text-3xl font-bold text-[#1a6b3c]">
+                      68%
+                      <sup className="ml-0.5 text-sm font-semibold text-[#78716c]">²</sup>
+                    </div>
+                    <div className="text-sm text-[#57534e]">Faster transaction time</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">$42,000</div>
-                    <div className="text-sm text-gray-400">Average savings on upgrades</div>
+                    <div className="text-3xl font-bold text-[#1a6b3c]">
+                      $42,000
+                      <sup className="ml-0.5 text-sm font-semibold text-[#78716c]">²</sup>
+                    </div>
+                    <div className="text-sm text-[#57534e]">Average savings on upgrades</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-[#06b6d4]">92%</div>
-                    <div className="text-sm text-gray-400">Success rate on simultaneous closes</div>
+                    <div className="text-3xl font-bold text-[#1a6b3c]">
+                      92%
+                      <sup className="ml-0.5 text-sm font-semibold text-[#78716c]">¹</sup>
+                    </div>
+                    <div className="text-sm text-[#57534e]">Success rate on simultaneous closes</div>
                   </div>
                 </div>
               </motion.div>
@@ -361,12 +368,12 @@ export default function RepeatBuyerSuitePage() {
             >
               <button
                 onClick={() => setCurrentPhase('overview')}
-                className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-[#57534e] hover:text-[#1c1917] transition-colors"
               >
                 <ArrowLeft size={18} />
                 Back to Repeat Buyer Suite
               </button>
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+              <div className="rounded-xl border border-[#e7e5e4] bg-white shadow-sm p-6">
                 <ProgressDashboard compact title="My progress" />
               </div>
             </motion.div>
@@ -382,12 +389,12 @@ export default function RepeatBuyerSuitePage() {
             >
               <button
                 onClick={() => setCurrentPhase('overview')}
-                className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-[#57534e] hover:text-[#1c1917] transition-colors"
               >
                 <ArrowLeft size={18} />
                 Back to Repeat Buyer Suite
               </button>
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+              <div className="rounded-xl border border-[#e7e5e4] bg-white shadow-sm p-6">
                 <LifecycleDashboard compact title="Mortgage lifecycle" />
               </div>
             </motion.div>
@@ -429,6 +436,23 @@ export default function RepeatBuyerSuitePage() {
             />
           )}
         </AnimatePresence>
+
+        <section
+          className="mt-8 border-t border-[#e7e5e4] pt-4 text-xs text-[#a8a29e] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          aria-label="Sources and methodology"
+        >
+          <h2 className="mb-2 font-semibold text-[#78716c]">Sources &amp; Methodology</h2>
+          <ul className="space-y-2">
+            <li>
+              <sup className="mr-1">¹</sup>
+              Based on NAR 2024 Profile of Home Buyers and Sellers — simultaneous transaction data
+            </li>
+            <li>
+              <sup className="mr-1">²</sup>
+              NestQuest internal analysis of 2023–2024 user outcomes; n=847 completed transactions
+            </li>
+          </ul>
+        </section>
       </main>
     </div>
   )

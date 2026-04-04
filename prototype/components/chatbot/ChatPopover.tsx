@@ -14,7 +14,7 @@ const OPENING_GREETING = {
   id: 'welcome',
   role: 'assistant' as const,
   content:
-    "Hi! I'm NQ, your homebuying guide. Have a question about this phase or anything else? Ask away!",
+    "Hi! I'm NQ, your home buying guide. Have a question about this phase or anything else? Ask away!",
   timestamp: new Date(),
 }
 
@@ -143,9 +143,9 @@ export function ChatPopover({ isOpen, onClose, triggerRef, extraTriggerRefs, cla
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -8, scale: 0.98 }}
           transition={{ duration: 0.2 }}
-          className={`h-[min(420px,70vh)] w-[min(380px,calc(100vw-2rem))] max-sm:!w-auto max-sm:!max-w-[calc(100vw-2rem)] bg-white border-2 border-sky-200/80 rounded-2xl shadow-xl flex flex-col overflow-hidden overscroll-contain ${className}`}
+          className={`h-[min(420px,70vh)] w-[min(380px,calc(100vw-2rem))] max-sm:!w-auto max-sm:!max-w-[calc(100vw-2rem)] bg-white border-2 border-teal-200/80 rounded-2xl shadow-xl flex flex-col overflow-hidden overscroll-contain ${className}`}
         >
-          <div className="bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-3 flex items-center justify-between shrink-0">
+          <div className="bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-4 py-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
                 <Bot className="w-5 h-5 text-white" />
@@ -166,11 +166,11 @@ export function ChatPopover({ isOpen, onClose, triggerRef, extraTriggerRefs, cla
 
           <div
             ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto overflow-x-hidden bg-sky-50/50 p-4 space-y-4 min-h-0 overscroll-contain"
+            className="flex-1 overflow-y-auto overflow-x-hidden bg-teal-50/50 p-4 space-y-4 min-h-0 overscroll-contain"
           >
             {!isAuthenticated && !authLoading ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-4 -mt-6">
-                <Bot className="w-10 h-10 text-sky-600 mb-3" />
+                <Bot className="w-10 h-10 text-teal-600 mb-3" />
                 <h3 className="font-semibold text-slate-800 mb-2 text-base">Log in to chat with NQ</h3>
                 <p className="text-sm text-slate-600 mb-4 max-w-[220px]">
                   Get personalized answers about pre-approval, mortgages, offers, and more.
@@ -184,14 +184,14 @@ export function ChatPopover({ isOpen, onClose, triggerRef, extraTriggerRefs, cla
                 <Link
                   href="/inbox"
                   onClick={onClose}
-                  className="mt-2 text-sm text-sky-600 font-medium hover:underline"
+                  className="mt-2 text-sm text-teal-600 font-medium hover:underline"
                 >
                   Or open full Inbox
                 </Link>
               </div>
             ) : authLoading ? (
               <div className="flex items-center justify-center h-full">
-                <div className="w-7 h-7 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-7 h-7 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
               <>

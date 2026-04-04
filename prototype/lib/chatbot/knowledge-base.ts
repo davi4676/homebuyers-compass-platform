@@ -111,7 +111,7 @@ const CHUNKS: KnowledgeChunk[] = [
   {
     id: 'kb-15',
     source: 'Journey Overview',
-    text: 'Homebuying journey steps: Preparation and Planning 2-4 weeks, Pre-Approval 1-3 days, House Hunting 2-12 weeks, Make an Offer 1-3 days, Inspection 1-2 weeks, Appraisal 1-2 weeks, Underwriting 2-4 weeks, Closing 1 day. Preparation: check credit, gather documents. Pre-approval: shop at least 3 lenders within 14 days. House hunting: define must-haves and walk-away budget. Never waive inspection. Include financing and inspection contingencies.',
+    text: 'home buying journey steps: Preparation and Planning 2-4 weeks, Pre-Approval 1-3 days, House Hunting 2-12 weeks, Make an Offer 1-3 days, Inspection 1-2 weeks, Appraisal 1-2 weeks, Underwriting 2-4 weeks, Closing 1 day. Preparation: check credit, gather documents. Pre-approval: shop at least 3 lenders within 14 days. House hunting: define must-haves and walk-away budget. Never waive inspection. Include financing and inspection contingencies.',
     keywords: ['journey', 'steps', 'overview', 'preparation', 'pre-approval', 'closing'],
   },
 ]

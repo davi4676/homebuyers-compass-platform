@@ -1,16 +1,35 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Info, Loader2, Home, TrendingUp, RefreshCw } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Info, Loader2, Home, TrendingUp, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth, saveQuizResults } from '@/lib/hooks/useAuth'
 import { trackActivity } from '@/lib/track-activity'
-import { formatCurrency, calculateDTI, getCityData, getZipCodeData, getCityDataWithZillow, getZipCodeDataWithZillow, type CreditScoreRange, type Timeline, type AgentStatus, type Concern } from '@/lib/calculations'
+import {
+  formatCurrency,
+  calculateDTI,
+  getCityData,
+  getZipCodeData,
+  getCityDataWithZillow,
+  getZipCodeDataWithZillow,
+  calculateAffordability,
+  calculateCostBreakdown,
+  identifySavingsOpportunities,
+  type CreditScoreRange,
+  type Timeline,
+  type AgentStatus,
+  type Concern,
+  type QuizData,
+} from '@/lib/calculations'
+import { computeEducationScoreFromQuiz } from '@/lib/quiz-questions'
+import { analyzeRepeatBuyer, type RepeatBuyerData } from '@/lib/calculations-repeat-buyer'
+import { analyzeRefinance, type RefinanceData } from '@/lib/calculations-refinance'
+import { SIGNUP_DISABLED } from '@/lib/auth-flags'
 import { formatNumberForInput, parseFormattedNumber } from '@/lib/number-format'
 import { 
   getQuestionsForTransactionType, 
@@ -20,6 +39,7 @@ import {
 } from '@/lib/quiz-questions'
 import { parseIcpTypeParam, resolveTransactionAndIcp, type IcpType } from '@/lib/icp-types'
 import PlainEnglishText from '@/components/PlainEnglishText'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 // Form validation schema - base schema that gets extended based on transaction type
 const baseQuizSchema = z.object({
@@ -137,8 +157,93 @@ function quizStageLabel(
   return 'Your Goals'
 }
 
+async function computeQuizSavingsEstimate(
+  data: Record<string, unknown>,
+  transactionType: TransactionType
+): Promise<number> {
+  if (transactionType === 'first-time') {
+    const eduScore = computeEducationScoreFromQuiz(data as Record<string, string | undefined>)
+    const quizData: QuizData & { eduScore?: number } = {
+      income: Number(data.income) || 60000,
+      monthlyDebt: Number(data.monthlyDebt) || 0,
+      downPayment: Number(data.downPayment) || 20000,
+      city: String(data.city || 'Austin'),
+      timeline: (data.timeline || '6-months') as QuizData['timeline'],
+      creditScore: (data.creditScore || '650-700') as QuizData['creditScore'],
+      agentStatus: (data.agentStatus || 'not-yet') as QuizData['agentStatus'],
+      concern: (data.concern || 'hidden-costs') as QuizData['concern'],
+      ...(data.targetHomePrice != null ? { targetHomePrice: Number(data.targetHomePrice) } : {}),
+      ...(eduScore != null ? { eduScore } : {}),
+    }
+    const affordability = calculateAffordability(quizData)
+    const costBreakdown = await calculateCostBreakdown(affordability, quizData.city, quizData.downPayment)
+    const opps = identifySavingsOpportunities(quizData, costBreakdown, affordability)
+    return Math.round(
+      opps.reduce((sum, o) => sum + Number(o.savingsMax ?? o.savingsMin ?? 0), 0)
+    )
+  }
+
+  if (transactionType === 'repeat-buyer') {
+    const salePrice = Number(data.expectedSalePrice) || 400000
+    const rb: RepeatBuyerData = {
+      transactionType: 'repeat-buyer',
+      income: Number(data.income) || 80000,
+      monthlyDebt: Number(data.monthlyDebt) || 0,
+      currentHomeValue: Number(data.currentHomeValue) || 400000,
+      currentMortgageBalance: Number(data.currentMortgageBalance) || 200000,
+      ownedYears: (data.ownedYears || '2-5') as RepeatBuyerData['ownedYears'],
+      saleStatus: (data.saleStatus || 'not-listed') as RepeatBuyerData['saleStatus'],
+      expectedSalePrice: salePrice,
+      sellingClosingCosts: Math.round(salePrice * 0.02),
+      agentCommission: Number(data.agentCommission) || 5,
+      repairsAndConcessions: Number(data.repairsAndConcessions) || 0,
+      debtPayoff: Number(data.debtPayoff) || 0,
+      additionalSavings: Number(data.additionalSavings) || 0,
+      city: String(data.city || 'Austin'),
+      timeline: (data.timeline || '6-months') as RepeatBuyerData['timeline'],
+      creditScore: (data.creditScore || '650-700') as RepeatBuyerData['creditScore'],
+      agentStatus: (data.agentStatus || 'not-yet') as RepeatBuyerData['agentStatus'],
+      concern: String(data.concern || 'other'),
+      currentRate: Number(data.currentRate) || 6,
+      currentYearsRemaining: Number(data.currentYearsRemaining) || 25,
+      currentMonthlyPayment: Number(data.currentMonthlyPayment) || 2000,
+    }
+    const analysis = analyzeRepeatBuyer(rb)
+    const equity = analysis.equityPosition.grossEquity
+    return Math.min(
+      150000,
+      Math.max(12000, Math.round(equity * 0.1 + Number(analysis.saleProceeds.netProceeds) * 0.04))
+    )
+  }
+
+  const goalsRaw = data.refinanceGoals
+  const goals = Array.isArray(goalsRaw)
+    ? goalsRaw.map(String)
+    : typeof goalsRaw === 'string' && goalsRaw.length > 0
+      ? goalsRaw.split(',').map((s) => s.trim())
+      : ['lower-payment']
+
+  const refi: RefinanceData = {
+    transactionType: 'refinance',
+    currentHomeValue: Number(data.currentHomeValue) || 450000,
+    currentMortgageBalance: Number(data.currentMortgageBalance) || 300000,
+    currentRate: Number(data.currentRate) || 6.5,
+    currentMonthlyPayment: Number(data.currentMonthlyPayment) || 2000,
+    yearsRemaining: Number(data.yearsRemaining) || 25,
+    refinanceGoals: goals,
+    cashoutAmount: data.cashoutAmount != null ? Number(data.cashoutAmount) : undefined,
+    creditScore: (data.creditScore || '650-700') as RefinanceData['creditScore'],
+    propertyType: (data.propertyType || 'primary') as RefinanceData['propertyType'],
+    previousRefinances: (data.previousRefinances || 'never') as RefinanceData['previousRefinances'],
+    concern: String(data.concern || 'other'),
+  }
+  const analysis = await analyzeRefinance(refi)
+  const life = analysis.lifetimeAnalysis.netSavings
+  const fallback = analysis.breakEvenAnalysis.monthlySavings * 12 * 7
+  return Math.max(4000, Math.round(Math.abs(life) > 1000 ? Math.abs(life) : fallback))
+}
+
 export default function QuizPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated } = useAuth()
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
@@ -166,6 +271,13 @@ export default function QuizPage() {
   const cityDropdownRef = useRef<HTMLDivElement>(null)
   /** Questions already answered in quick scan or implied by URL — do not show again in full quiz. */
   const [skippedQuestionIds, setSkippedQuestionIds] = useState<Set<string>>(() => new Set())
+
+  const [showCompletionResults, setShowCompletionResults] = useState(false)
+  const [completionSavings, setCompletionSavings] = useState(0)
+  const [animatedSavings, setAnimatedSavings] = useState(0)
+  const [resultEmail, setResultEmail] = useState('')
+  const [emailSubmitStatus, setEmailSubmitStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [celebrateResults, setCelebrateResults] = useState(false)
 
   const {
     register,
@@ -321,19 +433,54 @@ export default function QuizPage() {
     }
   }
 
-  const onSubmit = (data: any) => {
+  useEffect(() => {
+    if (!showCompletionResults || completionSavings <= 0) return
+    setAnimatedSavings(1)
+    let start: number | null = null
+    const duration = 1800
+    const to = completionSavings
+    const tick = (now: number) => {
+      if (start === null) start = now
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const raw = Math.floor(eased * to)
+      setAnimatedSavings(progress >= 1 ? to : Math.max(1, raw))
+      if (progress < 1) requestAnimationFrame(tick)
+    }
+    const id = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(id)
+  }, [showCompletionResults, completionSavings])
+
+  useEffect(() => {
+    if (!showCompletionResults) {
+      setCelebrateResults(false)
+      return
+    }
+    const timer = setTimeout(() => setCelebrateResults(true), 500)
+    return () => clearTimeout(timer)
+  }, [showCompletionResults])
+
+  const onSubmit = async (data: any) => {
     setIsLoading(true)
-    
-    // Build URL with query params
-    const params = new URLSearchParams({
-      transactionType: transactionType || 'first-time',
-    })
+    const tt = transactionType || 'first-time'
     const icp = (data.icpType as IcpType) || icpType
+
+    let total = 12450
+    try {
+      total = await computeQuizSavingsEstimate(data as Record<string, unknown>, tt)
+    } catch (e) {
+      console.warn('Savings estimate fallback', e)
+    }
+    total = Math.min(200000, Math.max(3500, Math.round(total)))
+
+    const params = new URLSearchParams({
+      transactionType: tt,
+    })
     params.set('icpType', icp)
     params.set('type', icp)
 
-    // Add all form data to params
-    Object.keys(data).forEach(key => {
+    Object.keys(data).forEach((key) => {
       if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
         if (Array.isArray(data[key])) {
           params.append(key, data[key].join(','))
@@ -343,7 +490,6 @@ export default function QuizPage() {
       }
     })
 
-    // Add location info
     if (locationType === 'zip' && zipCode) {
       params.set('city', zipCode)
       if (/^\d{5}$/.test(zipCode.trim())) {
@@ -352,23 +498,75 @@ export default function QuizPage() {
     }
     params.set('locationType', locationType)
 
-    // Save quiz state for signed-in users so it's remembered next time
-    if (isAuthenticated) {
-      saveQuizResults({ ...data, transactionType: transactionType || 'first-time', icpType: icp }).catch(() => {})
-      trackActivity('quiz_completed', { transactionType: transactionType || 'first-time', icpType: icp })
+    const quizPayload = {
+      ...data,
+      transactionType: tt,
+      icpType: icp,
+      estimatedSavings: total,
+      completedAt: new Date().toISOString(),
+    }
+    try {
+      localStorage.setItem('quizData', JSON.stringify(quizPayload))
+    } catch {
+      /* ignore quota */
     }
 
-    // Navigate after loading screen
-    console.log('Quiz submission - URL params:', params.toString())
-    console.log('Quiz submission - Transaction type:', transactionType)
-    console.log('Quiz submission - Form data:', data)
-    
-    setTimeout(() => {
-      const finalUrl = `/results?${params.toString()}`
-      console.log('Navigating to:', finalUrl)
-      router.push(finalUrl)
-    }, 4000)
+    if (isAuthenticated) {
+      saveQuizResults({ ...data, transactionType: tt, icpType: icp }).catch(() => {})
+      trackActivity('quiz_completed', { transactionType: tt, icpType: icp })
+    }
+
+    setCompletionSavings(total)
+    setAnimatedSavings(0)
+    setShowCompletionResults(true)
+    setEmailSubmitStatus('idle')
+    setResultEmail('')
+    setIsLoading(false)
   }
+
+  const handlePlanEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resultEmail.trim()) return
+    const trimmed = resultEmail.trim()
+    setEmailSubmitStatus('sending')
+    try {
+      try {
+        localStorage.setItem('quizLeadEmail', trimmed)
+        localStorage.setItem('quizLeadEmailCapturedAt', new Date().toISOString())
+      } catch {
+        /* ignore */
+      }
+      await fetch('/api/leads/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed, source: 'quiz-results' }),
+      }).catch(() => {})
+      trackActivity('tool_used', {
+        tool: 'quiz_result_email_capture',
+        email_length: trimmed.length,
+      })
+    } catch {
+      /* still treat as captured if localStorage succeeded */
+    } finally {
+      setEmailSubmitStatus('sent')
+    }
+  }
+
+  const authSignupRedirect = (path: string) =>
+    SIGNUP_DISABLED ? path : `/auth?mode=signup&redirect=${encodeURIComponent(path)}`
+
+  const primaryJourneyPath =
+    transactionType === 'refinance'
+      ? '/homebuyer/refinance-journey'
+      : transactionType === 'repeat-buyer'
+        ? '/homebuyer/buy-sell-journey'
+        : '/customized-journey'
+  const primaryJourneyLabel =
+    transactionType === 'refinance'
+      ? 'Continue My Refinance Plan →'
+      : transactionType === 'repeat-buyer'
+        ? 'Get My Move-Up & Sell-Buy Plan →'
+        : 'Get My Full Personalized Plan →'
 
   const progress = filteredQuestions.length > 0 ? ((currentQuestion + 1) / filteredQuestions.length) * 100 : 0
   const hasAnswer = currentQ && (
@@ -413,7 +611,7 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-slate-800 font-sans">
+    <div className="app-page-shell">
       {/* Header section with graphic */}
       <div className="relative h-32 sm:h-36 overflow-hidden">
         <div
@@ -436,7 +634,7 @@ export default function QuizPage() {
         <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-brand-sage">Quick scan · 3 questions</p>
-            <h2 className="mt-2 text-2xl font-bold text-brand-forest">
+            <h2 className="font-display mt-2 text-2xl font-bold text-brand-forest">
               {quickStep === 0 && 'What best describes your situation?'}
               {quickStep === 1 && 'Approximate household income?'}
               {quickStep === 2 && 'Target home price?'}
@@ -559,19 +757,217 @@ export default function QuizPage() {
       {quizMode === 'full' && (
       <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Top Navigation Bar */}
-        <div className="mb-6 flex items-center justify-between sticky top-4 z-40 bg-white/95 backdrop-blur-sm border border-slate-200 shadow-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 rounded-xl">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-[rgb(var(--navy))] text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--coral))] transition-all"
-          >
-            <ArrowLeft size={18} />
-            <span>Return to Home</span>
-          </Link>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 sticky top-4 z-40 bg-white/95 backdrop-blur-sm border border-slate-200 shadow-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 rounded-xl">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-[rgb(var(--navy))] text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--coral))] transition-all"
+            >
+              <ArrowLeft size={18} />
+              <span>Return to Home</span>
+            </Link>
+            {!showCompletionResults ? <BackToMyJourneyLink className="font-semibold" /> : null}
+          </div>
           <p className="text-sm font-semibold text-slate-600">
-            Question {currentQuestion + 1} of {filteredQuestions.length}
+            {showCompletionResults
+              ? 'Your results'
+              : `Question ${currentQuestion + 1} of ${filteredQuestions.length}`}
           </p>
         </div>
 
+        {showCompletionResults ? (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative space-y-8 overflow-hidden rounded-2xl border border-[#e7e5e4] bg-[#fafaf9] p-6 shadow-sm sm:p-8"
+        >
+          {celebrateResults ? (
+            <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+              {Array.from({ length: 18 }).map((_, i) => (
+                <motion.span
+                  key={i}
+                  className="absolute h-2 w-2 rounded-sm bg-[#0d9488]/80"
+                  initial={{
+                    opacity: 0,
+                    top: '42%',
+                    left: '50%',
+                    scale: 0,
+                    rotate: 0,
+                  }}
+                  animate={{
+                    opacity: [0, 1, 1, 0],
+                    top: `${28 + (i % 6) * 9}%`,
+                    left: `${20 + (i % 5) * 14}%`,
+                    scale: [0, 1, 1, 0.6],
+                    rotate: i * 40,
+                  }}
+                  transition={{ duration: 1.2, ease: 'easeOut', delay: i * 0.02 }}
+                />
+              ))}
+            </div>
+          ) : null}
+          <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <BackToMyJourneyLink />
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#57534e] hover:text-[#1c1917]"
+            >
+              <ArrowLeft size={18} />
+              Home
+            </Link>
+          </div>
+
+          <div className="relative z-10 text-center">
+            <p className="font-display text-2xl text-[#1c1917]">
+              You may qualify for up to
+            </p>
+            <div className="mt-3 inline-block rounded-2xl px-3 py-2 animate-savings-pulse">
+              <p className="text-5xl font-extrabold text-[#1a6b3c] font-display">{formatCurrency(animatedSavings)}</p>
+            </div>
+            <p className="mt-2 text-base font-medium text-[#57534e]">
+              in free money toward your down payment and closing cost savings
+            </p>
+          </div>
+
+          <div className="relative z-10 grid gap-4 md:grid-cols-3">
+            {(
+              [
+                {
+                  title: 'State DPA Grant',
+                  desc: 'Up to $10,000 for first-time buyers in your state. No repayment required.',
+                  savings: '$10,000',
+                },
+                {
+                  title: 'FHA Advantage Program',
+                  desc: '3.5% down with flexible credit requirements. Estimated savings: $4,200.',
+                  savings: '$4,200',
+                },
+                {
+                  title: 'Closing Cost Assistance',
+                  desc: 'Up to $3,000 toward closing costs from local housing authority.',
+                  savings: '$3,000',
+                },
+              ] as const
+            ).map((card, cardIndex) => (
+              <div
+                key={card.title}
+                className="relative z-10 rounded-xl border border-[#e7e5e4] border-l-4 border-l-[#0d9488] bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-start gap-3">
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      delay: 0.55 + cardIndex * 0.08,
+                      type: 'spring',
+                      stiffness: 380,
+                      damping: 20,
+                    }}
+                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+                    aria-hidden
+                  >
+                    <Check className="h-4 w-4" strokeWidth={2.5} />
+                  </motion.span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-display font-semibold text-[#1c1917]">{card.title}</p>
+                    <p className="mt-2 text-sm font-medium leading-relaxed text-[#57534e]">
+                      {card.desc}
+                    </p>
+                    <p className="mt-3 text-sm font-bold text-[#c0622a]">Est. {card.savings}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="relative z-10 text-center text-xs leading-relaxed text-[#78716c]">
+            Program names and dollar amounts are illustrative examples for this prototype. Eligibility, benefits, and
+            savings vary by location and lender—confirm with housing agencies and licensed professionals before you rely
+            on them.
+          </p>
+
+          <div className="relative z-10 rounded-xl border border-[#e7e5e4] bg-white p-6 shadow-sm">
+            {emailSubmitStatus !== 'sent' ? (
+              <>
+                <h3 className="font-display text-lg font-semibold text-[#1c1917]">
+                  Get your personalized savings plan by email
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#57534e]">
+                  We&apos;ll send you a breakdown of every program you qualify for, plus a step-by-step action plan — free,
+                  no spam.
+                </p>
+                <form onSubmit={handlePlanEmailSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="quiz-result-email" className="sr-only">
+                      Email
+                    </label>
+                    <input
+                      id="quiz-result-email"
+                      type="email"
+                      autoComplete="email"
+                      value={resultEmail}
+                      onChange={(e) => setResultEmail(e.target.value)}
+                      placeholder="you@email.com"
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-[#0d9488] focus:ring-2"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={emailSubmitStatus === 'sending'}
+                    className="rounded-xl bg-[#0d9488] px-6 py-3 font-semibold text-white transition hover:bg-[#0f766e] disabled:opacity-60"
+                  >
+                    {emailSubmitStatus === 'sending' ? 'Sending…' : 'Send My Free Plan'}
+                  </button>
+                </form>
+                <p className="mt-2 text-xs text-[#a8a29e]">We&apos;ll never share your email. Unsubscribe anytime.</p>
+              </>
+            ) : (
+              <div className="space-y-6 text-left">
+                <p className="text-base font-medium text-[#1a6b3c]">
+                  ✓ Check your inbox! Your plan is on its way.
+                </p>
+                <div className="rounded-xl border border-[#e7e5e4] bg-[#fafaf9] p-5">
+                  <h4 className="font-display text-base font-semibold text-[#1c1917]">
+                    Create your free account to track your progress
+                  </h4>
+                  <p className="mt-2 text-sm text-[#57534e]">
+                    Save your results, access your personalized journey hub, and get notified when new programs open in
+                    your area.
+                  </p>
+                  <Link
+                    href={authSignupRedirect(primaryJourneyPath)}
+                    className="mt-4 inline-flex items-center justify-center rounded-xl border-2 border-[#1a6b3c] bg-white px-6 py-3 text-sm font-semibold text-[#1a6b3c] transition hover:bg-[#1a6b3c]/5"
+                  >
+                    Create Free Account →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative z-10 rounded-xl border border-[#e7e5e4] bg-white p-6 text-center shadow-sm">
+            <Link
+              href={primaryJourneyPath}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-[#1a6b3c] px-8 py-4 text-lg font-semibold text-white shadow-md transition hover:bg-[#155c33] sm:w-auto"
+            >
+              {primaryJourneyLabel}
+            </Link>
+            <p className="mt-3 text-sm text-[#57534e]">Free to start · Takes 2 minutes to set up your journey</p>
+            <p className="mt-4 text-center text-xs text-[#57534e]">
+              <span aria-hidden>🔒</span> No credit check · No affiliate kickbacks · Your data stays private
+            </p>
+          </div>
+
+          <div className="relative z-10 text-center">
+            <Link
+              href={`/results?transactionType=${encodeURIComponent(transactionType || 'first-time')}`}
+              className="text-sm font-semibold text-teal-700 underline underline-offset-2 hover:text-teal-900"
+            >
+              View detailed breakdown on full results page →
+            </Link>
+          </div>
+        </motion.div>
+        ) : (
+        <>
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
@@ -602,7 +998,7 @@ export default function QuizPage() {
         >
           {isStartOfFinancialAssessment ? (
             <div
-              className="mb-6 rounded-xl border border-sky-200 bg-gradient-to-r from-sky-50 to-indigo-50/80 px-4 py-3 text-sm text-slate-800 shadow-sm sm:text-base"
+              className="mb-6 rounded-xl border border-teal-200 bg-gradient-to-r from-millennial-primary-light/50 to-teal-50/80 px-4 py-3 text-sm text-slate-800 shadow-sm sm:text-base"
               role="status"
               aria-live="polite"
             >
@@ -618,7 +1014,7 @@ export default function QuizPage() {
           <div className="mb-6">
             <div className="flex items-start justify-between mb-4">
               <PlainEnglishText
-                className="text-2xl font-bold text-[rgb(var(--navy))]"
+                className="font-display text-2xl font-bold text-[rgb(var(--navy))]"
                 text={currentQ.title}
                 as="h2"
               />
@@ -1101,6 +1497,8 @@ export default function QuizPage() {
             </button>
           </div>
         </motion.div>
+        )}
+        </>
         )}
       </div>
       )}

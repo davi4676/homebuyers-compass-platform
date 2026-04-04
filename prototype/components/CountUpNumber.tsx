@@ -5,21 +5,30 @@ import { useEffect, useRef, useState } from 'react'
 type CountUpNumberProps = {
   end: number
   prefix?: string
+  suffix?: string
   duration?: number
   className?: string
+  /** If false, wait until element intersects viewport before animating (default: true = animate on mount). */
+  startOnMount?: boolean
 }
+
+const DEFAULT_FALLBACK = 5593
 
 export default function CountUpNumber({
   end,
   prefix = '',
-  duration = 2000,
+  suffix = '',
+  duration = 1800,
   className,
+  startOnMount = true,
 }: CountUpNumberProps) {
   const ref = useRef<HTMLSpanElement>(null)
-  const [display, setDisplay] = useState(0)
-  const [started, setStarted] = useState(false)
+  const target = end > 0 ? end : DEFAULT_FALLBACK
+  const [display, setDisplay] = useState(1)
+  const [started, setStarted] = useState(startOnMount)
 
   useEffect(() => {
+    if (startOnMount) return
     const el = ref.current
     if (!el || started) return
     const obs = new IntersectionObserver(
@@ -30,7 +39,7 @@ export default function CountUpNumber({
     )
     obs.observe(el)
     return () => obs.disconnect()
-  }, [started])
+  }, [started, startOnMount])
 
   useEffect(() => {
     if (!started) return
@@ -41,12 +50,13 @@ export default function CountUpNumber({
     const tick = (now: number) => {
       if (cancelled) return
       if (startTime === null) startTime = now
-      const t = Math.min((now - startTime) / duration, 1)
-      setDisplay(Math.floor(end * t))
-      if (t < 1) {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const raw = Math.floor(eased * target)
+      setDisplay(progress >= 1 ? target : Math.max(1, raw))
+      if (progress < 1) {
         rafId = requestAnimationFrame(tick)
-      } else {
-        setDisplay(end)
       }
     }
     rafId = requestAnimationFrame(tick)
@@ -54,12 +64,13 @@ export default function CountUpNumber({
       cancelled = true
       cancelAnimationFrame(rafId)
     }
-  }, [started, end, duration])
+  }, [started, target, duration])
 
   return (
     <span ref={ref} className={className}>
       {prefix}
       {display.toLocaleString('en-US')}
+      {suffix}
     </span>
   )
 }

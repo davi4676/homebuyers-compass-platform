@@ -41,10 +41,10 @@ export default function MoneyLayerBar({ totals, sticky = true }: MoneyLayerBarPr
           <motion.div
             animate={pulse.funds && !reduceMotion ? { scale: [1, 1.02, 1] } : undefined}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="rounded-xl border border-sky-200/80 bg-sky-50/70 px-3 py-2"
+            className="rounded-xl border border-teal-200/80 bg-teal-50/70 px-3 py-2"
           >
-            <p className="text-[11px] font-bold uppercase tracking-wide text-sky-900">Funds Found So Far</p>
-            <p className="mt-1 text-sm font-bold text-sky-950 tabular-nums">{formatCurrency(totals.fundsFoundSoFar)}</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-teal-900">Funds Found So Far</p>
+            <p className="mt-1 text-sm font-bold text-teal-950 tabular-nums">{formatCurrency(totals.fundsFoundSoFar)}</p>
           </motion.div>
           <motion.div
             animate={pulse.alt && !reduceMotion ? { scale: [1, 1.02, 1] } : undefined}

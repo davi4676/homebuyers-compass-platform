@@ -102,6 +102,38 @@ export function loadQuizDataFromLocalStorage(): QuizData | null {
   }
 }
 
+export type StoredQuizTransactionType = 'first-time' | 'repeat-buyer' | 'refinance' | null
+
+/**
+ * Reads `transactionType` / `icpType` from raw `quizData` (including refinance & repeat-buyer),
+ * which `parseStoredQuizData` does not return for non–first-time flows.
+ */
+export function getStoredQuizTransactionMeta(): {
+  transactionType: StoredQuizTransactionType
+  icpType: string | null
+} {
+  if (typeof window === 'undefined') {
+    return { transactionType: null, icpType: null }
+  }
+  try {
+    const raw = localStorage.getItem(QUIZ_DATA_KEY)
+    if (!raw) return { transactionType: null, icpType: null }
+    const p = JSON.parse(raw) as Record<string, unknown>
+    const icpRaw = p.icpType
+    const icpType = icpRaw != null && String(icpRaw).trim() !== '' ? String(icpRaw) : null
+    const tt = p.transactionType
+    if (tt === 'first-time' || tt === 'repeat-buyer' || tt === 'refinance') {
+      return { transactionType: tt, icpType }
+    }
+    if (icpType === 'refinance') {
+      return { transactionType: 'refinance', icpType }
+    }
+    return { transactionType: null, icpType }
+  } catch {
+    return { transactionType: null, icpType: null }
+  }
+}
+
 /** Build snapshot from quiz answers (client localStorage or server `quizAnswers`). */
 export function buildUserSnapshot(
   quiz: QuizData | null,

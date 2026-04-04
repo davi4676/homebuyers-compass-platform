@@ -32,11 +32,11 @@ export default function OnboardingFlow({
   const onboardingSteps = [
     {
       title: "Hey, I'm NQ! 👋",
-      subtitle: "Your Personal Homebuying Guide",
+      subtitle: "Your Personal home buying Guide",
       content: (
         <div className="space-y-3">
           <p className="text-sm text-gray-300">
-            Yo! I'm NQ, and I'm here to guide you through your homebuying journey. Think of me as your pocket expert who's got your back 24/7! 
+            Yo! I'm NQ, and I'm here to guide you through your home buying journey. Think of me as your pocket expert who's got your back 24/7! 
           </p>
           <p className="text-sm text-gray-300">
             Before we dive in, let me ask you a few quick questions so I can personalize everything just for you. Takes like 60 seconds, promise! 🚀
@@ -257,7 +257,7 @@ export default function OnboardingFlow({
     },
     {
       title: "You're all set! 🎉",
-      subtitle: "Let's get started",
+      subtitle: "Let's find your savings",
       content: (
         <div className="space-y-3">
           <p className="text-sm text-gray-300">

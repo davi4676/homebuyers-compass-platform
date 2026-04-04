@@ -53,7 +53,7 @@ export default function LockedFeatureCard({
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   For buyers who choose {def.name}
                 </p>
-                <MindsetTag compact mindset={def.mindset} className="max-w-full border-sky-100 bg-sky-50/50" />
+                <MindsetTag compact mindset={def.mindset} className="max-w-full border-teal-100 bg-teal-50/50" />
               </div>
             )
           ) : null}

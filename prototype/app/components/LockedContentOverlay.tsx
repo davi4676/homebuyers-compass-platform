@@ -19,7 +19,7 @@ export default function LockedContentOverlay({
   title,
   description,
   features = [],
-  ctaText = 'Upgrade to Guided Plan',
+  ctaText = 'Upgrade to Momentum',
   ctaLink = '/upgrade',
   pricing = '$29',
   blur = true,
@@ -122,7 +122,7 @@ export function BlurOverlay({
 
 // Tier Badge Component
 export function PremiumBadge({ 
-  tier = 'Guided',
+  tier = 'Foundations',
   size = 'sm'
 }: { 
   tier?: string

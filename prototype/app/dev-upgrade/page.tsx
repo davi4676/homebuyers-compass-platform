@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 import { setUserTier } from '@/lib/user-tracking'
 import { type UserTier } from '@/lib/tiers'
 
@@ -22,11 +23,14 @@ export default function DevUpgradePage() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] flex items-center justify-center">
+    <div className="app-page-shell flex flex-col items-center justify-center px-4 py-10">
+      <div className="mb-6">
+        <BackToMyJourneyLink />
+      </div>
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-        <p className="text-lg font-semibold text-purple-400">Upgrading to Guided Plan...</p>
-        <p className="text-sm text-gray-400 mt-2">Redirecting...</p>
+        <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-[#e7e5e4] border-t-[#0d9488]" />
+        <p className="text-lg font-semibold text-[#0f766e]">Upgrading to Momentum…</p>
+        <p className="mt-2 text-sm text-[#57534e]">Redirecting…</p>
       </div>
     </div>
   )

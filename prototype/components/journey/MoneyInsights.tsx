@@ -49,7 +49,7 @@ export default function MoneyInsights({
             </p>
             <p className="flex items-center justify-between gap-3 text-slate-700">
               <span>Funds You May Qualify For</span>
-              <strong className="tabular-nums text-sky-900">{formatCurrency(totals.fundsFoundSoFar)}</strong>
+              <strong className="tabular-nums text-teal-900">{formatCurrency(totals.fundsFoundSoFar)}</strong>
             </p>
             <p className="flex items-center justify-between gap-3 text-slate-700">
               <span>Alternative Options Available</span>
@@ -96,7 +96,7 @@ export default function MoneyInsights({
 
               <div className="mt-4 grid gap-4 md:grid-cols-3">
                 <InsightCol title="Savings" accent="text-emerald-900" items={savingsDetails} />
-                <InsightCol title="Funds" accent="text-sky-900" items={fundingDetails} />
+                <InsightCol title="Funds" accent="text-teal-900" items={fundingDetails} />
                 <InsightCol title="Alternative options" accent="text-violet-900" items={alternativeDetails} />
               </div>
               <p className="mt-4 text-xs text-slate-500">

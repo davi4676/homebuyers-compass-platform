@@ -5,34 +5,47 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { SIGNUP_DISABLED } from '@/lib/auth-flags'
+import { shouldShowMobileMarketingSticky } from '@/lib/mobile-marketing-cta'
 
-const QUIZ_CTA_HREF = SIGNUP_DISABLED ? '/quiz' : '/auth?mode=signup&redirect=%2Fquiz'
+const SAVINGS_HREF = SIGNUP_DISABLED ? '/quiz?transactionType=first-time' : '/auth?mode=signup&redirect=%2Fquiz%3FtransactionType%3Dfirst-time'
 
-/** Fixed bottom CTA on mobile; appears after the landing hero scrolls out of view. */
+/** Fixed bottom CTA on mobile; appears after the landing/marketing hero scrolls out of view. */
 export default function StickyMobileCta() {
   const pathname = usePathname()
   const { isAuthenticated } = useAuth()
   const [showBar, setShowBar] = useState(false)
 
+  const eligible = shouldShowMobileMarketingSticky(pathname, isAuthenticated)
+
   useEffect(() => {
-    if (pathname !== '/' || isAuthenticated) {
+    if (!eligible) {
       setShowBar(false)
       return
     }
-    const hero = document.getElementById('landing-hero')
-    if (!hero) return
 
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        setShowBar(!entry.isIntersecting)
-      },
-      { threshold: 0, rootMargin: '0px' }
-    )
-    obs.observe(hero)
-    return () => obs.disconnect()
-  }, [pathname, isAuthenticated])
+    if (pathname === '/') {
+      const hero = document.getElementById('landing-hero')
+      if (!hero) return
 
-  if (pathname !== '/' || isAuthenticated) return null
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          setShowBar(!entry.isIntersecting)
+        },
+        { threshold: 0, rootMargin: '0px' }
+      )
+      obs.observe(hero)
+      return () => obs.disconnect()
+    }
+
+    const onScroll = () => {
+      setShowBar(window.scrollY > 96)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [eligible, pathname])
+
+  if (!eligible) return null
 
   return (
     <div
@@ -41,13 +54,18 @@ export default function StickyMobileCta() {
       }`}
       style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
     >
-      <div className="bg-brand-forest px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <Link
-          href={QUIZ_CTA_HREF}
-          className="flex min-h-[48px] w-full items-center justify-center rounded-lg py-3 text-center text-base font-semibold text-white"
-        >
-          Find My Savings — Free →
-        </Link>
+      <div className="border-t border-millennial-border bg-millennial-surface/95 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-3 pb-2 pt-3 font-sans">
+          <Link
+            href={SAVINGS_HREF}
+            className="flex w-full items-center justify-center rounded-xl bg-millennial-cta-primary px-4 py-3.5 text-base font-bold text-white shadow-md transition-colors hover:bg-millennial-cta-hover active:scale-[0.99]"
+          >
+            Find My Savings →
+          </Link>
+          <p className="mt-2 text-center text-[11px] font-medium text-millennial-text-muted">
+            Free · No credit check · Typical scan ~90 seconds
+          </p>
+        </div>
       </div>
     </div>
   )

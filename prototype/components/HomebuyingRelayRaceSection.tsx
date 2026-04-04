@@ -16,7 +16,7 @@ import {
 
 const buyerSteps = [
   { id: 1, emoji: '📝', title: 'Get Pre-Approved', description: 'Bank says "You can play!"', color: 'from-blue-400 to-cyan-400', borderColor: 'border-blue-400/50' },
-  { id: 2, emoji: '🤝', title: 'Find a Real Estate Agent', description: 'Team up with a homebuying expert', color: 'from-indigo-400 to-blue-400', borderColor: 'border-indigo-400/50' },
+  { id: 2, emoji: '🤝', title: 'Find a Real Estate Agent', description: 'Team up with a home buying expert', color: 'from-millennial-cta-primary to-teal-400', borderColor: 'border-teal-400/50' },
   { id: 3, emoji: '🔍', title: 'Find Your Home', description: 'House hunting with your agent', color: 'from-purple-400 to-pink-400', borderColor: 'border-purple-400/50' },
   { id: 4, emoji: '💌', title: 'Make Offer', description: 'Say "I want this house!"', color: 'from-red-400 to-rose-400', borderColor: 'border-red-400/50' },
   { id: 5, emoji: '✅', title: 'Inspect & Appraise', description: 'House gets a health check', color: 'from-green-400 to-emerald-400', borderColor: 'border-green-400/50' },
@@ -38,9 +38,9 @@ const businessProcesses = [
 export default function HomebuyingRelayRaceSection() {
   return (
     <>
-      {/* The Homebuying Relay Race section */}
+      {/* The home buying Relay Race section */}
       <motion.section
-        id="homebuying-process-section"
+        id="home-buying-process-section"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -48,7 +48,7 @@ export default function HomebuyingRelayRaceSection() {
       >
         <div className="text-center mb-12 font-sans">
           <h2 className="text-3xl md:text-4xl font-bold mb-3 text-[rgb(var(--navy))] tracking-tight">
-            The Homebuying Relay Race 🏃‍♂️
+            The home buying Relay Race 🏃‍♂️
           </h2>
           <p className="text-lg text-[rgb(var(--text-muted))] max-w-3xl mx-auto mb-6 leading-relaxed">
             6-7 separate companies must work together perfectly
@@ -59,7 +59,7 @@ export default function HomebuyingRelayRaceSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mb-8 bg-[rgb(var(--sky-mid))] border border-slate-200 rounded-2xl p-6 text-center max-w-4xl mx-auto font-sans"
+          className="mb-8 bg-[rgb(var(--millennial-tint-mid))] border border-slate-200 rounded-2xl p-6 text-center max-w-4xl mx-auto font-sans"
         >
           <p className="text-lg text-[rgb(var(--navy))] mb-2 font-medium">
             <strong className="text-[rgb(var(--coral))]">Did you know?</strong> Buying a house requires <strong>6-7 separate companies</strong> to work together perfectly.

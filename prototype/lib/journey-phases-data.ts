@@ -143,8 +143,8 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         tierRequired: 'momentum',
       },
       {
-        id: 'homebuying-team',
-        title: 'Your homebuying team',
+        id: 'home-buying-team',
+        title: 'Your home buying team',
         description: 'Who runs inspection, appraisal, and title.',
         detailDescription:
           'How your agent, lender, inspector, appraiser, and title/escrow coordinate—and what to expect when.',

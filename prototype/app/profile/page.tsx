@@ -11,6 +11,7 @@ import PlainEnglishText from '@/components/PlainEnglishText'
 import { useExperiment } from '@/lib/hooks/useExperiment'
 import { PLAIN_ENGLISH_LS_KEY, usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
 import { applyPlainEnglishCopy } from '@/lib/plain-english'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ReturnType<typeof getUserProfile> | null>(null)
@@ -31,16 +32,19 @@ export default function ProfilePage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[rgb(var(--sky-light))] text-[rgb(var(--text-dark))]">
+    <div className="app-page-shell">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-[rgb(var(--navy))] transition-colors text-sm font-medium"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to home
-          </Link>
+        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <BackToMyJourneyLink className="font-medium" />
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-slate-600 hover:text-[rgb(var(--navy))] transition-colors text-sm font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to home
+            </Link>
+          </div>
           {isAuthenticated && (
             <button
               onClick={() => signOut()}

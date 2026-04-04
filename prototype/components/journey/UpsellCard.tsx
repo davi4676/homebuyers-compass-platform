@@ -53,7 +53,7 @@ export default function UpsellCard({
   return (
     <div
       id={domId}
-      className={`relative rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-50/90 via-white to-indigo-50/40 p-4 shadow-sm ring-1 ring-sky-100/60 sm:p-5 ${className}`}
+      className={`relative rounded-2xl border border-teal-200/80 bg-gradient-to-br from-teal-50/90 via-white to-teal-50/40 p-4 shadow-sm ring-1 ring-teal-100/60 sm:p-5 ${className}`}
     >
       {dismissible ? (
         <button
@@ -65,7 +65,7 @@ export default function UpsellCard({
           <X className="h-4 w-4" aria-hidden />
         </button>
       ) : null}
-      <p className="pr-8 text-sm font-bold text-sky-950">{title}</p>
+      <p className="pr-8 text-sm font-bold text-teal-950">{title}</p>
       <p className="mt-1.5 text-sm leading-relaxed text-slate-700">{valueLine}</p>
       <div className="mt-2">
         <MindsetTag compact mindset={def.mindset} />

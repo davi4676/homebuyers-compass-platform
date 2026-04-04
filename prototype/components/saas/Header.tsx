@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { useAuth } from '@/lib/hooks/useAuth'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function Header() {
   const { user, signOut } = useAuth()
 
   return (
     <header className="h-14 border-b border-slate-200 bg-white flex items-center justify-between px-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <span className="text-sm text-gray-400">SaaS Admin</span>
+        <BackToMyJourneyLink className="font-medium" />
       </div>
       <div className="flex items-center gap-4">
         {user ? (
