@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -187,7 +187,10 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
       }
       const t = visibleTabIds[next]
       persistTab(t)
-      router.push(journeyTabHrefPreservingSearch(tabLinkBase, searchKey, t), { scroll: false })
+      const href = journeyTabHrefPreservingSearch(tabLinkBase, searchKey, t)
+      startTransition(() => {
+        router.push(href, { scroll: false })
+      })
       requestAnimationFrame(() => tabRefs.current[next]?.focus())
     },
     [persistTab, router, searchKey, tabLinkBase, visibleTabIds]
@@ -223,7 +226,10 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
               if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
               e.preventDefault()
               persistTab(id)
-              router.push(journeyTabHrefPreservingSearch(tabLinkBase, searchKey, id), { scroll: false })
+              const href = journeyTabHrefPreservingSearch(tabLinkBase, searchKey, id)
+              startTransition(() => {
+                router.push(href, { scroll: false })
+              })
             }}
             onKeyDown={(e) => onKeyDown(e, index)}
             className={`flex min-w-[4rem] shrink-0 cursor-pointer touch-manipulation snap-start flex-col items-center gap-1 rounded-xl border px-2 py-2 no-underline md:min-w-0 md:flex-row md:gap-2 md:rounded-t-lg md:border-b-2 md:px-2.5 md:py-2 lg:px-3 ${

@@ -422,8 +422,13 @@ export default function NQGuidedRoadmap({
     goTab('budget')
   }, [dismissStartHereCard, goTab])
 
+  const prevJourneyTabRef = useRef<JourneyTab>(activeTab)
   useEffect(() => {
-    if (activeTab !== 'upgrades') resetPreviewToAccount()
+    const prev = prevJourneyTabRef.current
+    prevJourneyTabRef.current = activeTab
+    if (prev === 'upgrades' && activeTab !== 'upgrades') {
+      resetPreviewToAccount()
+    }
   }, [activeTab, resetPreviewToAccount])
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
@@ -972,7 +977,7 @@ export default function NQGuidedRoadmap({
           >
           {startHereState === 'show' ? (
             <motion.div
-              initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduceMotion ? 0.01 : 0.35 }}
               className="relative overflow-hidden rounded-2xl border-2 border-teal-400/70 bg-gradient-to-br from-teal-50 via-white to-emerald-50/40 p-5 shadow-lg ring-1 ring-teal-200/60 sm:p-6"
@@ -1098,7 +1103,7 @@ export default function NQGuidedRoadmap({
             </section>
           ) : null}
           <motion.section
-            initial={reduceMotion ? undefined : { opacity: 0, y: 14 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
             className="rounded-3xl border-2 border-teal-300/70 bg-gradient-to-br from-white via-millennial-primary-light/30 to-emerald-50/35 p-5 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/80 sm:p-6"
@@ -1290,7 +1295,7 @@ export default function NQGuidedRoadmap({
           ) : null}
 
           <motion.div
-            initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
             className="rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/25 to-emerald-50/25 p-6 shadow-lg sm:p-8"
@@ -1558,12 +1563,9 @@ export default function NQGuidedRoadmap({
               <div className="my-4 h-[3px] w-full rounded-full bg-gradient-to-r from-millennial-cta-primary via-teal-500 to-slate-200/80 sm:my-5" aria-hidden />
 
               <div className="h-1.5 w-full max-w-xl overflow-hidden rounded-full bg-slate-200/90">
-                <motion.div
-                  key={activeTab}
-                  className="h-full rounded-full bg-gradient-to-r from-millennial-cta-primary to-teal-600"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPct}%` }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-millennial-cta-primary to-teal-600 transition-[width] duration-500 ease-out motion-reduce:transition-none"
+                  style={{ width: `${progressPct}%` }}
                 />
               </div>
             </div>
