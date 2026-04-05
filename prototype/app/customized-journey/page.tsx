@@ -1,31 +1,162 @@
 'use client'
 
-import { useState, useEffect, Suspense, useMemo } from 'react'
+import { useState, useEffect, Suspense, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Bell, BookOpen } from 'lucide-react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { Bell, BookOpen, X } from 'lucide-react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/useAuth'
 import UserJourneyTracker from '@/components/analytics/UserJourneyTracker'
 import { useExperiment } from '@/lib/hooks/useExperiment'
 import NQGuidedRoadmap from '@/components/NQGuidedRoadmap'
 import PlainEnglishText from '@/components/PlainEnglishText'
-import { PLAIN_ENGLISH_LS_KEY, usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
-import { parseJourneyTabParam, type JourneyTab } from '@/lib/journey-nav-tabs'
+import {
+  PLAIN_ENGLISH_LS_KEY,
+  PLAIN_ENGLISH_JOURNEY_CALLOUT_DISMISSED_KEY,
+  usePlainEnglish,
+} from '@/lib/hooks/usePlainEnglish'
+import {
+  parseJourneyTabParam,
+  type JourneyTab,
+  journeyTabHrefPreservingSearch,
+  JOURNEY_PAGE_PATH,
+} from '@/lib/journey-nav-tabs'
+import { getStoredQuizTransactionMeta } from '@/lib/user-snapshot'
+import {
+  getActiveOnboardingNotification,
+  dismissOnboardingNotification,
+  type OnboardingNotificationDef,
+} from '@/lib/onboarding-notifications'
+import { REFERRED_BY_LS_KEY, getOrCreateReferralCode } from '@/lib/referral-program'
+import { referralSlugFromUser } from '@/lib/referral-slug'
+import { getTrialEndingSoonBanner } from '@/lib/user-tracking'
 
 export default function CustomizedJourneyPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const pathname = usePathname()
   const plainEnglish = usePlainEnglish()
   const { user } = useAuth()
   const roadmapExperiment = useExperiment('roadmap_today_view_v2')
   const [showReturnBanner, setShowReturnBanner] = useState(false)
+  const [showPlainEnglishCallout, setShowPlainEnglishCallout] = useState(false)
+  const [trialEndingBanner, setTrialEndingBanner] = useState<{ days: number } | null>(null)
+  const [onboardingNotify, setOnboardingNotify] = useState<OnboardingNotificationDef | null>(null)
+  const [referralModalKick, setReferralModalKick] = useState(0)
+  const [showRefLandingBanner, setShowRefLandingBanner] = useState(false)
+
+  const plainEnglishTooltip =
+    'Plain English Mode replaces financial jargon with simple explanations. Perfect if this is your first time buying a home.'
+
+  const dismissPlainEnglishCallout = useCallback(() => {
+    try {
+      localStorage.setItem(PLAIN_ENGLISH_JOURNEY_CALLOUT_DISMISSED_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+    setShowPlainEnglishCallout(false)
+  }, [])
+
+  const turnOnPlainEnglish = useCallback(() => {
+    try {
+      localStorage.setItem(PLAIN_ENGLISH_LS_KEY, '1')
+      window.dispatchEvent(new Event('nq-plain-english-changed'))
+      localStorage.setItem(PLAIN_ENGLISH_JOURNEY_CALLOUT_DISMISSED_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+    setShowPlainEnglishCallout(false)
+  }, [])
   /** Same source as TopNav tab highlight — keeps roadmap panels in sync with `?tab=` (avoids nested useSearchParams drift). */
   const journeySearchKey = searchParams.toString()
   const activeJourneyTab: JourneyTab = useMemo(
     () => parseJourneyTabParam(new URLSearchParams(journeySearchKey).get('tab')),
     [journeySearchKey]
   )
+
+  useEffect(() => {
+    if (activeJourneyTab !== 'firstgen') return
+    if (typeof window === 'undefined') return
+    if (getStoredQuizTransactionMeta().icpType === 'first-gen') return
+    const base =
+      pathname === JOURNEY_PAGE_PATH || (pathname?.startsWith(`${JOURNEY_PAGE_PATH}/`) ?? false)
+        ? JOURNEY_PAGE_PATH
+        : pathname || JOURNEY_PAGE_PATH
+    router.replace(journeyTabHrefPreservingSearch(base, journeySearchKey, 'overview'))
+  }, [activeJourneyTab, journeySearchKey, pathname, router])
+
+  const referralSlug = useMemo(() => {
+    const fromUser = referralSlugFromUser(user ?? null)
+    if (fromUser && fromUser !== 'yourname') return fromUser
+    if (typeof window !== 'undefined') return getOrCreateReferralCode(user?.email ?? null)
+    return fromUser
+  }, [user])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const refCode = searchParams.get('ref')?.trim()
+    if (refCode) {
+      try {
+        localStorage.setItem(REFERRED_BY_LS_KEY, refCode.slice(0, 64))
+      } catch {
+        /* ignore */
+      }
+      setShowRefLandingBanner(true)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const tick = () => setOnboardingNotify(getActiveOnboardingNotification())
+    tick()
+    const id = window.setInterval(tick, 60_000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const refreshOnboarding = () => setOnboardingNotify(getActiveOnboardingNotification())
+    window.addEventListener('storage', refreshOnboarding)
+    return () => window.removeEventListener('storage', refreshOnboarding)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      if (localStorage.getItem(PLAIN_ENGLISH_JOURNEY_CALLOUT_DISMISSED_KEY) === '1') return
+      if (localStorage.getItem(PLAIN_ENGLISH_LS_KEY) === '1') return
+      setShowPlainEnglishCallout(true)
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const refreshTrialBanner = () => setTrialEndingBanner(getTrialEndingSoonBanner())
+    refreshTrialBanner()
+    window.addEventListener('tierChanged', refreshTrialBanner)
+    window.addEventListener('storage', refreshTrialBanner)
+    const interval = window.setInterval(refreshTrialBanner, 60_000)
+    return () => {
+      window.removeEventListener('tierChanged', refreshTrialBanner)
+      window.removeEventListener('storage', refreshTrialBanner)
+      window.clearInterval(interval)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!plainEnglish) return
+    setShowPlainEnglishCallout((visible) => {
+      if (!visible) return visible
+      try {
+        localStorage.setItem(PLAIN_ENGLISH_JOURNEY_CALLOUT_DISMISSED_KEY, '1')
+      } catch {
+        /* ignore */
+      }
+      return false
+    })
+  }, [plainEnglish])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -90,29 +221,167 @@ export default function CustomizedJourneyPage() {
             </div>
           </div>
         </div>
+
+        {trialEndingBanner ? (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-300/90 bg-amber-50 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            role="status"
+          >
+            <p className="text-sm font-medium text-amber-950 sm:text-base">
+              <span aria-hidden>⏰</span> Your free trial ends in {trialEndingBanner.days}{' '}
+              day{trialEndingBanner.days === 1 ? '' : 's'}. Upgrade to keep your progress and access.
+            </p>
+            <Link
+              href="/payment?tier=momentum&cycle=monthly"
+              className="inline-flex shrink-0 items-center justify-center rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white hover:bg-teal-800"
+            >
+              Keep My Plan →
+            </Link>
+          </motion.div>
+        ) : null}
+
+        {showRefLandingBanner ? (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-950 shadow-sm"
+            role="status"
+          >
+            You were referred by a friend — sign up today and get $50 off your first plan.
+            <button
+              type="button"
+              onClick={() => setShowRefLandingBanner(false)}
+              className="ml-2 font-semibold text-teal-800 underline"
+            >
+              Dismiss
+            </button>
+          </motion.div>
+        ) : null}
+
+        {onboardingNotify ? (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-md"
+            role="region"
+            aria-label="Journey notification"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="font-bold text-slate-900">{onboardingNotify.title}</p>
+                <p className="mt-1 text-sm text-slate-600">{onboardingNotify.body}</p>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cta = onboardingNotify.cta
+                    if ('action' in cta && cta.action === 'referral') {
+                      setReferralModalKick((k) => k + 1)
+                    } else if ('href' in cta) {
+                      router.push(cta.href)
+                    } else {
+                      router.push(
+                        journeyTabHrefPreservingSearch(JOURNEY_PAGE_PATH, journeySearchKey, cta.tab)
+                      )
+                    }
+                  }}
+                  className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+                >
+                  {onboardingNotify.cta.label}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    dismissOnboardingNotification(onboardingNotify.id)
+                    setOnboardingNotify(getActiveOnboardingNotification())
+                  }}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
       </div>
 
       <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
         <div className="min-w-0 flex-1">
-          <div className="mb-6 flex flex-wrap items-center justify-end gap-3 rounded-xl border border-millennial-border bg-white/95 px-4 py-3 shadow-sm">
-            <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-millennial-text">
-              <span>Plain English mode</span>
-              <input
-                type="checkbox"
-                className="h-5 w-5 accent-[#0d9488]"
-                checked={plainEnglish}
-                onChange={(e) => {
-                  const on = e.target.checked
-                  try {
-                    localStorage.setItem(PLAIN_ENGLISH_LS_KEY, on ? '1' : '0')
-                    window.dispatchEvent(new Event('nq-plain-english-changed'))
-                  } catch {
-                    /* ignore */
-                  }
-                }}
-                aria-label="Toggle plain English mode"
-              />
-            </label>
+          <div className="mb-6 space-y-3">
+            {showPlainEnglishCallout ? (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col gap-3 rounded-xl border border-amber-200/90 bg-gradient-to-r from-amber-50 to-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                role="region"
+                aria-label="Plain English suggestion"
+              >
+                <p className="min-w-0 flex-1 text-sm font-medium text-slate-800 sm:text-base">
+                  <span aria-hidden>💡</span> New to homebuying? Turn on Plain English Mode for jargon-free guidance.
+                </p>
+                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={turnOnPlainEnglish}
+                    className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
+                  >
+                    Turn On
+                  </button>
+                  <button
+                    type="button"
+                    onClick={dismissPlainEnglishCallout}
+                    className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                    aria-label="Dismiss Plain English suggestion"
+                  >
+                    <X className="h-5 w-5" aria-hidden />
+                  </button>
+                </div>
+              </motion.div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-teal-200/80 bg-gradient-to-br from-white via-teal-50/40 to-white px-4 py-3.5 shadow-md sm:px-5 sm:py-4">
+              <label
+                className="flex cursor-pointer flex-wrap items-center gap-3 text-base font-semibold text-millennial-text"
+                title={plainEnglishTooltip}
+              >
+                <span>Plain English mode</span>
+                {getStoredQuizTransactionMeta().icpType === 'first-gen' ? (
+                  <span
+                    className="max-w-[min(100%,14rem)] rounded-full bg-teal-100 px-2 py-1 text-center text-[11px] font-semibold leading-snug text-teal-900 sm:max-w-none sm:text-xs"
+                    title={
+                      plainEnglish
+                        ? 'Plain English is on — recommended for first-time buyers'
+                        : 'Turn on Plain English for jargon-free guidance'
+                    }
+                  >
+                    {plainEnglish
+                      ? 'On — recommended for first-time buyers'
+                      : 'Turn on for jargon-free guidance'}
+                  </span>
+                ) : null}
+                <span id="plain-english-mode-tip" className="sr-only">
+                  {plainEnglishTooltip}
+                </span>
+                <input
+                  type="checkbox"
+                  className="h-6 w-6 shrink-0 accent-[#0d9488]"
+                  checked={plainEnglish}
+                  onChange={(e) => {
+                    const on = e.target.checked
+                    try {
+                      localStorage.setItem(PLAIN_ENGLISH_LS_KEY, on ? '1' : '0')
+                      window.dispatchEvent(new Event('nq-plain-english-changed'))
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                  aria-describedby="plain-english-mode-tip"
+                />
+              </label>
+            </div>
           </div>
 
           {showReturnBanner ? (
@@ -173,6 +442,8 @@ export default function CustomizedJourneyPage() {
             <NQGuidedRoadmap
               activeTab={activeJourneyTab}
               userFirstName={user?.firstName}
+              referralSlug={referralSlug}
+              requestReferralModalOpen={referralModalKick}
               onGoToResults={goToDownPaymentEstimate}
             />
           </Suspense>

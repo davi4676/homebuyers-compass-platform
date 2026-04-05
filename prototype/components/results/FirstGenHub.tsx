@@ -2,11 +2,18 @@
 
 import Link from 'next/link'
 import { Users, ExternalLink, Landmark, MessagesSquare } from 'lucide-react'
+import { journeyTabHref } from '@/lib/journey-nav-tabs'
 
 const HUD_COUNSELORS_URL = 'https://www.hud.gov/findhousingcounselors'
 
+type FirstGenHubContext = 'results' | 'journey'
+
 /** Section 9 — First-Generation Buyer hub on results (cards + social proof). */
-export default function FirstGenHub() {
+export default function FirstGenHub({ context = 'results' }: { context?: FirstGenHubContext }) {
+  const programsHref =
+    context === 'journey' ? journeyTabHref('assistance') : '/down-payment-optimizer'
+  const guidedHref =
+    context === 'journey' ? journeyTabHref('learn') : journeyTabHref('firstgen')
   return (
     <div className="mt-6 rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/95 to-white p-5 sm:p-6 shadow-sm">
       <h3 className="text-lg font-bold text-brand-forest dark:text-white">
@@ -34,7 +41,7 @@ export default function FirstGenHub() {
         </Link>
 
         <Link
-          href="/down-payment-optimizer"
+          href={programsHref}
           className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-sage hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
         >
           <Users className="h-8 w-8 text-brand-sage" aria-hidden />
@@ -42,19 +49,27 @@ export default function FirstGenHub() {
           <span className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             Down payment &amp; closing-cost assistance matched to your profile — verify rules with each agency.
           </span>
-          <span className="mt-3 text-sm font-bold text-brand-terracotta">Search programs →</span>
+          <span className="mt-3 text-sm font-bold text-brand-terracotta">
+            {context === 'journey' ? 'Open Assistance tab →' : 'Search programs →'}
+          </span>
         </Link>
 
         <Link
-          href="/customized-journey?tab=learn"
+          href={guidedHref}
           className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-sage hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
         >
           <MessagesSquare className="h-8 w-8 text-brand-sage" aria-hidden />
-          <span className="mt-3 font-semibold text-brand-forest dark:text-white">Guided Q&amp;A &amp; tips</span>
-          <span className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-            Short explainers and checklists in your journey — same trusted voice as your roadmap.
+          <span className="mt-3 font-semibold text-brand-forest dark:text-white">
+            {context === 'journey' ? 'Myth-busting &amp; tips' : 'First-Gen Hub in your journey'}
           </span>
-          <span className="mt-3 text-sm font-bold text-brand-terracotta">Open Learn tab →</span>
+          <span className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+            {context === 'journey'
+              ? 'Short reads that build confidence — matched to your roadmap.'
+              : 'Open the First-Gen Hub for counselors, programs, and scripts in one place.'}
+          </span>
+          <span className="mt-3 text-sm font-bold text-brand-terracotta">
+            {context === 'journey' ? 'Open Learn tab →' : 'Open First-Gen Hub →'}
+          </span>
         </Link>
       </div>
 

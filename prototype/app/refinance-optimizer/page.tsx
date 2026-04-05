@@ -44,7 +44,7 @@ const PHASES: PhaseData[] = [
   {
     id: 'rate-radar',
     title: 'Rate Drop Radar',
-    description: 'Monitor rates and get alerts when refinancing makes sense',
+    description: 'Compare your rate to the market; personalized alerts with Momentum',
     icon: <Bell className="w-6 h-6" />,
     savingsPotential: '$2,000-$30,000',
   },
@@ -118,8 +118,8 @@ export default function RefinanceOptimizerPage() {
     <div className="app-page-shell">
       {/* Header */}
       <header className="border-b border-[#e7e5e4] sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <BackToMyJourneyLink className="mb-2" />
+        <div className="mx-auto max-w-7xl px-4 py-3 text-left sm:px-6 lg:px-8">
+          <BackToMyJourneyLink />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
           <div className="flex items-center justify-between">
@@ -249,7 +249,17 @@ export default function RefinanceOptimizerPage() {
               </div>
 
               {/* Refinance tools */}
-              <h2 className="text-xl font-bold mb-4 text-[#1c1917]">Refinance tools</h2>
+              <h2 className="text-xl font-bold mb-1 text-[#1c1917]">Refinance tools</h2>
+              <p className="mb-4 text-sm text-[#57534e] max-w-2xl">
+                Ready to execute?{' '}
+                <Link
+                  href="/homebuyer/refinance-journey"
+                  className="font-semibold text-[#1a6b3c] underline-offset-2 hover:underline"
+                >
+                  Open the refinance roadmap wizard
+                </Link>{' '}
+                for lender comparison prep, a document checklist, and appraisal timeline.
+              </p>
               <div className="grid md:grid-cols-2 gap-6 mt-4">
                 {PHASES.map((phase, index) => {
                   const isLocked = !canAccessPhase(phase)

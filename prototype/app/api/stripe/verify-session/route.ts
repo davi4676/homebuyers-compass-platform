@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { STRIPE_CONFIG } from '@/lib/stripe'
+import { STRIPE_CONFIG, isStripeSecretConfigured } from '@/lib/stripe'
 import type { UserTier } from '@/lib/tiers'
 
 function getStripe(): Stripe | null {
-  if (!STRIPE_CONFIG.secretKey) return null
+  if (!isStripeSecretConfigured()) return null
   return new Stripe(STRIPE_CONFIG.secretKey, { apiVersion: '2026-01-28.clover' })
 }
 
@@ -24,15 +24,20 @@ export async function POST(request: NextRequest) {
       expand: ['subscription'],
     })
 
-    const isComplete = session.status === 'complete'
-    const isPaid = session.payment_status === 'paid' || session.payment_status === 'no_payment_required'
-    if (!isComplete || !isPaid) {
+    const isPaid =
+      session.payment_status === 'paid' || session.payment_status === 'no_payment_required'
+
+    if (session.status !== 'complete' || !isPaid) {
       return NextResponse.json({ verified: true, paid: false })
     }
 
-    const subscription = session.subscription && typeof session.subscription !== 'string'
-      ? session.subscription
-      : null
+    let subscription: Stripe.Subscription | null = null
+    if (session.subscription) {
+      subscription =
+        typeof session.subscription === 'string'
+          ? await stripe.subscriptions.retrieve(session.subscription)
+          : session.subscription
+    }
 
     const tier = (session.metadata?.tier ||
       subscription?.metadata?.tier ||
@@ -42,11 +47,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tier metadata missing on session' }, { status: 400 })
     }
 
+    const trialEndIso =
+      subscription?.trial_end != null
+        ? new Date(subscription.trial_end * 1000).toISOString()
+        : null
+
     return NextResponse.json({
       verified: true,
       paid: true,
       tier,
       mode: session.mode,
+      trialEndIso,
     })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Session verification failed'

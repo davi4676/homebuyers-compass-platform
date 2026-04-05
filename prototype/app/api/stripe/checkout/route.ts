@@ -4,12 +4,13 @@ import {
   STRIPE_CONFIG,
   SUBSCRIPTION_PLANS,
   getPlanForCheckout,
+  isStripeSecretConfigured,
   type BillingCycle,
 } from '@/lib/stripe'
 import type { UserTier } from '@/lib/tiers'
 
 function getStripe(): Stripe | null {
-  if (!STRIPE_CONFIG.secretKey) return null
+  if (!isStripeSecretConfigured()) return null
   return new Stripe(STRIPE_CONFIG.secretKey, { apiVersion: '2026-01-28.clover' })
 }
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Stripe not configured. Set STRIPE_SECRET_KEY and tier Price IDs (e.g. STRIPE_PRICE_PREMIUM_MONTHLY).',
+            'Stripe not configured. Set `STRIPE_SECRET_KEY` and price IDs in `.env.local` (see `.env.local.example`).',
         },
         { status: 503 }
       )
@@ -89,6 +90,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const momentumTrialDays = resolvedTier === 'momentum' ? 7 : undefined
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -98,6 +101,7 @@ export async function POST(request: NextRequest) {
       metadata: { tier: resolvedTier, planId: plan.id },
       subscription_data: {
         metadata: { tier: resolvedTier, planId: plan.id },
+        ...(momentumTrialDays != null ? { trial_period_days: momentumTrialDays } : {}),
       },
     }
     if (customerId) sessionParams.customer = customerId

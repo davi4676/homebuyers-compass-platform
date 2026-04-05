@@ -3,14 +3,14 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
-import { setUserTier } from '@/lib/user-tracking'
+import { markMomentumPaidLocal, setUserTier } from '@/lib/user-tracking'
 import { type UserTier } from '@/lib/tiers'
 
 export default function DevUpgradePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Set to premium tier
+    markMomentumPaidLocal()
     setUserTier('momentum')
     
     // Dispatch event to update all components

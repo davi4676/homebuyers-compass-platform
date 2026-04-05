@@ -30,6 +30,10 @@ import {
   Bell,
   Mail,
   AlertCircle,
+  Copy,
+  Gift,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react'
 import { ChatPopover } from '@/components/chatbot/ChatPopover'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
@@ -55,6 +59,7 @@ import {
   countNqGuidedPhasesFullyComplete,
   getNqGuidedFirstAccessibleIndexInPhase,
   migrateNQGuidedLocalStorageIfNeeded,
+  isHomeownerHubPhaseUnlocked,
   type NQGuidedStep,
 } from '@/lib/nq-guided-steps'
 import {
@@ -62,8 +67,9 @@ import {
   TIER_ORDER,
   TIER_DEFINITIONS,
   tierAtLeast,
-  getNextTier,
+  getMomentumToNavigatorUpgradeCopy,
 } from '@/lib/tiers'
+import { trackActivity } from '@/lib/track-activity'
 import { getJourneyPhaseById, getJourneyPhaseByOrder } from '@/lib/journey-phases-data'
 import {
   buildUserSnapshot,
@@ -74,6 +80,7 @@ import {
 } from '@/lib/user-snapshot'
 import HousingBudgetSketchTile from '@/components/HousingBudgetSketchTile'
 import AssistanceProgramsTab from '@/components/journey/AssistanceProgramsTab'
+import FirstGenJourneyHub from '@/components/journey/FirstGenJourneyHub'
 import TierPreviewSwitcher from '@/components/TierPreviewSwitcher'
 import TierBadge from '@/components/TierBadge'
 import { useTierMindset } from '@/components/tier-mindset/TierMindsetProvider'
@@ -86,6 +93,14 @@ import JourneyOnboardingFlow from '@/components/journey/JourneyOnboardingFlow'
 import MoneyInsights from '@/components/journey/MoneyInsights'
 import WhyItMattersCard from '@/components/journey/WhyItMattersCard'
 import NextStepCard from '@/components/journey/NextStepCard'
+import HomeownerHubSection from '@/components/journey/HomeownerHubSection'
+import ReferralProgramModal from '@/components/referral/ReferralProgramModal'
+import {
+  REFERRAL_PROMPT_LS,
+  referralProgramUrl,
+  getOrCreateReferralCode,
+} from '@/lib/referral-program'
+import { getUserProgress } from '@/lib/user-tracking'
 import { hasJourneyFeature } from '@/lib/journey-feature-access'
 import { runNextStepEngineWithContext, type NextStepAction } from '@/lib/next-step-engine'
 import {
@@ -95,10 +110,15 @@ import {
   getAlternativeSolutions,
 } from '@/lib/money-engine'
 import { useMoneyTrackers } from '@/lib/hooks/useMoneyTrackers'
-import { JOURNEY_LEARN_MONEY_ITEMS, type LearnMoneyFilterId } from '@/lib/journey-learn-money-items'
+import {
+  JOURNEY_LEARN_MONEY_ITEMS,
+  JOURNEY_LEARN_SOLO_ITEMS,
+  type LearnMoneyFilterId,
+} from '@/lib/journey-learn-money-items'
 import MoneyTag from '@/components/journey/MoneyTag'
 import { formatCurrency } from '@/lib/calculations'
 import type { ReadinessScore } from '@/lib/calculations'
+import { consumeMoveUpWizardJourneySync } from '@/lib/move-up-journey-sync'
 
 function ReadinessScoreReveal({ readiness }: { readiness: ReadinessScore }) {
   const reduceMotion = useReducedMotion() ?? false
@@ -155,15 +175,17 @@ function ReadinessScoreReveal({ readiness }: { readiness: ReadinessScore }) {
 
 interface NQGuidedRoadmapProps {
   userFirstName?: string | null
+  /** For referral links (`nestquest.com/ref/...`); falls back to a placeholder when omitted. */
+  referralSlug?: string | null
   onGoToResults: () => void
   /** Hub page should pass the tab from `useSearchParams()` so panels match the URL reliably. */
   activeTab?: JourneyTab
+  /** Increment to open the referral share modal from parent (e.g. onboarding notification). */
+  requestReferralModalOpen?: number
 }
 
-const hasAccessToStep = (stepIndex: number, tier: UserTier): boolean => {
-  if (stepIndex <= NQ_FOUNDATIONS_LAST_STEP_INDEX) return true
-  return tierAtLeast(tier, 'momentum')
-}
+/** Foundations users can browse all steps; momentum-only depth is surfaced via inline upgrade prompts. */
+const hasAccessToStep = (_stepIndex: number, _tier: UserTier): boolean => true
 
 const hasToolAccess = (step: NQGuidedStep, tier: UserTier): boolean => {
   if (!step.tierRequired) return true
@@ -262,6 +284,9 @@ const PHASE_CHECKLIST_LS = 'nq_phase_checklist_v1'
 
 const ONBOARDING_LS = 'nq_customized_onboarding_v1'
 
+/** First visit to customized journey — show "Start here" → Budget tab (onboarding bridge from quiz → hub). */
+const START_HERE_CARD_LS = 'nq_journey_start_here_v1'
+
 const REFINANCE_PHASE_TITLES: Record<number, string> = {
   1: 'Review Current Loan & Goals',
   2: 'Check Credit & Equity',
@@ -281,7 +306,56 @@ const REPEAT_BUYER_PHASE_TITLES: Record<number, string> = {
   7: 'Action Plan',
 }
 
-export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTab: activeTabProp }: NQGuidedRoadmapProps) {
+const FIRSTGEN_GLOSSARY_TERMS: { term: string; def: string }[] = [
+  { term: 'Pre-approval', def: 'A lender’s preliminary yes on how much you can borrow — not a final loan promise.' },
+  { term: 'DTI', def: 'Debt-to-income: monthly debts divided by gross monthly income; lenders use it to size your payment.' },
+  { term: 'APR', def: 'Annual percentage rate: the full yearly cost of credit including some fees, not just the note rate.' },
+  { term: 'LTV', def: 'Loan-to-value: loan amount divided by appraised value; affects PMI and pricing.' },
+  { term: 'PMI', def: 'Private mortgage insurance when you put down less than 20%; protects the lender, not you.' },
+  { term: 'Escrow', def: 'Account where taxes and insurance are collected with your payment until paid at closing or to agencies.' },
+  { term: 'Closing costs', def: 'One-time fees at closing: lender, title, recording, prepaid items, etc.' },
+  { term: 'Earnest money', def: 'Good-faith deposit with your offer; usually credited toward cash to close.' },
+  { term: 'Contingency', def: 'A contract escape hatch (inspection, appraisal, financing) if something fails.' },
+  { term: 'Appraisal', def: 'Licensed opinion of value — the lender uses it to justify the loan amount.' },
+  { term: 'Title', def: 'Legal ownership; title insurance protects against hidden claims.' },
+  { term: 'Underwriting', def: 'Lender review of your file before final approval.' },
+  { term: 'Rate lock', def: 'Fixing a quoted rate for a set period while you close.' },
+  { term: 'Points', def: 'Fees paid to lower the rate; 1 point ≈ 1% of loan amount.' },
+  { term: 'PITI', def: 'Principal, interest, taxes, and insurance — core housing payment pieces.' },
+  { term: 'HOA', def: 'Homeowners association with dues and rules affecting affordability.' },
+  { term: 'CD / Closing Disclosure', def: 'Final line-item summary of loan and cash to close, received before signing.' },
+  { term: 'LE / Loan Estimate', def: 'Early good-faith summary of loan terms and closing costs.' },
+  { term: 'CASH TO CLOSE', def: 'Total funds you bring at signing beyond the loan.' },
+  { term: 'Down payment', def: 'Your equity at purchase; rest is financed.' },
+  { term: 'Gift letter', def: 'Lender documentation when part of the down payment is a gift.' },
+  { term: 'FHA / VA / USDA', def: 'Government-backed loan programs with different rules and costs.' },
+  { term: 'Conventional', def: 'Non-government loan, often with PMI under 20% down.' },
+  { term: 'ARM vs fixed', def: 'Adjustable rate changes over time; fixed keeps the same rate for the locked term.' },
+  { term: 'Amortization', def: 'Schedule paying interest first, then more principal over time.' },
+]
+
+const SOLO_ADVOCATE_12: string[] = [
+  'Get pre-approved before touring',
+  'Never share your max budget with an agent',
+  'Request all disclosures in writing',
+  'Hire an independent inspector — not one referred by the agent',
+  'Get a second opinion on the inspection report',
+  'Research comparable sales yourself',
+  'Never waive inspection contingency',
+  'Read the HOA documents yourself',
+  'Verify the title search independently',
+  'Understand your closing costs before signing',
+  'Have an attorney review the purchase agreement',
+  'Keep all communications in writing',
+]
+
+export default function NQGuidedRoadmap({
+  userFirstName,
+  referralSlug: referralSlugProp,
+  onGoToResults,
+  activeTab: activeTabProp,
+  requestReferralModalOpen = 0,
+}: NQGuidedRoadmapProps) {
   const { userTier, effectiveTier, previewTier, setPreviewTier, resetPreviewToAccount, mindsetFor } =
     useTierMindset()
   const reduceMotion = useReducedMotion() ?? false
@@ -325,6 +399,30 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      setStartHereState(localStorage.getItem(START_HERE_CARD_LS) === '1' ? 'hide' : 'show')
+    } catch {
+      setStartHereState('show')
+    }
+  }, [])
+
+  const dismissStartHereCard = useCallback(() => {
+    try {
+      localStorage.setItem(START_HERE_CARD_LS, '1')
+    } catch {
+      /* ignore */
+    }
+    setStartHereState('hide')
+  }, [])
+
+  const goToBudgetFromStartHere = useCallback(() => {
+    trackActivity('tool_used', { tool: 'journey_start_here_budget' })
+    dismissStartHereCard()
+    goTab('budget')
+  }, [dismissStartHereCard, goTab])
+
+  useEffect(() => {
     if (activeTab !== 'upgrades') resetPreviewToAccount()
   }, [activeTab, resetPreviewToAccount])
 
@@ -345,6 +443,22 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
     setSnapshot(buildUserSnapshot(q, { firstName: userFirstName }))
     setQuizTxnMeta(getStoredQuizTransactionMeta())
   }, [userFirstName])
+
+  const hubReferralSlug = useMemo(() => {
+    const trimmed = referralSlugProp?.trim()
+    if (trimmed) return trimmed.slice(0, 32)
+    if (typeof window !== 'undefined') {
+      return getOrCreateReferralCode(null).slice(0, 32)
+    }
+    if (userFirstName) {
+      const s = String(userFirstName)
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '')
+        .slice(0, 32)
+      if (s) return s
+    }
+    return 'yourname'
+  }, [referralSlugProp, userFirstName])
 
   useEffect(() => {
     refreshSnapshot()
@@ -371,18 +485,32 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
   useEffect(() => {
     if (typeof window === 'undefined') return
     migrateNQGuidedLocalStorageIfNeeded()
+    const meta = getStoredQuizTransactionMeta()
+    /** Buy-sell wizard sync targets move-up (simultaneous) buyers only — not generic repeat buyers. */
+    const synced = consumeMoveUpWizardJourneySync(meta.icpType === 'move-up')
+
     try {
-      const stored = JSON.parse(localStorage.getItem('nq_current_step') || '0')
-      let n = typeof stored === 'number' ? stored : Number(stored)
-      if (!Number.isFinite(n)) n = 0
-      const idx = Math.max(0, Math.min(Math.floor(n), NQ_GUIDED_STEPS.length - 1))
+      let idx: number
+      if (synced) {
+        idx = Math.max(0, Math.min(synced.targetStepIndex, NQ_GUIDED_STEPS.length - 1))
+      } else {
+        const stored = JSON.parse(localStorage.getItem('nq_current_step') || '0')
+        let n = typeof stored === 'number' ? stored : Number(stored)
+        if (!Number.isFinite(n)) n = 0
+        idx = Math.max(0, Math.min(Math.floor(n), NQ_GUIDED_STEPS.length - 1))
+      }
       setCurrentStepIndex(idx)
     } catch {
       setCurrentStepIndex(0)
     }
     try {
-      const done = JSON.parse(localStorage.getItem('nq_completed_steps') || '[]') as number[]
-      setCompletedSteps(new Set(done.filter((i) => i >= 0 && i < NQ_GUIDED_STEPS.length)))
+      if (synced) {
+        const allowed = new Set(synced.completedStepIndices.filter((i) => i >= 0 && i < NQ_GUIDED_STEPS.length))
+        setCompletedSteps(allowed)
+      } else {
+        const done = JSON.parse(localStorage.getItem('nq_completed_steps') || '[]') as number[]
+        setCompletedSteps(new Set(done.filter((i) => i >= 0 && i < NQ_GUIDED_STEPS.length)))
+      }
     } catch {
       setCompletedSteps(new Set())
     }
@@ -397,6 +525,51 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('nq_completed_steps', JSON.stringify(Array.from(completedSteps)))
+    }
+  }, [completedSteps])
+
+  const referralPromptPrevCompletedRef = useRef<Set<number> | null>(null)
+  const [referralRoadmapOpen, setReferralRoadmapOpen] = useState<
+    null | 'preapproval' | 'phase7' | 'quiz'
+  >(null)
+
+  useEffect(() => {
+    if (requestReferralModalOpen > 0) {
+      setReferralRoadmapOpen('quiz')
+    }
+  }, [requestReferralModalOpen])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (referralPromptPrevCompletedRef.current === null) {
+      referralPromptPrevCompletedRef.current = new Set(completedSteps)
+      return
+    }
+    const prev = referralPromptPrevCompletedRef.current
+    const phase2Now = isNqGuidedPhaseFullyComplete(2, completedSteps)
+    const phase2Was = isNqGuidedPhaseFullyComplete(2, prev)
+    const phase7Now = isNqGuidedPhaseFullyComplete(7, completedSteps)
+    const phase7Was = isNqGuidedPhaseFullyComplete(7, prev)
+    referralPromptPrevCompletedRef.current = new Set(completedSteps)
+
+    try {
+      if (
+        phase7Now &&
+        !phase7Was &&
+        !localStorage.getItem(REFERRAL_PROMPT_LS.afterPhase7PostClosing)
+      ) {
+        setReferralRoadmapOpen('phase7')
+        return
+      }
+      if (
+        phase2Now &&
+        !phase2Was &&
+        !localStorage.getItem(REFERRAL_PROMPT_LS.afterPreApprovalPhase)
+      ) {
+        setReferralRoadmapOpen('preapproval')
+      }
+    } catch {
+      /* ignore */
     }
   }, [completedSteps])
 
@@ -438,6 +611,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
   const [budgetMonthlyPair, setBudgetMonthlyPair] = useState({ sketch: 0, base: 0 })
   const [onboardingComplete, setOnboardingComplete] = useState(false)
   const [onboardingHydrated, setOnboardingHydrated] = useState(false)
+  const [startHereState, setStartHereState] = useState<'loading' | 'show' | 'hide'>('loading')
   const [docTaskTouched, setDocTaskTouched] = useState(false)
   const phaseChecklistItems = displayStep?.nqPhaseChecklist
   const phaseChecklistSig = phaseChecklistItems?.join('\u0001') ?? ''
@@ -504,7 +678,8 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
   }, [step, currentStepIndex, snapshot, displayStep, setJourneyNavChrome, quizTxnMeta])
 
   const totalSteps = NQ_GUIDED_STEPS.length
-  const isStepLocked = !hasAccessToStep(currentStepIndex, effectiveTier)
+  const showMomentumRoadmapBanner =
+    currentStepIndex > NQ_FOUNDATIONS_LAST_STEP_INDEX && !tierAtLeast(effectiveTier, 'momentum')
   const isLastStep = currentStepIndex === totalSteps - 1
 
   const handleIDidIt = () => {
@@ -546,7 +721,25 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
     [step, snapshot]
   )
 
-  const canAccess = (idx: number) => hasAccessToStep(idx, effectiveTier)
+  const canAccess = useCallback(
+    (idx: number) => {
+      if (!hasAccessToStep(idx, effectiveTier)) return false
+      const s = getNQStepByIndex(idx)
+      if (s?.phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)) return false
+      return true
+    },
+    [effectiveTier, completedSteps]
+  )
+
+  useEffect(() => {
+    const s = getNQStepByIndex(currentStepIndex)
+    if (!s || s.phaseOrder !== 8) return
+    if (isHomeownerHubPhaseUnlocked(completedSteps)) return
+    const indices7 = getNqGuidedIndicesForPhaseOrder(7)
+    const firstIncomplete = indices7.find((i) => !completedSteps.has(i))
+    const fallback = firstIncomplete ?? indices7[indices7.length - 1] ?? 0
+    setCurrentStepIndex(fallback)
+  }, [completedSteps, currentStepIndex])
 
   const goToPhase = (phaseOrder: number) => {
     const idx = getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess)
@@ -556,6 +749,8 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
   const displayPhaseOrderSafe = step ? Math.max(1, step.phaseOrder) : 1
 
   const moneyTotals = useMoneyTrackers(snapshot, userTier, displayPhaseOrderSafe)
+  const moneyInsightsDetailsUnlocked = tierAtLeast(effectiveTier, 'momentum')
+  const budgetSketchLineCap = TIER_DEFINITIONS[effectiveTier].features.budgetSketch.maxEditableLineItems
 
   const nextEngine = useMemo(
     () =>
@@ -587,12 +782,17 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
     setJourneyNavChrome({ moneyTotals })
   }, [moneyTotals, setJourneyNavChrome])
 
+  const learnMoneyCatalog = useMemo(() => {
+    const solo = quizTxnMeta.icpType === 'solo' ? JOURNEY_LEARN_SOLO_ITEMS : []
+    return [...solo, ...JOURNEY_LEARN_MONEY_ITEMS]
+  }, [quizTxnMeta.icpType])
+
   const learnMoneyFiltered = useMemo(() => {
-    return JOURNEY_LEARN_MONEY_ITEMS.filter((item) => {
+    return learnMoneyCatalog.filter((item) => {
       if (learnMoneyFilter === 'all') return true
       return item.moneyTags.includes(learnMoneyFilter)
     })
-  }, [learnMoneyFilter])
+  }, [learnMoneyCatalog, learnMoneyFilter])
 
   const savingsDetails = useMemo(
     () => {
@@ -666,7 +866,9 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
       ? REFINANCE_PHASE_TITLES[displayPhaseOrder]
       : null
   const repeatBuyerPhaseTitle =
-    isRepeatBuyerUser && REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder]
+    isRepeatBuyerUser &&
+    quizTxnMeta.icpType === 'move-up' &&
+    REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder]
       ? REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder]
       : null
   const phaseHeadingTitle =
@@ -677,6 +879,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
       : null
   const nextRepeatBuyerTitle =
     isRepeatBuyerUser &&
+    quizTxnMeta.icpType === 'move-up' &&
     displayPhaseOrder < guidedPhaseTotal &&
     REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder + 1]
       ? REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder + 1]
@@ -698,6 +901,25 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
         : snapshot.readiness.total >= 40
           ? "You're building momentum."
           : "You're building a strong foundation."
+
+  const hosaFeatures = TIER_DEFINITIONS[effectiveTier].features.hosa
+  const showFullHosaBreakdown =
+    Boolean(hosaFeatures.optimizationScore) && tierAtLeast(effectiveTier, 'momentum')
+
+  const quizEstimatedSavings = useMemo(() => {
+    const q = loadQuizDataFromLocalStorage() as { estimatedSavings?: number } | null
+    return typeof q?.estimatedSavings === 'number' ? q.estimatedSavings : 8500
+  }, [snapshot?.readiness.total])
+
+  const unclaimedSavingsAmount = useMemo(() => {
+    if (tierAtLeast(effectiveTier, 'momentum')) return null
+    const claimedApprox = Math.min(quizEstimatedSavings * 0.22, 4500)
+    return Math.max(1500, Math.round(quizEstimatedSavings - claimedApprox))
+  }, [effectiveTier, quizEstimatedSavings])
+
+  const [soloAdvocateOpen, setSoloAdvocateOpen] = useState(false)
+  const [referralCopied, setReferralCopied] = useState(false)
+  const [firstGenGlossaryOpen, setFirstGenGlossaryOpen] = useState(false)
 
   const hasLearnContent = Boolean(
     (displayStep.nqWhyItMattersCards && displayStep.nqWhyItMattersCards.length > 0) ||
@@ -728,6 +950,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
           canAccessIndex={canAccess}
           onPhaseSelect={goToPhase}
           goTab={goTab}
+          quizIcpType={quizTxnMeta.icpType}
           onComplete={() => {
             try {
               localStorage.setItem(ONBOARDING_LS, '1')
@@ -747,6 +970,52 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
           aria-labelledby="journey-tab-overview"
             className="space-y-4 scroll-mt-28 sm:space-y-5 md:space-y-6"
           >
+          {startHereState === 'show' ? (
+            <motion.div
+              initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduceMotion ? 0.01 : 0.35 }}
+              className="relative overflow-hidden rounded-2xl border-2 border-teal-400/70 bg-gradient-to-br from-teal-50 via-white to-emerald-50/40 p-5 shadow-lg ring-1 ring-teal-200/60 sm:p-6"
+              role="region"
+              aria-label="Getting started"
+            >
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-teal-200/20 blur-2xl" aria-hidden />
+              <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-teal-900">
+                    <Sparkles className="h-4 w-4 text-teal-600" aria-hidden />
+                    Start here
+                  </p>
+                  <h2 className="mt-2 font-display text-xl font-bold text-[rgb(var(--navy))] sm:text-2xl">
+                    New to this hub? Start with your Budget Sketch
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
+                    You just saw your savings snapshot on results — next, stress-test your{' '}
+                    <strong className="font-semibold text-slate-800">monthly payment</strong> line by line (or your
+                    affordability snapshot on Foundations). Then come back to Overview and your phase tab.
+                  </p>
+                </div>
+                <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[11rem]">
+                  <button
+                    type="button"
+                    onClick={goToBudgetFromStartHere}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-teal-700"
+                  >
+                    Go to Budget Sketch
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={dismissStartHereCard}
+                    className="text-center text-sm font-semibold text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-slate-800"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
+
           <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-start">
             <div className="flex flex-wrap items-center gap-2">
               <TierBadge tier={effectiveTier} className="max-w-sm" />
@@ -758,7 +1027,55 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
             savingsDetails={savingsDetails}
             fundingDetails={fundingDetails}
             alternativeDetails={alternativeDetails}
+            detailsUnlocked={moneyInsightsDetailsUnlocked}
+            upgradeHref="/upgrade?source=journey-overview-insights&tier=momentum"
           />
+          {unclaimedSavingsAmount != null ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-1">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <span className="text-2xl" aria-hidden>
+                  💰
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-amber-900 text-sm">
+                    You have {formatCurrency(unclaimedSavingsAmount)} in unclaimed savings
+                  </p>
+                  <p className="text-amber-700 text-xs">
+                    Based on your profile, you qualify for programs and optimizations you haven&apos;t accessed yet.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push('/upgrade')}
+                  className="shrink-0 bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+                >
+                  Claim Now →
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {!tierAtLeast(effectiveTier, 'momentum') && activeTab === 'overview' ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Your momentum</p>
+              {(() => {
+                const p = typeof window !== 'undefined' ? getUserProgress() : null
+                if (!p) return <p className="mt-2 text-sm text-slate-600">Complete the quiz to start earning XP.</p>
+                return (
+                  <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-800">
+                    <span>
+                      <strong className="tabular-nums">{p.totalXp}</strong> XP total
+                    </span>
+                    <span>
+                      <strong className="tabular-nums">{p.currentStreak}</strong>-day streak
+                    </span>
+                  </div>
+                )
+              })()}
+              <p className="mt-2 text-xs text-slate-500">
+                Level up to Momentum to unlock levels and the leaderboard.
+              </p>
+            </div>
+          ) : null}
           {isRefinanceUser ? (
             <section
               className="rounded-xl border border-slate-200/90 border-l-4 border-l-teal-500 bg-white p-5 shadow-sm sm:p-6"
@@ -789,8 +1106,60 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-900/90">Readiness score</p>
             <p className="mt-1.5 text-base font-semibold text-slate-700">{overviewWarmth}</p>
             {snapshot ? (
-              <div className="mt-4 border-t border-teal-100/90 pt-4">
+              <div className="mt-4 space-y-4 border-t border-teal-100/90 pt-4">
                 <ReadinessScoreReveal readiness={snapshot.readiness} />
+                {showFullHosaBreakdown ? (
+                  <div className="rounded-2xl border border-emerald-200/80 bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100/70">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-900/90">
+                      HOSA Savings Score
+                    </p>
+                    <p className="mt-2 font-display text-3xl font-black tabular-nums text-emerald-900 sm:text-4xl">
+                      {Math.round(snapshot.readiness.total)}
+                      <span className="text-xl font-bold text-slate-500 sm:text-2xl">/100</span>
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Factor weights, savings opportunities, and the full optimization view live on your results page.
+                    </p>
+                    <Link
+                      href="/results"
+                      className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-emerald-900 underline decoration-emerald-600/60 underline-offset-2 hover:text-emerald-950"
+                    >
+                      View full HOSA breakdown
+                      <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-gray-900">Your HOSA Savings Score</h3>
+                      <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full">Preview</span>
+                    </div>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="relative">
+                        <div className="w-20 h-20 rounded-full bg-teal-600 flex items-center justify-center blur-sm">
+                          <span className="text-white font-bold text-2xl">{Math.round(snapshot.readiness.total)}</span>
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Lock className="text-teal-700 w-8 h-8" aria-hidden />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-gray-700 text-sm">
+                          Your score is calculated. Upgrade to see your full breakdown and the 3 actions that would
+                          increase it the most.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/upgrade')}
+                      className="w-full bg-teal-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-teal-700"
+                    >
+                      Unlock My Full Score →
+                    </button>
+                    <p className="text-xs text-gray-500 text-center mt-2">Includes your top 3 savings opportunities</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white/90 p-4 text-center sm:p-5">
@@ -807,6 +1176,52 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
               </div>
             )}
           </motion.section>
+
+          <div className="rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white to-teal-50/40 p-5 shadow-sm sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
+                <Gift className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-lg font-bold text-slate-900">Know someone buying a home?</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Share your link and you both get $50 off your next plan.
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <code className="truncate rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800">
+                    {referralProgramUrl(hubReferralSlug)}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(referralProgramUrl(hubReferralSlug))
+                      setReferralCopied(true)
+                      window.setTimeout(() => setReferralCopied(false), 2000)
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+                  >
+                    <Copy className="h-4 w-4" aria-hidden />
+                    {referralCopied ? 'Copied' : 'Copy Link'}
+                  </button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href={`mailto:?subject=${encodeURIComponent('Check out NestQuest')}&body=${encodeURIComponent(`I'm using NestQuest for my home buying plan — thought you might want it too: ${referralProgramUrl(hubReferralSlug)}`)}`}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline"
+                  >
+                    <Mail className="h-4 w-4" aria-hidden />
+                    Share via Email
+                  </a>
+                  <a
+                    href={`sms:?body=${encodeURIComponent(`Check out NestQuest: ${referralProgramUrl(hubReferralSlug)}`)}`}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline"
+                  >
+                    Share via Text
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {snapshot ? (
             <section className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-lg sm:p-6">
@@ -935,7 +1350,7 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
               onClick={() => goTab('budget')}
               className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 sm:text-base"
             >
-              Open Budget Sketch
+              {budgetSketchLineCap <= 0 ? 'Affordability calculator' : 'Open Budget Sketch'}
             </button>
             <button
               type="button"
@@ -967,16 +1382,20 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
             savingsDetails={savingsDetails}
             fundingDetails={fundingDetails}
             alternativeDetails={alternativeDetails}
+            detailsUnlocked={moneyInsightsDetailsUnlocked}
+            upgradeHref="/upgrade?source=journey-budget-insights&tier=momentum"
           />
           {!hasJourneyFeature(effectiveTier, 'affordability_review') ? (
             <div className="rounded-2xl border border-teal-100/90 bg-millennial-primary-light/30 p-4 shadow-sm sm:p-5">
-              <p className="text-sm font-semibold text-slate-900">Navigator+ unlocks a personalized affordability review.</p>
+              <p className="text-sm font-semibold text-slate-900">
+                {getMomentumToNavigatorUpgradeCopy(quizTxnMeta.icpType)}
+              </p>
               <MindsetTag className="mt-2 border-teal-100 bg-white/90" mindset={TIER_DEFINITIONS.navigator.mindset} />
               <Link
                 href="/upgrade?source=budget-inline&tier=navigator"
                 className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2 hover:text-teal-950"
               >
-                Explore Navigator+
+                {quizTxnMeta.icpType === 'first-gen' ? 'Get Expert Review →' : 'Explore Navigator+'}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             </div>
@@ -1000,6 +1419,8 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
           </div>
           <HousingBudgetSketchTile
             snapshot={snapshot}
+            maxEditableLineItems={budgetSketchLineCap}
+            budgetUpgradeHref="/upgrade?source=budget-sketch-lines&tier=momentum"
             onSketchDirtyChange={(dirty) => {
               setBudgetSketchDirty(dirty)
               setJourneyNavChrome({ budgetSketchEdited: dirty })
@@ -1064,7 +1485,18 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
         </div>
       ) : null}
 
-      {activeTab === 'assistance' ? <AssistanceProgramsTab /> : null}
+      {activeTab === 'assistance' ? <AssistanceProgramsTab userTier={effectiveTier} /> : null}
+
+      {activeTab === 'firstgen' ? (
+        <div
+          role="tabpanel"
+          id="journey-panel-firstgen"
+          aria-labelledby="journey-tab-firstgen"
+          className="scroll-mt-28"
+        >
+          <FirstGenJourneyHub goTab={goTab} />
+        </div>
+      ) : null}
 
       {activeTab === 'phase' ? (
         <div
@@ -1084,6 +1516,8 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
             savingsDetails={savingsDetails}
             fundingDetails={fundingDetails}
             alternativeDetails={alternativeDetails}
+            detailsUnlocked={moneyInsightsDetailsUnlocked}
+            upgradeHref="/upgrade?source=journey-phase-insights&tier=momentum"
           />
           <section
             className="relative scroll-mt-28 pt-0 md:pt-1"
@@ -1176,8 +1610,17 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
               }
               onSelectPhase={goToPhase}
               isPhaseComplete={(phaseOrder) => isNqGuidedPhaseFullyComplete(phaseOrder, completedSteps)}
+              getPhaseBlockedHint={(phaseOrder) =>
+                phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)
+                  ? 'Complete all milestones in Post-Closing first.'
+                  : undefined
+              }
             />
           </section>
+
+          {step.phaseOrder === 8 ? (
+            <HomeownerHubSection snapshot={snapshot} referralSlug={hubReferralSlug} />
+          ) : null}
 
           {phasesDoneCount >= 3 &&
           tierAtLeast(effectiveTier, 'navigator') &&
@@ -1220,33 +1663,43 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
 
           <div className="pt-0 md:pt-2">
             <AnimatePresence mode="wait">
-              {isStepLocked ? (
-                <PaywallCard
-                  key="paywall"
-                  step={displayStep}
-                  currentStepIndex={currentStepIndex}
-                  nextStep={getNQStepByIndex(NQ_FOUNDATIONS_LAST_STEP_INDEX + 1)}
-                  accountTier={userTier}
-                  onUpgrade={() => (window.location.href = '/upgrade?source=nq-guided&tier=momentum')}
-                />
-              ) : (
-                <motion.div
-                  key={displayStep.id}
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  transition={{ duration: 0.25 }}
-                  className="relative rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/28 to-emerald-50/28 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/60 sm:rounded-3xl"
-                >
-                  <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl sm:rounded-3xl" aria-hidden>
-                    <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[rgb(var(--navy))] via-millennial-cta-primary to-teal-400" />
-                    <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-millennial-cta-primary/10 blur-3xl" />
-                    <div className="absolute -left-16 bottom-0 h-32 w-32 rounded-full bg-millennial-cta-primary/10 blur-3xl" />
-                  </div>
+              <motion.div
+                key={displayStep.id}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={{ duration: 0.25 }}
+                className="relative rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/28 to-emerald-50/28 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/60 sm:rounded-3xl"
+              >
+                <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl sm:rounded-3xl" aria-hidden>
+                  <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[rgb(var(--navy))] via-millennial-cta-primary to-teal-400" />
+                  <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-millennial-cta-primary/10 blur-3xl" />
+                  <div className="absolute -left-16 bottom-0 h-32 w-32 rounded-full bg-millennial-cta-primary/10 blur-3xl" />
+                </div>
 
-                  <div className="relative z-10 border-l-4 border-millennial-cta-primary bg-gradient-to-b from-transparent to-white/70 p-4 pl-4 sm:p-6 sm:pl-6">
-                    <motion.div variants={itemVariants} className="mb-4 flex items-start gap-3 sm:gap-4">
+                <div className="relative z-10 border-l-4 border-millennial-cta-primary bg-gradient-to-b from-transparent to-white/70 p-4 pl-4 sm:p-6 sm:pl-6">
+                  {showMomentumRoadmapBanner ? (
+                    <div className="mb-4 rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50 to-emerald-50/90 p-4 shadow-sm ring-1 ring-teal-100/80 sm:p-5">
+                      <p className="flex items-start gap-2 text-sm font-semibold text-teal-950">
+                        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-teal-700" aria-hidden />
+                        <span>
+                          You&apos;re viewing a later-phase milestone. Full scripts, checklists, and weekly rhythm for
+                          House Hunting onward are included in{' '}
+                          <strong className="font-bold">{TIER_DEFINITIONS.momentum.name}</strong> — browse the step
+                          below, then upgrade when you want NQ to go deeper with you.
+                        </span>
+                      </p>
+                      <Link
+                        href="/upgrade?source=nq-guided-phase&tier=momentum"
+                        className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
+                      >
+                        Unlock full roadmap with Momentum
+                        <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+                      </Link>
+                    </div>
+                  ) : null}
+                  <motion.div variants={itemVariants} className="mb-4 flex items-start gap-3 sm:gap-4">
                       <div className="relative">
                         <motion.div
                           className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-millennial-primary-light/70 to-teal-100/55 shadow-xl shadow-teal-600/15 ring-2 ring-teal-200/60"
@@ -1483,7 +1936,6 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
                     </motion.div>
                   </div>
                 </motion.div>
-              )}
             </AnimatePresence>
           </div>
 
@@ -1537,7 +1989,137 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
             savingsDetails={savingsDetails}
             fundingDetails={fundingDetails}
             alternativeDetails={alternativeDetails}
+            detailsUnlocked={moneyInsightsDetailsUnlocked}
+            upgradeHref="/upgrade?source=journey-learn-insights&tier=momentum"
           />
+
+          {quizTxnMeta.icpType === 'first-gen' ? (
+            <section className="rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50/60 to-white p-5 shadow-sm" aria-labelledby="firstgen-learn-hub-heading">
+              <h3 id="firstgen-learn-hub-heading" className="font-display text-lg font-bold text-slate-900">
+                First-Gen Hub
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">Resources picked for buyers who are first in their family to own.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-teal-700">
+                    <BookOpen className="h-5 w-5" aria-hidden />
+                    <p className="font-bold text-slate-900">Glossary</p>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">25 terms every first-time buyer needs to know</p>
+                  <button
+                    type="button"
+                    onClick={() => setFirstGenGlossaryOpen((o) => !o)}
+                    className="mt-3 text-sm font-semibold text-teal-800 underline"
+                  >
+                    {firstGenGlossaryOpen ? 'Hide glossary' : 'View glossary'}
+                  </button>
+                  {firstGenGlossaryOpen ? (
+                    <ul className="mt-3 max-h-60 list-none space-y-2 overflow-y-auto text-sm text-slate-700">
+                      {FIRSTGEN_GLOSSARY_TERMS.map((g) => (
+                        <li key={g.term} className="rounded-lg bg-slate-50 px-2 py-1.5">
+                          <strong className="text-slate-900">{g.term}</strong> — {g.def}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+                <a
+                  href="https://www.hud.gov/i_want_to/talk_to_a_housing_counselor"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-300"
+                >
+                  <div className="flex items-center gap-2 text-teal-700">
+                    <ExternalLink className="h-5 w-5" aria-hidden />
+                    <p className="font-bold text-slate-900">HUD Counselors</p>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">Free, government-approved housing counselors in your area</p>
+                  <span className="mt-3 inline-flex text-sm font-semibold text-teal-800">Open HUD directory →</span>
+                </a>
+                <Link
+                  href="/resources"
+                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-300"
+                >
+                  <p className="font-bold text-slate-900">Gift Fund Guide</p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    How to use family money for your down payment — the right way
+                  </p>
+                  <span className="mt-3 inline-flex text-sm font-semibold text-teal-800">Read guide →</span>
+                </Link>
+                <Link
+                  href="/learn/buying-solo"
+                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-300"
+                >
+                  <p className="font-bold text-slate-900">Family Conversation Scripts</p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    How to talk to your family about helping you buy a home
+                  </p>
+                  <span className="mt-3 inline-flex text-sm font-semibold text-teal-800">Open scripts →</span>
+                </Link>
+              </div>
+            </section>
+          ) : null}
+
+          {quizTxnMeta.icpType === 'solo' ? (
+            <section className="space-y-3" aria-label="Solo buyer learn cards">
+              <div className="rounded-xl border border-teal-200/80 bg-gradient-to-r from-teal-50/90 to-white p-4 text-sm text-slate-700 shadow-sm">
+                <p className="font-bold text-teal-950">Buying solo</p>
+                <p className="mt-1">Extra picks below — then the rest of the Learn library still applies.</p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="font-bold text-slate-900">Qualifying on One Income</p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Lenders look at your debt-to-income ratio. Here&apos;s how to maximize your qualification on a single
+                    income.
+                  </p>
+                  <Link
+                    href={
+                      tierAtLeast(effectiveTier, 'momentum')
+                        ? '/mortgage-shopping'
+                        : '/upgrade?source=solo-dti&tier=momentum'
+                    }
+                    className="mt-3 inline-flex text-sm font-semibold text-teal-800 underline"
+                  >
+                    Calculate My DTI →
+                  </Link>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="font-bold text-slate-900">The Solo Buyer Advocate Checklist</p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Buying alone means you need to be your own advocate. Here are 12 things to verify before signing
+                    anything.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSoloAdvocateOpen((o) => !o)}
+                    className="mt-3 text-sm font-semibold text-teal-800 underline"
+                  >
+                    {soloAdvocateOpen ? 'Hide checklist' : 'View Checklist →'}
+                  </button>
+                  {soloAdvocateOpen ? (
+                    <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-slate-700">
+                      {SOLO_ADVOCATE_12.map((line, i) => (
+                        <li key={i}>{line}</li>
+                      ))}
+                    </ol>
+                  ) : null}
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="font-bold text-slate-900">Negotiating Without a Partner</p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Solo buyers can actually negotiate harder — here&apos;s why, and how to use it to your advantage.
+                  </p>
+                  <Link
+                    href="/upgrade?source=solo-negotiation&tier=momentum"
+                    className="mt-3 inline-flex text-sm font-semibold text-teal-800 underline"
+                  >
+                    Get Negotiation Scripts →
+                  </Link>
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filter learn by money type">
             {(
@@ -2219,6 +2801,22 @@ export default function NQGuidedRoadmap({ userFirstName, onGoToResults, activeTa
           />
         </div>
       ) : null}
+
+      <ReferralProgramModal
+        open={referralRoadmapOpen !== null}
+        onClose={() => setReferralRoadmapOpen(null)}
+        referralSlug={hubReferralSlug}
+        milestone={
+          referralRoadmapOpen === 'phase7' ? 'phase7' : referralRoadmapOpen === 'quiz' ? 'quiz' : 'preapproval'
+        }
+        storageKeyOnDismiss={
+          referralRoadmapOpen === 'phase7'
+            ? REFERRAL_PROMPT_LS.afterPhase7PostClosing
+            : referralRoadmapOpen === 'quiz'
+              ? REFERRAL_PROMPT_LS.afterQuizResults
+              : REFERRAL_PROMPT_LS.afterPreApprovalPhase
+        }
+      />
     </div>
   )
 }
@@ -2251,104 +2849,5 @@ function ToolTierLockCallout({
         Upgrade to {def.name}
       </Link>
     </div>
-  )
-}
-
-function PaywallCard({
-  step,
-  currentStepIndex,
-  nextStep,
-  onUpgrade,
-  accountTier,
-}: {
-  step: NQGuidedStep
-  currentStepIndex: number
-  nextStep: NQGuidedStep | undefined
-  onUpgrade: () => void
-  accountTier: UserTier
-}) {
-  const nextTier = getNextTier(accountTier) ?? 'momentum'
-  const nextDef = TIER_DEFINITIONS[nextTier]
-  const [chatOpen, setChatOpen] = useState(false)
-  const paywallChatTriggerRef = useRef<HTMLButtonElement>(null)
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="relative overflow-hidden rounded-3xl border-2 border-amber-300/90 bg-gradient-to-br from-amber-50 via-white to-orange-50/40 p-6 shadow-2xl shadow-amber-200/40 ring-1 ring-amber-100/50 sm:p-8"
-    >
-      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500" />
-      <div className="absolute -right-16 top-20 h-32 w-32 rounded-full bg-amber-200/20 blur-3xl" aria-hidden />
-      <div className="flex items-start gap-5 mb-6">
-        <motion.div
-          className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/80 shadow-lg shadow-amber-500/20 ring-2 ring-amber-200/50"
-          whileHover={{ rotate: 5, scale: 1.05 }}
-        >
-          <Image
-            src="/images/nq-assistant.png"
-            alt="NQ, your home buying guide"
-            width={120}
-            height={120}
-            className="h-full w-full object-contain"
-          />
-        </motion.div>
-        <div className="flex-1 min-w-0">
-          <h2 className="mb-2 text-xl font-bold text-slate-900 sm:text-2xl">
-            You&apos;ve finished Preparation & Pre-Approval — nice work!
-          </h2>
-          <p className="text-lg text-slate-600 leading-relaxed">
-            I&apos;d love to guide you through House Hunting, Negotiation, and Closing. Upgrade to{' '}
-            <strong className="font-semibold text-slate-800">{nextDef.name}</strong> and we&apos;ll keep going together.
-          </p>
-          <p className="mt-2 text-sm italic text-slate-600">&ldquo;{nextDef.mindset}&rdquo;</p>
-        </div>
-        <div className="relative shrink-0">
-          <button
-            ref={paywallChatTriggerRef}
-            type="button"
-            onClick={() => setChatOpen((o) => !o)}
-            title="Ask NQ a question"
-            className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-colors ${
-              chatOpen
-                ? 'bg-amber-100 border-amber-300 text-amber-700'
-                : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100 hover:border-amber-300 hover:text-amber-700'
-            }`}
-          >
-            <MessageCircle className="w-6 h-6" strokeWidth={2} />
-          </button>
-          <ChatPopover isOpen={chatOpen} onClose={() => setChatOpen(false)} triggerRef={paywallChatTriggerRef} />
-        </div>
-      </div>
-
-      {nextStep && (
-        <div className="rounded-2xl bg-white/90 border-2 border-amber-200/60 p-5 mb-6">
-          <p className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2">
-            A peek at what&apos;s next
-          </p>
-          <p className="font-bold text-slate-800 text-xl">{nextStep.title}</p>
-          <p className="text-base text-slate-600 mt-1">
-            {renderWithAnnualCreditReportLink(nextStep.nqWhatToDo)}
-          </p>
-        </div>
-      )}
-
-      <motion.button
-        type="button"
-        onClick={onUpgrade}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 hover:-translate-y-0.5 transition-all duration-200"
-      >
-        Upgrade to {nextDef.name} <ArrowRight className="w-5 h-5" />
-      </motion.button>
-      <p className="mt-4 text-base text-slate-500">
-        Or{' '}
-        <Link href="/inbox" className="text-millennial-cta-primary font-semibold hover:underline">
-          ask NQ a question
-        </Link>{' '}
-        anytime.
-      </p>
-    </motion.div>
   )
 }

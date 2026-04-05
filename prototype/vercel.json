@@ -3,6 +3,10 @@
     {
       "path": "/api/user/reminders/run",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/email/sequences/run",
+      "schedule": "30 14 * * *"
     }
   ]
 }

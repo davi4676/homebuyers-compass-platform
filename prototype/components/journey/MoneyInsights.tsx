@@ -1,8 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, X } from 'lucide-react'
+import { ChevronRight, Lock, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/calculations'
 import type { PersistedMoneyTrackers } from '@/lib/money-tracker-storage'
 
@@ -18,6 +19,9 @@ type MoneyInsightsProps = {
   fundingDetails: InsightItem[]
   alternativeDetails: InsightItem[]
   sticky?: boolean
+  /** When false, detail modal shows totals but blurs full breakdown until Momentum+. */
+  detailsUnlocked?: boolean
+  upgradeHref?: string
 }
 
 export default function MoneyInsights({
@@ -26,6 +30,8 @@ export default function MoneyInsights({
   fundingDetails,
   alternativeDetails,
   sticky = true,
+  detailsUnlocked = true,
+  upgradeHref = '/upgrade?source=money-insights&tier=momentum',
 }: MoneyInsightsProps) {
   const [open, setOpen] = useState(false)
   const totalDetailCount = useMemo(
@@ -94,10 +100,33 @@ export default function MoneyInsights({
                 </button>
               </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-3">
-                <InsightCol title="Savings" accent="text-emerald-900" items={savingsDetails} />
-                <InsightCol title="Funds" accent="text-teal-900" items={fundingDetails} />
-                <InsightCol title="Alternative options" accent="text-violet-900" items={alternativeDetails} />
+              <div className="relative mt-4">
+                <div
+                  className={`grid gap-4 md:grid-cols-3 ${!detailsUnlocked ? 'pointer-events-none select-none blur-sm' : ''}`}
+                >
+                  <InsightCol title="Savings" accent="text-emerald-900" items={savingsDetails} />
+                  <InsightCol title="Funds" accent="text-teal-900" items={fundingDetails} />
+                  <InsightCol title="Alternative options" accent="text-violet-900" items={alternativeDetails} />
+                </div>
+                {!detailsUnlocked ? (
+                  <div className="pointer-events-auto mt-4 rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50 to-emerald-50/80 p-4 shadow-md ring-1 ring-teal-100/80">
+                    <p className="flex items-center gap-2 text-sm font-bold text-teal-950">
+                      <Lock className="h-4 w-4 shrink-0 text-teal-700" aria-hidden />
+                      Full HOSA-style breakdown is included with Momentum
+                    </p>
+                    <p className="mt-1.5 text-sm text-slate-700">
+                      You can still see headline totals above — upgrade to unpack savings, funds, and alternatives line
+                      by line.
+                    </p>
+                    <Link
+                      href={upgradeHref}
+                      className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
+                    >
+                      Upgrade to Momentum
+                      <ChevronRight className="h-4 w-4" aria-hidden />
+                    </Link>
+                  </div>
+                ) : null}
               </div>
               <p className="mt-4 text-xs text-slate-500">
                 {totalDetailCount} opportunities surfaced. Estimates are directional and meant to guide your next move.

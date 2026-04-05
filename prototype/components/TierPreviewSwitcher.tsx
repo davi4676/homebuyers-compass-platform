@@ -82,7 +82,7 @@ const COMPARISON_ROWS: {
     cell: (t) => (tierAtLeast(t, 'momentum') ? 'Yes' : '—'),
   },
   {
-    label: '1:1 onboarding & affordability review',
+    label: '1:1 onboarding & human finance review',
     cell: (t) => (tierAtLeast(t, 'navigator') ? 'Yes' : '—'),
   },
   {
@@ -119,7 +119,7 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
   },
   {
     q: 'Is my data used to pressure me to upgrade?',
-    a: 'No. Upsells only appear when a feature could genuinely help with what you are doing right now — for example, deeper scripts after Phase 2 or affordability review when you edit your budget.',
+    a: 'No. Upsells only appear when a feature could genuinely help with what you are doing right now — for example, deeper scripts after Phase 2 or a human finance review when you edit your budget.',
   },
 ]
 

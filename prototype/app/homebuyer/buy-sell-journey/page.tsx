@@ -47,8 +47,14 @@ import {
 } from '@/components/journeys'
 import { getCachedFreddieMacRates } from '@/lib/freddie-mac-rates'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
+import ReferralProgramModal from '@/components/referral/ReferralProgramModal'
+import { REFERRAL_PROMPT_LS } from '@/lib/referral-program'
+import { getOrCreateReferralCode } from '@/lib/referral-program'
+import { queueMoveUpWizardJourneySync, buySellWizardStepToPhaseOrder, BUY_SELL_JOURNEY_STORAGE_KEY } from '@/lib/move-up-journey-sync'
+import { loadMoveUpRateAlert, saveMoveUpRateAlert } from '@/lib/move-up-rate-alert'
+import { useRouter } from 'next/navigation'
 
-const BUY_SELL_STORAGE_KEY = 'buy-sell-journey-v1'
+const BUY_SELL_STORAGE_KEY = BUY_SELL_JOURNEY_STORAGE_KEY
 const BUY_SELL_STEPS: { id: string; label: string; shortLabel: string }[] = [
   { id: 'current', label: 'Current Home Profile', shortLabel: 'Current' },
   { id: 'vision', label: 'New Home Vision', shortLabel: 'Vision' },
@@ -370,6 +376,7 @@ function saveBuySellState(
 }
 
 export default function BuySellJourneyPage() {
+  const router = useRouter()
   const [step, setStep] = useState(0)
   const [currentHome, setCurrentHome] = useState<BuySellCurrentHome>(defaultCurrentHome)
   const [newHome, setNewHome] = useState<BuySellNewHome>(defaultNewHome)
@@ -377,6 +384,20 @@ export default function BuySellJourneyPage() {
   const [currentHousingCost, setCurrentHousingCost] = useState(defaultCurrentHousingCost)
   const [snapshotScenarioId, setSnapshotScenarioId] = useState<string>('')
   const [pmmsRefreshVersion, setPmmsRefreshVersion] = useState(0)
+  const [rateAlertEmail, setRateAlertEmail] = useState('')
+  const [rateAlertBusy, setRateAlertBusy] = useState(false)
+  const [rateAlertSubscribed, setRateAlertSubscribed] = useState(false)
+  const [referralOpen, setReferralOpen] = useState(false)
+  const [referralSlug, setReferralSlug] = useState('yourname')
+
+  useEffect(() => {
+    setRateAlertSubscribed(!!loadMoveUpRateAlert())
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setReferralSlug(getOrCreateReferralCode(null))
+  }, [])
 
   useEffect(() => {
     const s = loadBuySellState()
@@ -640,7 +661,7 @@ export default function BuySellJourneyPage() {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <BackToMyJourneyLink className="font-semibold" />
+            <BackToMyJourneyLink />
             <Link
               href="/"
               className="flex items-center gap-2 text-sm font-medium text-[#57534e] hover:text-[#1c1917] transition"
@@ -1074,6 +1095,58 @@ export default function BuySellJourneyPage() {
                   />
                 </div>
               )}
+
+              <div className="rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50/90 to-white p-5 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Gauge className="h-6 w-6 text-indigo-600" aria-hidden />
+                  <h3 className="text-lg font-bold text-gray-900">Rate alerts (prototype)</h3>
+                </div>
+                <p className="mt-2 text-sm text-gray-600">
+                  When benchmark mortgage rates move enough, your bridge cost and new payment estimates can shift. Subscribe
+                  to save today&apos;s PMMS baseline; we&apos;ll surface a notice in your lifecycle dashboard when the
+                  market moves by your threshold (stored on this device only in the prototype).
+                </p>
+                {rateAlertSubscribed ? (
+                  <p className="mt-4 text-sm font-semibold text-indigo-900">
+                    You&apos;re subscribed. We&apos;ll compare future rates to your saved benchmark and highlight changes
+                    on the{' '}
+                    <Link href="/lifecycle-dashboard" className="underline underline-offset-2 hover:text-indigo-950">
+                      lifecycle dashboard
+                    </Link>
+                    .
+                  </p>
+                ) : (
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <label className="flex-1 text-sm font-medium text-gray-700">
+                      Email (optional)
+                      <input
+                        type="email"
+                        value={rateAlertEmail}
+                        onChange={(e) => setRateAlertEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      disabled={rateAlertBusy}
+                      onClick={async () => {
+                        setRateAlertBusy(true)
+                        try {
+                          const r = await getCachedFreddieMacRates()
+                          saveMoveUpRateAlert(rateAlertEmail, { rate30Year: r.rate30Year, date: r.date })
+                          setRateAlertSubscribed(true)
+                        } finally {
+                          setRateAlertBusy(false)
+                        }
+                      }}
+                      className="shrink-0 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"
+                    >
+                      {rateAlertBusy ? 'Saving…' : 'Subscribe to rate alerts'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </motion.section>
           )}
 
@@ -1226,7 +1299,8 @@ export default function BuySellJourneyPage() {
                 </div>
                 <div className="mt-5">
                   <Link
-                    href="/mortgage-shopping"
+                    href="/customized-journey?tab=phase"
+                    onClick={() => queueMoveUpWizardJourneySync(buySellWizardStepToPhaseOrder(5))}
                     className="inline-flex items-center gap-2 rounded-lg bg-rose-500 px-5 py-3 text-white font-semibold hover:bg-rose-600 transition shadow-md shadow-rose-200/50"
                   >
                     Show my customized next steps
@@ -1496,6 +1570,52 @@ export default function BuySellJourneyPage() {
                 </ul>
               </div>
 
+              <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-5">
+                <h3 className="font-bold text-gray-900 mb-3">After you close on your new home</h3>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Link
+                    href="/lifecycle-dashboard"
+                    className="rounded-lg border border-white bg-white p-4 shadow-sm transition hover:border-teal-300"
+                  >
+                    <p className="font-semibold text-gray-900">Lifecycle Dashboard</p>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Track your mortgage, equity, and refinance opportunities in one place.
+                    </p>
+                  </Link>
+                  <Link
+                    href="/refinance-optimizer#rate-radar"
+                    className="rounded-lg border border-white bg-white p-4 shadow-sm transition hover:border-teal-300"
+                  >
+                    <p className="font-semibold text-gray-900">Rate Drop Radar</p>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Get alerted when rates drop enough to save you $200+/month.
+                    </p>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setReferralOpen(true)}
+                    className="rounded-lg border border-white bg-white p-4 text-left shadow-sm transition hover:border-teal-300"
+                  >
+                    <p className="font-semibold text-gray-900">Refer a Friend</p>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Know someone buying? Share NestQuest and you both get $50 off.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  queueMoveUpWizardJourneySync(7)
+                  router.push('/customized-journey?tab=phase')
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-6 py-4 text-base font-bold text-white shadow-md transition hover:bg-teal-800"
+              >
+                Continue to my customized journey
+                <ArrowRight className="h-5 w-5" aria-hidden />
+              </button>
+
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/mortgage-shopping"
@@ -1561,16 +1681,28 @@ export default function BuySellJourneyPage() {
               <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
-            <Link
-              href="/"
+            <button
+              type="button"
+              onClick={() => {
+                queueMoveUpWizardJourneySync(7)
+                router.push('/customized-journey?tab=phase')
+              }}
               className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2 text-white font-semibold hover:bg-green-700 transition"
             >
-              Done
+              Continue to journey
               <ChevronRight className="h-4 w-4" />
-            </Link>
+            </button>
           )}
         </nav>
       </main>
+
+      <ReferralProgramModal
+        open={referralOpen}
+        onClose={() => setReferralOpen(false)}
+        referralSlug={referralSlug}
+        milestone="quiz"
+        storageKeyOnDismiss={REFERRAL_PROMPT_LS.afterQuizResults}
+      />
     </div>
   )
 }

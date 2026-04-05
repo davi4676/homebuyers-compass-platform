@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { STRIPE_CONFIG } from '@/lib/stripe'
+import { findUserByEmail, updateUser } from '@/lib/user-store'
+import type { UserTier } from '@/lib/tiers'
 
 function getStripe(): Stripe | null {
   if (!STRIPE_CONFIG.secretKey) return null
@@ -33,10 +35,30 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        const subscriptionId = session.subscription as string | null
-        const customerId = session.customer as string | null
-        const customerEmail = session.customer_email
-        // Persist: link subscription to user, grant access, etc.
+        const subscriptionId =
+          typeof session.subscription === 'string'
+            ? session.subscription
+            : session.subscription?.id ?? null
+        const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null
+        const customerEmail = session.customer_email || session.customer_details?.email || null
+
+        if (customerId && customerEmail) {
+          const user = findUserByEmail(customerEmail)
+          if (user) {
+            const tierMeta = session.metadata?.tier as UserTier | undefined
+            const tierOk =
+              tierMeta &&
+              ['foundations', 'momentum', 'navigator', 'navigator_plus'].includes(tierMeta)
+            updateUser(user.id, {
+              stripeCustomerId: customerId,
+              ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
+              ...(tierOk ? { subscriptionTier: tierMeta } : {}),
+              momentumTrial: undefined,
+              subscriptionPause: undefined,
+            })
+          }
+        }
+
         console.log('[Stripe] checkout.session.completed', {
           sessionId: session.id,
           subscriptionId,

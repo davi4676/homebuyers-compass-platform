@@ -2,6 +2,10 @@
 
 This guide covers multiple deployment options for your Next.js application.
 
+## Stripe (paid checkout)
+
+Checkout fails with **503** until `STRIPE_SECRET_KEY` and the Stripe **Price IDs** for each paid tier and billing cycle are configured. Follow **[STRIPE_SETUP.md](./STRIPE_SETUP.md)** (product catalog, env vars, webhooks, and end-to-end test). Add the same variables in your host’s environment (e.g. Vercel → Project → Settings → Environment Variables).
+
 ## Option 1: Vercel (Recommended - Easiest for Next.js)
 
 Vercel is made by the Next.js team and offers the simplest deployment experience.

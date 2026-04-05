@@ -11,7 +11,7 @@ const dmSans = DM_Sans({
 
 const siteTitle = 'NestQuest — Save $10,000–$15,000 on Your Home Purchase'
 const siteDescription =
-  "NestQuest is a free personalized home buying guide that finds hidden funds, simplifies every step, and helps you save $10,000–$15,000 on your home purchase."
+  'NestQuest is your home buying advocate — finding grants, programs, and savings opportunities that save first-time buyers $10,000–$15,000. No affiliate kickbacks. No hidden agendas.'
 
 export const metadata: Metadata = {
   title: { default: siteTitle, template: '%s | NestQuest' },

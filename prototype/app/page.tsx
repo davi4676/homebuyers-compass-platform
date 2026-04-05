@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -8,8 +8,10 @@ import {
   ArrowUpCircle,
   Award,
   BadgeCheck,
+  Building2,
   Check,
   Database,
+  Key,
   ListChecks,
   MessageSquare,
   Shield,
@@ -25,6 +27,7 @@ import {
   ChevronDown,
   ChevronUp,
   Calculator,
+  RefreshCw,
 } from 'lucide-react'
 import CountUpNumber from '@/components/CountUpNumber'
 import ScrollRevealSection from '@/components/ScrollRevealSection'
@@ -35,6 +38,7 @@ import HomebuyingRelayRaceSection from '@/components/HomebuyingRelayRaceSection'
 import { trackActivity } from '@/lib/track-activity'
 import { useExperiment } from '@/lib/hooks/useExperiment'
 import { SIGNUP_DISABLED } from '@/lib/auth-flags'
+import { REFERRED_BY_LS_KEY } from '@/lib/referral-program'
 
 export default function LandingPage() {
   const [heroForm, setHeroForm] = useState({ type: 'first-time', preparedness: 'learning', when: '6-months' })
@@ -46,7 +50,20 @@ export default function LandingPage() {
   const [equityMortgage, setEquityMortgage] = useState(265000)
   const [equityYears, setEquityYears] = useState(6)
   const [showMoveUpTools, setShowMoveUpTools] = useState(false)
+  const [refFriendBanner, setRefFriendBanner] = useState(false)
   const authGateExperiment = useExperiment('auth_gate_v2')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const ref = new URLSearchParams(window.location.search).get('ref')?.trim()
+    if (!ref) return
+    try {
+      localStorage.setItem(REFERRED_BY_LS_KEY, ref.slice(0, 64))
+    } catch {
+      /* ignore */
+    }
+    setRefFriendBanner(true)
+  }, [])
 
   useEffect(() => {
     if (authGateExperiment.isReady) {
@@ -61,6 +78,9 @@ export default function LandingPage() {
     authSignupThenPath(`/quiz?transactionType=${encodeURIComponent(transactionType)}`)
 
   const quizByIcp = (icp: string) => authSignupThenPath(`/quiz?type=${encodeURIComponent(icp)}`)
+
+  const quizAffordabilityHref = authSignupThenPath('/quiz?type=affordability')
+  const quizGuidedHref = authSignupThenPath('/quiz?type=guided')
 
   const estimatedEquity = Math.max(0, equityHomeValue - equityMortgage)
   const sellingCostsPct = 0.07
@@ -77,6 +97,15 @@ export default function LandingPage() {
     trackActivity('tool_used', { tool: source, transactionType })
     authGateExperiment.track('landing_cta_clicked', { source, transactionType })
   }
+
+  /** Icons chosen for broad lucide-react@0.30x compatibility (avoid newer/missing names). */
+  const guidedPathSteps = [
+    { label: 'Credit & Documents', Icon: Check, active: true },
+    { label: 'Pre-Approval', Icon: Building2, active: true },
+    { label: 'Find Your Home', Icon: Home, active: false },
+    { label: 'Offer & Inspection', Icon: FileText, active: false },
+    { label: 'Close & Move In', Icon: Key, active: false },
+  ] as const
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-millennial-bg via-millennial-bg to-[#f0f4f0] text-millennial-text font-sans antialiased">
@@ -113,35 +142,233 @@ export default function LandingPage() {
         )}
       </AnimatePresence>
 
-      <section id="landing-hero" className="relative flex min-h-[100dvh] flex-col">
-        <div
-          className="absolute inset-0 z-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              'linear-gradient(to top, rgba(250,250,245,0.98) 0%, rgba(250,250,245,0.82) 28%, rgba(250,250,245,0.55) 48%, rgba(250,250,245,0.28) 68%, transparent 100%), url(https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80)',
-            backgroundPosition: 'center',
-            backgroundSize: 'cover',
-          }}
-        />
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-4 pt-6 text-center sm:pt-8">
-          <div className="max-w-3xl">
-            <h1 className="font-display text-[1.65rem] sm:text-[2.1rem] md:text-[2.65rem] lg:text-[3.1rem] font-extrabold text-millennial-text mb-3 tracking-tight leading-[1.15]">
+      {refFriendBanner ? (
+        <div className="border-b border-teal-200 bg-teal-50 px-4 py-3 text-center text-sm font-medium text-teal-950">
+          You were referred by a friend — sign up today and get $50 off your first plan.
+          <button
+            type="button"
+            onClick={() => setRefFriendBanner(false)}
+            className="ml-2 font-semibold text-teal-800 underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
+      <section id="landing-hero" className="relative w-full overflow-hidden">
+        <div className="border-b border-slate-200/80 bg-millennial-bg/95 px-4 py-8 text-center sm:py-10 md:py-12">
+          <div className="mx-auto max-w-3xl">
+            <h1 className="font-display text-[1.65rem] font-extrabold leading-tight tracking-tight text-millennial-text sm:text-[2.1rem] md:text-4xl">
               Save $10,000–$15,000 on Your Home Purchase — Without Guessing
             </h1>
-            <p className="mx-auto max-w-2xl px-1 text-[1.08rem] font-medium leading-relaxed text-millennial-text [text-shadow:0_0_1px_rgba(250,250,245,1),0_2px_24px_rgba(250,250,245,0.9)] md:text-[1.22rem] md:leading-snug">
-              A personalized buying guide that finds hidden funds, simplifies every step, and holds your hand from
-              search to close.
+            <p className="mx-auto mt-4 max-w-2xl text-lg font-medium leading-relaxed text-slate-700 sm:text-xl md:mt-5 md:text-[1.35rem] md:leading-snug">
+              We find the money everyone else is hiding from you — grants, programs, and negotiation tactics that
+              save first-time buyers $10,000–$15,000.
             </p>
-            <Link
-              href={ctaHref('first-time')}
-              onClick={() => handlePrimaryCtaClick('landing_hero_primary_savings', 'first-time')}
-              className="mt-8 inline-flex w-full max-w-none items-center justify-center rounded-xl bg-millennial-cta-primary px-8 py-4 text-lg font-semibold text-white shadow-md transition-all duration-200 hover:bg-millennial-cta-hover md:mx-auto md:mt-10 md:w-auto"
-            >
-              Find My Savings in 90 Seconds →
-            </Link>
-            <p className="mt-2 text-sm text-millennial-text-subtle">
-              Free · No credit check · No account required
-            </p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-2">
+          {/* LEFT — Stretched Millennial / affordability track */}
+          <div
+            className="relative px-5 py-10 sm:px-8 sm:py-12 md:px-10 md:py-14 lg:px-12"
+            style={{
+              backgroundColor: '#FAF8F5',
+              backgroundImage: `
+                linear-gradient(to right, rgba(27, 67, 50, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(27, 67, 50, 0.06) 1px, transparent 1px)
+              `,
+              backgroundSize: '24px 24px',
+            }}
+          >
+            <div
+              className="pointer-events-none absolute inset-y-8 right-0 z-[1] hidden w-px bg-gradient-to-b from-transparent via-slate-400/35 to-transparent md:block"
+              aria-hidden
+            />
+            <span className="pointer-events-none absolute right-0 top-1/2 z-[2] hidden -translate-y-1/2 translate-x-1/2 md:flex md:items-center md:justify-center">
+              <span className="rounded-full border border-slate-200/90 bg-[#FAF8F5] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500 shadow-sm">
+                or
+              </span>
+            </span>
+            <div className="relative z-0 mx-auto max-w-lg">
+              <h2 className="font-display text-[28px] font-bold leading-tight tracking-tight text-slate-800">
+                Find out if you can actually afford it — and what it&apos;ll really cost.
+              </h2>
+              <p className="mt-3 text-base font-medium leading-relaxed text-slate-600">
+                Real numbers. Every fee. No surprises at closing.
+              </p>
+
+              <div className="mt-8 rounded-2xl border border-slate-200/90 bg-white/90 p-4 shadow-sm backdrop-blur-sm sm:p-5">
+                <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                  <p className="text-sm font-semibold text-slate-800">Monthly Payment Breakdown</p>
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs font-semibold text-brand-forest/90 underline-offset-2 hover:underline"
+                  >
+                    Edit →
+                  </button>
+                </div>
+                <table className="mt-3 w-full text-sm">
+                  <tbody className="divide-y divide-slate-100">
+                    {(
+                      [
+                        ['Principal & Interest', '$1,847'],
+                        ['Property Taxes', '$312'],
+                        ['Homeowners Insurance', '$95'],
+                        ['PMI', '$142'],
+                        ['HOA', '$0'],
+                      ] as const
+                    ).map(([label, value]) => (
+                      <tr key={label}>
+                        <th scope="row" className="py-2.5 pr-4 text-left font-medium text-slate-600">
+                          {label}
+                        </th>
+                        <td className="py-2.5 text-right tabular-nums font-medium text-slate-800">{value}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-brand-forest/10">
+                      <th scope="row" className="rounded-l-lg py-3 pl-3 pr-4 text-left text-sm font-bold text-brand-forest">
+                        Total
+                      </th>
+                      <td className="rounded-r-lg py-3 pr-3 text-right text-base font-bold tabular-nums text-brand-forest">
+                        $2,396/mo
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <Link
+                href={quizAffordabilityHref}
+                onClick={() => handlePrimaryCtaClick('landing_hero_affordability', 'affordability')}
+                className="mt-8 flex h-12 w-full items-center justify-center rounded-xl bg-brand-forest px-6 text-base font-semibold text-white shadow-md transition-colors hover:bg-brand-forest/90"
+              >
+                Run My Affordability Check →
+              </Link>
+              <p className="mt-3 text-center text-sm text-slate-600">Free · No credit check · Takes 90 seconds</p>
+            </div>
+          </div>
+
+          {/* Mobile only: stack between columns (hidden ≥ md so grid is exactly two cells) */}
+          <div className="flex items-center justify-center bg-[#FAF8F5] py-3 text-sm font-medium text-slate-500 md:hidden">
+            <span aria-hidden className="text-slate-400">
+              — or —
+            </span>
+          </div>
+
+          {/* RIGHT — First-gen / guided track */}
+          <div
+            className="px-5 py-10 sm:px-8 sm:py-12 md:px-10 md:py-14 lg:px-12"
+            style={{
+              backgroundColor: '#FDF6EC',
+              backgroundImage: 'radial-gradient(circle, rgba(27, 67, 50, 0.07) 1px, transparent 1px)',
+              backgroundSize: '18px 18px',
+            }}
+          >
+            <div className="relative z-0 mx-auto max-w-lg">
+              <h2 className="font-display text-[28px] font-bold leading-tight tracking-tight text-slate-800">
+                No one in your family has done this. We&apos;ll walk you through every step.
+              </h2>
+              <p className="mt-3 text-base font-medium leading-relaxed text-slate-600">
+                Plain language. No jargon. No judgment.
+              </p>
+
+              {/* Desktop: horizontal 5-step path, dotted connectors (segments 1–2 active) */}
+              <div
+                className="mt-10 hidden w-full flex-row items-start md:flex"
+                role="img"
+                aria-label="Five steps: Credit and documents, pre-approval, find your home, offer and inspection, close and move in. First two steps highlighted."
+              >
+                {guidedPathSteps.map((step, i) => {
+                  const Icon = step.Icon
+                  return (
+                    <Fragment key={step.label}>
+                      <div className="flex w-[4.75rem] shrink-0 flex-col items-center text-center sm:w-[5.25rem]">
+                        <span
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                            step.active ? 'bg-brand-forest text-white shadow-sm' : 'bg-slate-200/80 text-slate-500'
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                        </span>
+                        <span
+                          className={`mt-2.5 text-xs font-semibold leading-snug ${
+                            step.active ? 'text-brand-forest' : 'text-slate-400'
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                      </div>
+                      {i < guidedPathSteps.length - 1 && (
+                        <div
+                          className={`mt-[18px] h-0 min-w-[8px] flex-1 border-t-2 border-dotted ${
+                            i < 2 ? 'border-brand-forest/45' : 'border-slate-300'
+                          }`}
+                          aria-hidden
+                        />
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </div>
+
+              {/* Mobile: vertical path with SVG dotted connectors */}
+              <ol
+                className="relative mt-8 flex list-none flex-col gap-0 md:hidden"
+                aria-label="Buying journey steps"
+              >
+                {guidedPathSteps.map((step, i) => {
+                  const Icon = step.Icon
+                  return (
+                    <li key={step.label} className="relative flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <span
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                            step.active ? 'bg-brand-forest text-white shadow-sm' : 'bg-slate-200/80 text-slate-500'
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                        </span>
+                        {i < guidedPathSteps.length - 1 && (
+                          <svg
+                            className="my-1 h-8 w-[2px] shrink-0 overflow-visible"
+                            aria-hidden
+                            viewBox="0 0 2 32"
+                            preserveAspectRatio="none"
+                          >
+                            <line
+                              x1="1"
+                              y1="0"
+                              x2="1"
+                              y2="32"
+                              strokeWidth={2}
+                              strokeDasharray="4 5"
+                              stroke={i < 2 ? 'rgb(27 67 50 / 0.45)' : 'rgb(148 163 184 / 0.9)'}
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <span
+                        className={`pt-2 text-sm font-semibold leading-snug ${
+                          step.active ? 'text-brand-forest' : 'text-slate-400'
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ol>
+
+              <Link
+                href={quizGuidedHref}
+                onClick={() => handlePrimaryCtaClick('landing_hero_guided', 'guided')}
+                className="mt-10 flex h-12 w-full items-center justify-center rounded-xl bg-[#D97706] px-6 text-base font-semibold text-white shadow-md transition-colors hover:bg-[#b45309]"
+              >
+                Start My Guided Journey →
+              </Link>
+              <p className="mt-3 text-center text-sm text-slate-600">Free · No account required · Your pace</p>
+            </div>
           </div>
         </div>
       </section>
@@ -153,13 +380,14 @@ export default function LandingPage() {
           <h2 className="font-display mt-1 text-center text-xl font-bold text-brand-forest md:text-2xl">
             Which best describes you?
           </h2>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(
               [
                 { type: 'first-time' as const, IcpIcon: Home, title: 'First-Time Buyer', desc: "I've never owned a home before" },
                 { type: 'first-gen' as const, IcpIcon: Users, title: 'First in My Family', desc: 'No one in my family has done this before' },
                 { type: 'solo' as const, IcpIcon: User, title: 'Buying Solo', desc: "I'm purchasing on my own" },
                 { type: 'move-up' as const, IcpIcon: ArrowUpCircle, title: 'I Own & Want to Upgrade', desc: 'I want to sell and buy simultaneously' },
+                { type: 'refinance' as const, IcpIcon: RefreshCw, title: 'Refinancing', desc: 'Lower my rate, cash out, or change loan terms' },
               ] as const
             ).map((row) => {
               const I = row.IcpIcon
@@ -635,7 +863,7 @@ export default function LandingPage() {
 
       <footer className="bg-[rgb(var(--navy))] text-white/80 py-8 border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-base">
-          <p>© {new Date().getFullYear()} NestQuest. Your guide to homeownership.</p>
+          <p>© {new Date().getFullYear()} NestQuest. Your Home Buying Advocate.</p>
 
           <div className="mt-10 border-t border-white/10 pt-10">
             <p className="text-sm font-semibold text-white">Not quite ready?</p>

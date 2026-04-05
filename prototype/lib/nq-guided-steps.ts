@@ -14,6 +14,7 @@ export type NQStepPhaseId =
   | 'underwriting'
   | 'closing'
   | 'post-closing'
+  | 'homeowner-hub'
 
 export interface NqWhyItMattersCard {
   title: string
@@ -58,6 +59,7 @@ export const NQ_ROADMAP_PHASE_LINE: Record<number, string> = {
   5: 'Underwriting & Final Approval',
   6: 'Closing & Move-In',
   7: 'Post-Closing & Beyond',
+  8: 'Homeowner Hub',
 }
 
 /** Tailwind text color classes for `NQ_ROADMAP_PHASE_LINE` (one distinct hue per phase). */
@@ -69,6 +71,7 @@ export const NQ_ROADMAP_PHASE_LINE_COLOR: Record<number, string> = {
   5: 'text-violet-600',
   6: 'text-teal-600',
   7: 'text-green-700',
+  8: 'text-teal-700',
 }
 
 export const NQ_GUIDED_STEPS: NQGuidedStep[] = [
@@ -297,13 +300,27 @@ export const NQ_GUIDED_STEPS: NQGuidedStep[] = [
       "**Predatory** lenders and **equity theft** scams target stress and urgency — if it feels rushed or secret, pause and verify. You have rights under **fair lending** and **servicing** rules; document everything. Preserving homeownership is about **early action** and **trusted sources**, not shame.",
     nqEncouragement: 'You earned the keys — protect them wisely.',
   },
+  {
+    id: 'homeowner-hub-intro',
+    order: 15,
+    phaseId: 'homeowner-hub',
+    phaseOrder: 8,
+    title: 'Welcome to your Homeowner Hub',
+    nqContext:
+      'You\'ve **closed** — huge milestone. This hub helps you **protect** your investment and **stay ahead** on refi and equity.',
+    nqWhatToDo:
+      'Use **Refinance Monitor** for rate-drop alerts, check **Equity Tracker** for a quick estimate, and **Refer a Friend** if someone else is buying.',
+    nqWhatItMeans:
+      'Homeownership is an ongoing journey: rates move, equity builds, and plans change. NestQuest keeps lightweight tools here so you don\'t have to hunt for updates.',
+    nqEncouragement: '🏡 You made it — now make it work for you.',
+  },
 ]
 
 /** Last step index (0-based) that Foundations users can access. Steps 0 through this index are Foundations. */
 export const NQ_FOUNDATIONS_LAST_STEP_INDEX = 4 // Steps 0-4: welcome through shop-lenders (phases 1-2)
 
-/** v2 = readiness-score step removed; v3 = post-closing milestones appended. */
-export const NQ_GUIDED_SCHEMA_VERSION = 3
+/** v2 = readiness-score step removed; v3 = post-closing milestones appended; v4 = Homeowner Hub (phase 8). */
+export const NQ_GUIDED_SCHEMA_VERSION = 4
 
 /**
  * v0→v1: indices at or after removed readiness step shift down by 1.
@@ -332,12 +349,26 @@ export function migrateNQGuidedLocalStorageIfNeeded(): void {
       v = 2
     }
 
-    if (v < NQ_GUIDED_SCHEMA_VERSION) {
+    if (v < 3) {
       const rawStep = JSON.parse(localStorage.getItem('nq_current_step') || '0')
       let idx = Math.max(0, Number(rawStep))
       idx = Math.min(idx, NQ_GUIDED_STEPS.length - 1)
       localStorage.setItem('nq_current_step', String(idx))
 
+      const doneRaw = JSON.parse(localStorage.getItem('nq_completed_steps') || '[]') as number[]
+      const nextDone = new Set<number>()
+      for (const i of doneRaw) {
+        if (typeof i !== 'number' || i < 0 || i >= NQ_GUIDED_STEPS.length) continue
+        nextDone.add(i)
+      }
+      localStorage.setItem('nq_completed_steps', JSON.stringify([...nextDone]))
+    }
+
+    if (v < 4) {
+      const rawStep = JSON.parse(localStorage.getItem('nq_current_step') || '0')
+      let idx = Math.max(0, Number(rawStep))
+      idx = Math.min(idx, NQ_GUIDED_STEPS.length - 1)
+      localStorage.setItem('nq_current_step', String(idx))
       const doneRaw = JSON.parse(localStorage.getItem('nq_completed_steps') || '[]') as number[]
       const nextDone = new Set<number>()
       for (const i of doneRaw) {
@@ -354,7 +385,12 @@ export function migrateNQGuidedLocalStorageIfNeeded(): void {
 }
 
 /** Phase orders on the action roadmap (aligned with `JOURNEY_PHASES_DATA[].order`). */
-export const NQ_GUIDED_PHASE_ORDERS = [1, 2, 3, 4, 5, 6, 7] as const
+export const NQ_GUIDED_PHASE_ORDERS = [1, 2, 3, 4, 5, 6, 7, 8] as const
+
+/** Homeowner Hub (phase 8) unlocks only after all post-closing (phase 7) steps are complete. */
+export function isHomeownerHubPhaseUnlocked(completedSteps: Set<number>): boolean {
+  return isNqGuidedPhaseFullyComplete(7, completedSteps)
+}
 
 export function getNqGuidedIndicesForPhaseOrder(phaseOrder: number): number[] {
   const out: number[] = []

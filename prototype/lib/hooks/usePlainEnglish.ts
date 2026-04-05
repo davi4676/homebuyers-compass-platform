@@ -5,6 +5,9 @@ import { useEffect, useState } from 'react'
 const LS_KEY = 'nq_plain_english_mode'
 export const PLAIN_ENGLISH_LS_KEY = LS_KEY
 
+/** Journey page one-time Plain English promo; set to `1` when dismissed or after "Turn On". */
+export const PLAIN_ENGLISH_JOURNEY_CALLOUT_DISMISSED_KEY = 'nq_journey_pe_callout_dismissed'
+
 /** Plain-language copy preference; stays in sync when toggled on Profile (same tab + other tabs). */
 export function usePlainEnglish(): boolean {
   const [on, setOn] = useState(false)

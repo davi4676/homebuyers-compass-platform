@@ -39,11 +39,21 @@ export interface TierFeatures {
   hosa: {
     version: 'basic' | 'standard' | 'pro'
     optimizationScore: boolean
+    /** Foundations: show headline score only; full factor breakdown requires Momentum+. */
+    savingsScorePreview?: boolean
     savingsOpportunities: number
     actionPlan: boolean
     weekByWeekPlan: boolean
     predictions: boolean
     monteCarlo: boolean
+  }
+  /** Assistance tab & DPA list: max programs shown before upgrade (Foundations = 3). */
+  assistancePrograms: {
+    maxMatchedInJourney: number
+  }
+  /** Budget Sketch: count of editable housing lines (Foundations = 3 core lines). */
+  budgetSketch: {
+    maxEditableLineItems: number
   }
   tools: {
     calculators: string[]
@@ -123,6 +133,16 @@ export interface TierDefinition {
     monthly?: number
     /** Placeholder range label for marketing, e.g. "$9–$19/mo" */
     displayMonthly?: string
+    /** Shown on upgrade page when One-Time billing is selected (e.g. "$119"). */
+    displayOneTime?: string
+    /** Annual prepay in cents (typically 20% off 12× monthly). */
+    annual?: number
+    /** e.g. "$278/yr" */
+    displayAnnual?: string
+    /** Buyer context line for one-time offer (vs monthly on the same card). */
+    oneTimeBlurb?: string
+    /** Shown when Annual billing is selected. */
+    annualBlurb?: string
   }
   description: string
   features: TierFeatures
@@ -147,17 +167,16 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     microcopy:
       'Start your journey with confidence. Get your readiness score, savings snapshot, and the tools to begin.',
     badge: null,
-    price: { displayMonthly: 'Free' },
+    price: { displayMonthly: 'Free', displayOneTime: 'Free' },
     description: 'Explore your options and see where you can save.',
     journeyHighlights: [
-      'Readiness score',
-      'Savings snapshot',
-      'Monthly budget sketch',
-      'Phase 1–2 guidance',
-      'Basic myths + learning',
-      'Limited scripts',
-      'Inbox for tasks',
-      'Email reminders',
+      'HOSA Savings Score (preview — full breakdown with Momentum)',
+      '3 matched DPA programs (full list with Momentum)',
+      'Affordability calculator via your savings snapshot',
+      'Closing cost estimate & savings snapshot',
+      'PDF export (watermarked)',
+      'Blog & starter learning',
+      'XP, starter badges & streaks (levels & leaderboard with Momentum)',
     ],
     features: {
       quiz: { questionCount: 8, conditionalQuestions: false, detailedBreakdown: false },
@@ -171,20 +190,28 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       hosa: {
         version: 'basic',
         optimizationScore: false,
-        savingsOpportunities: 0,
+        savingsScorePreview: true,
+        savingsOpportunities: 3,
         actionPlan: false,
         weekByWeekPlan: false,
         predictions: false,
         monteCarlo: false,
       },
+      assistancePrograms: {
+        maxMatchedInJourney: 3,
+      },
+      budgetSketch: {
+        /** Line-by-line Budget Sketch is a Momentum+ tool; free tier uses snapshot affordability only. */
+        maxEditableLineItems: 0,
+      },
       tools: {
-        calculators: [],
+        calculators: ['affordability'],
         lenderComparison: false,
         dealAnalyzer: false,
         documentVault: false,
         timelineOrchestrator: false,
       },
-      gamification: { xp: false, badges: false, streaks: false, leaderboard: false, levels: false },
+      gamification: { xp: true, badges: true, streaks: true, leaderboard: false, levels: false },
       support: { email: false, chat: false, phone: false, expertAccess: false, responseTime: Infinity },
       content: { blog: true, guides: false, scripts: 0, templates: false },
       aiAssistant: {
@@ -220,14 +247,16 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     limitations: [
       'Results expire after 30 days',
       'No action plan',
-      'Limited savings opportunities shown',
+      'HOSA: preview only (no factor breakdown)',
+      'DPA: 3 programs shown (full list requires Momentum)',
+      'Budget Sketch line editor requires Momentum (affordability snapshot is free)',
       'Watermarked PDFs',
       'No full 7-phase roadmap',
       'No AI assistant access',
     ],
     upgradePrompts: [
-      'Unlock Momentum for the full roadmap, scripts, and weekly plans →',
-      'Get smart nudges and priority inbox sorting →',
+      'Buyers who unlock the full roadmap before pre-approval save an average of $2,400 more — get your weekly plan and scripts now. [See My Roadmap →]',
+      'Stop guessing which step matters this week — Momentum prioritizes your inbox and nudges so you don’t miss deadlines that cost real money. [Get My Plan →]',
     ],
   },
   momentum: {
@@ -244,7 +273,17 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     microcopy:
       'Move forward with clarity. Unlock the full roadmap, scripts, checklists, and weekly action plans.',
     badge: 'most_popular',
-    price: { monthly: 2900, displayMonthly: '$29/mo' },
+    price: {
+      monthly: 2900,
+      displayMonthly: '$29/mo',
+      oneTime: 11900,
+      displayOneTime: '$119',
+      annual: 27800,
+      displayAnnual: '$278/yr',
+      oneTimeBlurb:
+        'Roughly 4–5 months of value at the monthly rate — best if you’re closing within 90 days',
+      annualBlurb: '$23/mo, billed annually — save $70/yr',
+    },
     description: 'Actively preparing to buy in 3–12 months.',
     journeyHighlights: [
       'Everything in Foundations',
@@ -267,11 +306,18 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       hosa: {
         version: 'standard',
         optimizationScore: true,
+        savingsScorePreview: false,
         savingsOpportunities: 10,
         actionPlan: true,
         weekByWeekPlan: true,
         predictions: true,
         monteCarlo: false,
+      },
+      assistancePrograms: {
+        maxMatchedInJourney: Number.POSITIVE_INFINITY,
+      },
+      budgetSketch: {
+        maxEditableLineItems: 6,
       },
       tools: {
         calculators: ['affordability', 'dti', 'down-payment', 'pmi', 'rent-vs-buy'],
@@ -320,8 +366,8 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       'No 1:1 human onboarding',
     ],
     upgradePrompts: [
-      'Navigator adds personalized affordability review and human-assisted Q&A →',
-      'Get credit improvement and document readiness plans →',
+      'A real person will review your finances and tell you exactly what to fix — most buyers improve their offer strength by $8,000–$15,000. [Get Expert Review →]',
+      'Fix your credit score before applying — buyers who improve 50+ points save an average of $4,200 in interest. [Get My Credit Plan →]',
     ],
   },
   navigator: {
@@ -338,12 +384,22 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     microcopy:
       'Expert guidance to help you get offer-ready faster. Personalized reviews, plans, and human support.',
     badge: null,
-    price: { monthly: 5900, displayMonthly: '$59/mo' },
+    price: {
+      monthly: 5900,
+      displayMonthly: '$59/mo',
+      oneTime: 22900,
+      displayOneTime: '$229',
+      annual: 56600,
+      displayAnnual: '$566/yr',
+      oneTimeBlurb:
+        'Roughly 4–5 months of value at the monthly rate — best if you’re closing within 60 days',
+      annualBlurb: '$47/mo, billed annually — save $142/yr',
+    },
     description: 'Ready to make offers and close.',
     journeyHighlights: [
       'Everything in Momentum',
       '1:1 onboarding call',
-      'Personalized affordability review',
+      'Human-reviewed finances (what to fix before you apply)',
       'Credit improvement plan',
       'Document readiness review',
       'Offer-readiness checklist',
@@ -363,11 +419,18 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       hosa: {
         version: 'pro',
         optimizationScore: true,
+        savingsScorePreview: false,
         savingsOpportunities: Infinity,
         actionPlan: true,
         weekByWeekPlan: true,
         predictions: true,
         monteCarlo: true,
+      },
+      assistancePrograms: {
+        maxMatchedInJourney: Number.POSITIVE_INFINITY,
+      },
+      budgetSketch: {
+        maxEditableLineItems: 6,
       },
       tools: {
         calculators: [
@@ -426,7 +489,10 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       },
     },
     limitations: [],
-    upgradePrompts: ['Navigator+ adds concierge, unlimited Q&A, and weekly check-ins →'],
+    upgradePrompts: [
+      'Most buyers who add expert review before offers improve their position by $8,000–$15,000. [Get Expert Review →]',
+      'Investment property refinancing can generate $10,000–$100,000 in returns when structured correctly. [Unlock Investment Tools →]',
+    ],
   },
   navigator_plus: {
     id: 'navigator_plus',
@@ -442,7 +508,16 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     microcopy:
       'Your home buying partner. Full concierge support, strategy sessions, and unlimited expert access.',
     badge: 'premium',
-    price: { monthly: 14900, displayMonthly: '$149/mo' },
+    price: {
+      monthly: 14900,
+      displayMonthly: '$149/mo',
+      oneTime: 54900,
+      displayOneTime: '$549',
+      annual: 143000,
+      displayAnnual: '$1,430/yr',
+      oneTimeBlurb: 'Roughly 4–5 months of value at the monthly rate — full concierge support',
+      annualBlurb: '$119/mo, billed annually — save $358/yr',
+    },
     description: 'Full-service, hands-on guidance to close.',
     journeyHighlights: [
       'Everything in Navigator',
@@ -468,11 +543,18 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       hosa: {
         version: 'pro',
         optimizationScore: true,
+        savingsScorePreview: false,
         savingsOpportunities: Infinity,
         actionPlan: true,
         weekByWeekPlan: true,
         predictions: true,
         monteCarlo: true,
+      },
+      assistancePrograms: {
+        maxMatchedInJourney: Number.POSITIVE_INFINITY,
+      },
+      budgetSketch: {
+        maxEditableLineItems: 6,
       },
       tools: {
         calculators: [
@@ -533,17 +615,57 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       },
     },
     limitations: [],
-    upgradePrompts: [],
+    upgradePrompts: [
+      'Your dedicated home buying partner — available every step of the way. Concierge+ buyers close an average of 23% faster. [Get My Partner →]',
+    ],
   },
 }
 
 export function formatTierPrice(def: TierDefinition): string {
   if (def.price.displayMonthly) return def.price.displayMonthly
   const { oneTime, monthly } = def.price
-  if (oneTime != null && monthly != null) return `$${oneTime} once · or $${monthly}/mo`
-  if (oneTime != null) return `$${oneTime} one-time`
-  if (monthly != null) return `$${monthly}/mo`
+  if (oneTime != null && monthly != null)
+    return `$${(oneTime / 100).toFixed(0)} once · or $${(monthly / 100).toFixed(0)}/mo`
+  if (oneTime != null) return `$${(oneTime / 100).toFixed(0)} one-time`
+  if (monthly != null) return `$${(monthly / 100).toFixed(0)}/mo`
   return 'Free'
+}
+
+export type TierBillingDisplayCycle = 'monthly' | 'one-time' | 'annual'
+
+/** Price string for upgrade/checkout UI for the selected billing toggle. */
+export function formatTierPriceForCycle(def: TierDefinition, cycle: TierBillingDisplayCycle): string {
+  if (cycle === 'one-time') {
+    if (def.price.displayOneTime != null) return def.price.displayOneTime
+    if (def.price.oneTime != null) return `$${Math.round(def.price.oneTime / 100)}`
+    return formatTierPrice(def)
+  }
+  if (cycle === 'annual') {
+    if (def.price.displayAnnual != null) return def.price.displayAnnual
+    if (def.price.annual != null) {
+      const n = Math.round(def.price.annual / 100)
+      return `$${n.toLocaleString('en-US')}/yr`
+    }
+    return formatTierPrice(def)
+  }
+  return formatTierPrice(def)
+}
+
+/**
+ * Human-readable half of the advertised monthly price (pause / retention offers).
+ * Falls back to generic copy when parsing fails or plan is free.
+ */
+export function estimateHalfMonthlyFromDisplay(displayMonthly?: string): string {
+  if (!displayMonthly || displayMonthly.toLowerCase().includes('free')) {
+    return '50% of your plan’s monthly rate'
+  }
+  const match = displayMonthly.match(/([\d,.]+)/)
+  if (!match) return '50% of your plan’s monthly rate'
+  const n = parseFloat(match[1].replace(/,/g, ''))
+  if (!Number.isFinite(n) || n <= 0) return '50% of your plan’s monthly rate'
+  const half = n / 2
+  const formatted = Number.isInteger(half) ? String(half) : half.toFixed(2)
+  return `$${formatted}/mo`
 }
 
 export function hasFeature(tier: UserTier, featurePath: string): boolean {
@@ -573,10 +695,27 @@ export function getUpgradePrompt(tier: UserTier, feature: string): string | null
   return definition.upgradePrompts[0]
 }
 
+/** Momentum → Navigator+ pitch; solo and first-gen buyers get ICP-specific copy. */
+export function getMomentumToNavigatorUpgradeCopy(icpType: string | null | undefined): string {
+  if (icpType === 'solo') {
+    return 'Have an expert check your offer before you submit it — solo buyers who use expert review save an average of $4,200 more.'
+  }
+  if (icpType === 'first-gen') {
+    return 'Talk to a real person who will review your finances and tell you exactly what to fix — no jargon, no judgment.'
+  }
+  return TIER_DEFINITIONS.momentum.upgradePrompts[0]
+}
+
 export function getNextTier(tier: UserTier): UserTier | null {
   const currentIndex = TIER_ORDER.indexOf(tier)
   if (currentIndex === -1 || currentIndex === TIER_ORDER.length - 1) return null
   return TIER_ORDER[currentIndex + 1]
+}
+
+/** Whether this tier may use a named calculator id (see `tools.calculators`). */
+export function tierHasCalculator(tier: UserTier, calculatorId: string): boolean {
+  const ids = TIER_DEFINITIONS[tier]?.features?.tools?.calculators ?? []
+  return ids.includes(calculatorId)
 }
 
 export function showConciergePlusChrome(tier: UserTier): boolean {

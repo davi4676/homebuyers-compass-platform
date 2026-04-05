@@ -41,6 +41,7 @@ export default function EquityLeverageCalculator({
 
   const availableEquity = data.currentHomeValue - data.mortgageBalance
   const equityPercent = (availableEquity / data.currentHomeValue) * 100
+  const modeledProceedsLift = Math.round(Math.min(25000, Math.max(8400, availableEquity * 0.02)))
 
   // Calculate different financing options
   const helocRate = 0.075 // 7.5% typical HELOC rate
@@ -228,15 +229,19 @@ export default function EquityLeverageCalculator({
             <Lock className="w-6 h-6 text-yellow-400" />
             <h2 className="text-xl font-bold">Premium Feature</h2>
           </div>
-          <p className="text-gray-300 mb-4">
-            Upgrade to Premium to see detailed financing options comparison, tax implications, and
-            personalized recommendations.
+          <p className="text-gray-300 mb-2 font-semibold text-white">
+            Unlock {formatCurrency(modeledProceedsLift)} more in net proceeds from your sale (modeled vs. a baseline sale
+            path).
+          </p>
+          <p className="text-gray-400 mb-4 text-sm">
+            Momentum adds HELOC vs cash-out vs bridge comparisons, tax angles on the table, and exportable scenarios —
+            not just feature labels.
           </p>
           <button
             onClick={() => onUpgrade('momentum')}
             className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
           >
-            Upgrade to Premium
+            Show me how to capture it
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -304,13 +309,27 @@ export default function EquityLeverageCalculator({
           Back to Suite
         </button>
         {isPremium && (
-          <Link
-            href="/repeat-buyer-suite?phase=simultaneous"
-            className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
-          >
-            Continue to Buy-Sell Orchestrator
-            <ArrowRight className="w-5 h-5" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/repeat-buyer-suite?phase=simultaneous"
+              className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              Continue to Buy-Sell Orchestrator
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <Link
+              href="/lifecycle-dashboard"
+              className="px-4 py-3 rounded-lg border border-gray-600 text-gray-200 text-sm font-semibold hover:bg-gray-800/80"
+            >
+              Lifecycle dashboard
+            </Link>
+            <Link
+              href="/refinance-optimizer"
+              className="px-4 py-3 rounded-lg border border-gray-600 text-gray-200 text-sm font-semibold hover:bg-gray-800/80"
+            >
+              Refinance optimizer
+            </Link>
+          </div>
         )}
       </div>
     </motion.div>

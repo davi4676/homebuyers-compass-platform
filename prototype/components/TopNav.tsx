@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
+import { Menu, Search, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { UserMenu } from '@/components/auth/UserMenu'
@@ -22,6 +22,8 @@ import { TIER_DEFINITIONS } from '@/lib/tiers'
 export default function TopNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  /** Landing → Playbooks should show “Back to Home” on `/resources`. */
+  const resourcesNavHref = pathname === '/' ? '/resources?from=home' : '/resources'
   const { isAuthenticated } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [journeyHeaderTier, setJourneyHeaderTier] = useState<UserTier>('foundations')
@@ -118,7 +120,7 @@ export default function TopNav() {
                 My Journey
               </Link>
               <Link
-                href="/resources"
+                href={resourcesNavHref}
                 className={`text-nav font-medium transition-colors ${
                   pathname === '/resources'
                     ? 'font-semibold text-millennial-cta-primary dark:text-white'
@@ -157,17 +159,31 @@ export default function TopNav() {
               >
                 Inbox
               </Link>
+              <Link
+                href="/for-professionals"
+                className={`text-nav font-medium transition-colors ${
+                  pathname === '/for-professionals'
+                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
+                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                For organizations
+              </Link>
             </div>
           ) : (
             <div className="hidden md:flex md:flex-1 md:items-center md:justify-center md:gap-8">
               <Link
-                href="/#how-it-works"
-                className="text-nav font-medium text-millennial-text-muted transition-colors hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white"
+                href="/how-it-works"
+                className={`text-nav font-medium transition-colors ${
+                  pathname === '/how-it-works'
+                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
+                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
+                }`}
               >
                 How It Works
               </Link>
               <Link
-                href="/resources"
+                href={resourcesNavHref}
                 className={`text-nav font-medium transition-colors ${
                   pathname === '/resources'
                     ? 'font-semibold text-millennial-cta-primary dark:text-white'
@@ -175,6 +191,16 @@ export default function TopNav() {
                 }`}
               >
                 Playbooks
+              </Link>
+              <Link
+                href="/for-professionals"
+                className={`text-nav font-medium transition-colors ${
+                  pathname === '/for-professionals'
+                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
+                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
+                }`}
+              >
+                For organizations
               </Link>
               <Link
                 href={SIGNUP_DISABLED ? '/quiz' : '/auth?mode=signup&redirect=%2Fquiz'}
@@ -186,6 +212,15 @@ export default function TopNav() {
           )}
 
           <div className="flex shrink-0 items-center gap-2 md:gap-3">
+            <Link
+              href="/search"
+              className={`inline-flex rounded-lg p-2 text-millennial-text-muted transition-colors hover:bg-millennial-primary-light/30 hover:text-millennial-text dark:hover:bg-slate-800 ${
+                pathname === '/search' ? 'text-millennial-cta-primary dark:text-cyan-400' : ''
+              }`}
+              aria-label="Search"
+            >
+              <Search className="h-5 w-5" />
+            </Link>
             {isJourneyPage ? (
               <span className="text-xs font-semibold text-millennial-cta-primary md:hidden dark:text-cyan-400">Journey</span>
             ) : null}
@@ -247,6 +282,16 @@ export default function TopNav() {
               className="relative z-[120] overflow-hidden border-t border-millennial-border bg-white md:hidden"
             >
               <div className="space-y-1 py-4">
+                <Link
+                  href="/search"
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-lg font-medium hover:bg-millennial-primary-light/25 ${
+                    pathname === '/search' ? 'font-semibold text-millennial-cta-primary' : 'text-millennial-text'
+                  }`}
+                >
+                  <Search className="h-5 w-5 shrink-0 opacity-80" aria-hidden />
+                  Search
+                </Link>
                 {isJourneyPage ? (
                   <>
                     <p className="px-4 text-xs font-bold uppercase tracking-wide text-slate-500">Also on NestQuest</p>
@@ -307,7 +352,7 @@ export default function TopNav() {
                       Upgrades
                     </Link>
                     <Link
-                      href="/resources"
+                      href={resourcesNavHref}
                       onClick={() => setMobileOpen(false)}
                       className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
                     >
@@ -331,7 +376,7 @@ export default function TopNav() {
                       My Journey
                     </Link>
                     <Link
-                      href="/resources"
+                      href={resourcesNavHref}
                       onClick={() => setMobileOpen(false)}
                       className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
                     >
@@ -359,6 +404,13 @@ export default function TopNav() {
                       Inbox
                     </Link>
                     <Link
+                      href="/for-professionals"
+                      onClick={() => setMobileOpen(false)}
+                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                    >
+                      For organizations
+                    </Link>
+                    <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
                       className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
@@ -376,18 +428,31 @@ export default function TopNav() {
                       Home
                     </Link>
                     <Link
-                      href="/#how-it-works"
+                      href="/how-it-works"
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={`block rounded-lg px-4 py-2.5 text-lg font-medium hover:bg-millennial-primary-light/25 ${
+                        pathname === '/how-it-works'
+                          ? 'font-semibold text-millennial-cta-primary'
+                          : 'text-millennial-text'
+                      }`}
                     >
                       How It Works
                     </Link>
                     <Link
-                      href="/resources"
+                      href={resourcesNavHref}
                       onClick={() => setMobileOpen(false)}
                       className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
                     >
                       Playbooks
+                    </Link>
+                    <Link
+                      href="/for-professionals"
+                      onClick={() => setMobileOpen(false)}
+                      className={`block rounded-lg px-4 py-2.5 text-lg font-medium hover:bg-millennial-primary-light/25 ${
+                        pathname === '/for-professionals' ? 'font-semibold text-millennial-cta-primary' : 'text-millennial-text'
+                      }`}
+                    >
+                      For organizations
                     </Link>
                     <Link
                       href={SIGNUP_DISABLED ? '/quiz' : '/auth?mode=signup&redirect=%2Fquiz'}

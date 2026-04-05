@@ -491,7 +491,7 @@ export default function RefinanceJourneyPage() {
       <header className="bg-white shadow-sm sticky top-0 z-40 print:static">
         <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3 print:hidden">
-            <BackToMyJourneyLink className="font-semibold" />
+            <BackToMyJourneyLink />
             <Link
               href="/"
               className="flex items-center gap-2 text-[#57534e] hover:text-[#1c1917] transition text-sm font-medium"

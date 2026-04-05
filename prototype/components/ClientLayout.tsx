@@ -15,7 +15,7 @@ import OfflineIndicator from './OfflineIndicator'
 import TopNav from './TopNav'
 import StickyMobileCta from './StickyMobileCta'
 import Link from 'next/link'
-import { shouldShowMobileMarketingSticky } from '@/lib/mobile-marketing-cta'
+import { shouldShowLandingQuizMobileSticky } from '@/lib/mobile-marketing-cta'
 import { JourneyNavChromeProvider } from './JourneyNavChromeContext'
 import { TierMindsetProvider } from './tier-mindset/TierMindsetProvider'
 
@@ -32,12 +32,12 @@ const EmptyFallback = () => (
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { isAuthenticated } = useAuth()
-  const reserveMobileStickyCta = shouldShowMobileMarketingSticky(pathname, isAuthenticated)
+  const reserveMobileStickyCta = shouldShowLandingQuizMobileSticky(pathname, isAuthenticated)
 
   return (
     <div
       id="main-content"
-      className={clsx('app-page-shell', reserveMobileStickyCta && 'pb-16 md:pb-0')}
+      className={clsx('app-page-shell', reserveMobileStickyCta && 'pb-24 md:pb-0')}
       tabIndex={-1}
     >
       <ErrorBoundary
@@ -72,7 +72,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       <HomebuyerChatbotWidget />
       <CookieConsent />
       <OfflineIndicator />
-      <DeveloperTierSwitcher />
+      {process.env.NODE_ENV === 'development' ? <DeveloperTierSwitcher /> : null}
     </div>
   )
 }

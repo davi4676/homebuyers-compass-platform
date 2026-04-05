@@ -58,6 +58,15 @@ textarea {
   --text-body-lg: 1.25rem;
   --text-hero: clamp(2.5rem, 5vw, 4.25rem);
   --text-hero-sub: clamp(1.25rem, 2vw, 1.625rem);
+
+  /* Revenue channel colors */
+  --revenue-primary: #0d9488; /* Teal 600 — primary CTA */
+  --revenue-primary-hover: #0f766e; /* Teal 700 — hover state */
+  --revenue-accent: #f59e0b; /* Amber 400 — highlight/badge */
+  --revenue-partner-bg: #f0fdfa; /* Teal 50 — partner card background */
+  --revenue-partner-border: #99f6e4; /* Teal 200 — partner card border */
+  --revenue-muted: #6b7280; /* Gray 500 — secondary text */
+  --revenue-success: #10b981; /* Emerald 500 — confirmation states */
 }
 
 html {

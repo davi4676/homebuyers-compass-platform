@@ -16,6 +16,34 @@ export type LearnMoneyItem = {
   findsAmount?: number
 }
 
+/** Shown first on the Learn tab when quiz ICP is solo buyer. */
+export const JOURNEY_LEARN_SOLO_ITEMS: LearnMoneyItem[] = [
+  {
+    id: 'solo-one-income',
+    title: 'Qualifying on One Income',
+    sub: 'How lenders size you alone — DTI, reserves, and when a co-borrower is optional, not required.',
+    tag: 'Solo guide',
+    href: '/learn/buying-solo#qualifying-on-one-income',
+    moneyTags: ['saves_money', 'finds_funds', 'alternative_solution'],
+  },
+  {
+    id: 'solo-advocate-checklist',
+    title: 'The Advocate Checklist',
+    sub: 'No partner as a sounding board? Use this saved checklist for inspection, closing costs, and walk-away limits.',
+    tag: 'Solo guide',
+    href: '/learn/buying-solo#advocate-checklist',
+    moneyTags: ['saves_money', 'finds_funds', 'alternative_solution'],
+  },
+  {
+    id: 'solo-negotiate-alone',
+    title: 'Negotiating Without a Partner',
+    sub: 'Scripts for counteroffers, inspection asks, and pausing when you need a beat — without second-guessing alone.',
+    tag: 'Solo guide',
+    href: '/learn/buying-solo#negotiating-without-a-partner',
+    moneyTags: ['saves_money', 'finds_funds', 'alternative_solution'],
+  },
+]
+
 export const JOURNEY_LEARN_MONEY_ITEMS: LearnMoneyItem[] = [
   {
     id: 'pmi-trap',

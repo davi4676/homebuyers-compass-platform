@@ -1,12 +1,27 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Check, Info, Loader2, Home, TrendingUp, RefreshCw } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpCircle,
+  Check,
+  Home,
+  Info,
+  Landmark,
+  Loader2,
+  Percent,
+  RefreshCw,
+  Sprout,
+  TrendingUp,
+  User,
+  Waypoints,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useAuth, saveQuizResults } from '@/lib/hooks/useAuth'
 import { trackActivity } from '@/lib/track-activity'
@@ -37,9 +52,42 @@ import {
   type TransactionType, 
   type Question 
 } from '@/lib/quiz-questions'
-import { parseIcpTypeParam, resolveTransactionAndIcp, type IcpType } from '@/lib/icp-types'
+import { parseIcpTypeParam, parseNarrativeQuizEntry, resolveTransactionAndIcp, type IcpType } from '@/lib/icp-types'
+import { enablePlainEnglishForFirstGenBuyer } from '@/lib/first-gen-preferences'
+import { getPersonalizedQuizHeadline, getQuizStateDisplayName } from '@/lib/quiz-result-copy'
+import { ConversationalIcpQuiz } from '@/components/quiz/ConversationalIcpQuiz'
 import PlainEnglishText from '@/components/PlainEnglishText'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
+import ResultsReferralCard from '@/components/results/ResultsReferralCard'
+import { getOrCreateReferralCode } from '@/lib/referral-program'
+
+const QUICK_SCAN_STEPS = 3
+
+function QuizCardProgressBar({
+  left,
+  right,
+  percent,
+}: {
+  left: ReactNode
+  right: ReactNode
+  percent: number
+}) {
+  const w = Math.min(100, Math.max(0, percent))
+  return (
+    <div className="w-full mb-6">
+      <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <span>{left}</span>
+        <span>{right}</span>
+      </div>
+      <div className="w-full rounded-full bg-gray-200 h-2">
+        <div
+          className="h-2 rounded-full bg-teal-500 transition-all duration-500 ease-out"
+          style={{ width: `${w}%` }}
+        />
+      </div>
+    </div>
+  )
+}
 
 // Form validation schema - base schema that gets extended based on transaction type
 const baseQuizSchema = z.object({
@@ -68,6 +116,7 @@ const firstTimeSchema = baseQuizSchema.extend({
 
 const repeatBuyerSchema = baseQuizSchema.extend({
   transactionType: z.literal('repeat-buyer'),
+  icpType: z.enum(['repeat-buyer', 'move-up']).optional(),
   income: z.number().min(30000).max(2000000),
   monthlyDebt: z.number().min(0).max(5000),
   currentHomeValue: z.number().min(100000).max(2000000),
@@ -79,6 +128,7 @@ const repeatBuyerSchema = baseQuizSchema.extend({
   repairsAndConcessions: z.number().min(0).max(50000),
   debtPayoff: z.number().min(0).max(200000),
   additionalSavings: z.number().min(0).max(200000),
+  repeatBuyerSellConcurrent: z.enum(['yes', 'no', 'already-sold']).optional(),
   city: z.string().min(1),
   timeline: z.enum(['3-months', '6-months', '1-year', 'exploring']),
   creditScore: z.enum(['under-600', '600-650', '650-700', '700-750', '750+']),
@@ -91,17 +141,9 @@ const repeatBuyerSchema = baseQuizSchema.extend({
 
 const refinanceSchema = baseQuizSchema.extend({
   transactionType: z.literal('refinance'),
-  currentHomeValue: z.number().min(100000).max(2000000),
-  currentMortgageBalance: z.number().min(0).max(1500000),
-  currentRate: z.number().min(2).max(10),
-  currentMonthlyPayment: z.number().min(500).max(10000),
-  yearsRemaining: z.number().min(1).max(30),
-  refinanceGoals: z.array(z.string()).min(1),
-  cashoutAmount: z.number().min(0).max(500000).optional(),
-  creditScore: z.enum(['under-600', '600-650', '650-700', '700-750', '750+']),
-  propertyType: z.enum(['primary', 'second-home', 'investment']),
-  previousRefinances: z.enum(['never', 'once', 'multiple', 'recent']),
-  concern: z.enum(['break-even', 'savings', 'extending-term', 'cashout-impact', 'closing-costs', 'appraisal', 'other']),
+  icpType: z.literal('refinance').optional(),
+  refiPrimaryGoal: z.enum(['lower-monthly', 'access-equity', 'shorten-term', 'better-rate']),
+  refiYearsInHome: z.enum(['<2', '2-5', '5-10', '10+']),
 })
 
 // Union type for all schemas
@@ -117,7 +159,7 @@ type QuizFormData = z.infer<typeof quizSchema>
 const FINANCIAL_ASSESSMENT_START_ID: Record<TransactionType, string> = {
   'first-time': 'income',
   'repeat-buyer': 'income',
-  refinance: 'currentHomeValue',
+  refinance: 'refiPrimaryGoal',
 }
 
 // City options (100+ major US metro areas)
@@ -216,12 +258,21 @@ async function computeQuizSavingsEstimate(
     )
   }
 
-  const goalsRaw = data.refinanceGoals
-  const goals = Array.isArray(goalsRaw)
-    ? goalsRaw.map(String)
-    : typeof goalsRaw === 'string' && goalsRaw.length > 0
-      ? goalsRaw.split(',').map((s) => s.trim())
-      : ['lower-payment']
+  const primary = String(data.refiPrimaryGoal || 'lower-monthly')
+  const cashout =
+    primary === 'access-equity'
+      ? 35000
+      : data.cashoutAmount != null
+        ? Number(data.cashoutAmount)
+        : undefined
+  const goals: string[] =
+    primary === 'lower-monthly'
+      ? ['lower-payment']
+      : primary === 'shorten-term'
+        ? ['shorter-term']
+        : primary === 'access-equity'
+          ? ['lower-payment']
+          : []
 
   const refi: RefinanceData = {
     transactionType: 'refinance',
@@ -231,7 +282,7 @@ async function computeQuizSavingsEstimate(
     currentMonthlyPayment: Number(data.currentMonthlyPayment) || 2000,
     yearsRemaining: Number(data.yearsRemaining) || 25,
     refinanceGoals: goals,
-    cashoutAmount: data.cashoutAmount != null ? Number(data.cashoutAmount) : undefined,
+    cashoutAmount: cashout,
     creditScore: (data.creditScore || '650-700') as RefinanceData['creditScore'],
     propertyType: (data.propertyType || 'primary') as RefinanceData['propertyType'],
     previousRefinances: (data.previousRefinances || 'never') as RefinanceData['previousRefinances'],
@@ -244,14 +295,18 @@ async function computeQuizSavingsEstimate(
 }
 
 export default function QuizPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
+  const narrativeEntry = parseNarrativeQuizEntry(searchParams.get('type'))
   const { isAuthenticated } = useAuth()
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
   const [icpType, setIcpType] = useState<IcpType>('first-time')
   /** Quick scan: 3 steps then teaser; full quiz after CTA unless ?full=1 */
-  const [quizMode, setQuizMode] = useState<'quick' | 'quick-teaser' | 'full'>(() =>
-    searchParams.get('full') === '1' ? 'full' : 'quick'
-  )
+  const [quizMode, setQuizMode] = useState<'quick' | 'quick-teaser' | 'full'>(() => {
+    const t = searchParams.get('type')?.trim().toLowerCase()
+    if (searchParams.get('full') === '1' || t === 'full') return 'full'
+    return 'quick'
+  })
   const [quickStep, setQuickStep] = useState(0)
   const [quickIncome, setQuickIncome] = useState(75000)
   const [quickPrice, setQuickPrice] = useState(350000)
@@ -276,8 +331,12 @@ export default function QuizPage() {
   const [completionSavings, setCompletionSavings] = useState(0)
   const [animatedSavings, setAnimatedSavings] = useState(0)
   const [resultEmail, setResultEmail] = useState('')
-  const [emailSubmitStatus, setEmailSubmitStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
+  /** After email submit or "Skip for now" — reveals full-plan CTA. */
+  const [resultPlanRevealed, setResultPlanRevealed] = useState(false)
+  /** Set when user submits email (shows success copy before CTA); skip leaves this false. */
+  const [resultEmailSaved, setResultEmailSaved] = useState(false)
   const [celebrateResults, setCelebrateResults] = useState(false)
+  const [resultReferralSlug, setResultReferralSlug] = useState('yourname')
 
   const {
     register,
@@ -294,12 +353,64 @@ export default function QuizPage() {
       downPayment: 20000,
       targetHomePrice: 350000,
       city: '',
+      refiPrimaryGoal: 'lower-monthly' as const,
+      refiYearsInHome: '2-5' as const,
     },
   })
 
   const watchedValues = watch()
 
-  // Sync URL ?type= → transaction + ICP
+  const prevIcpForPlainEnglish = useRef<IcpType | null>(null)
+  useEffect(() => {
+    const icp: IcpType =
+      quizMode === 'quick' || quizMode === 'quick-teaser'
+        ? quickIcp
+        : ((watchedValues.icpType as IcpType) || icpType)
+    if (icp === 'first-gen' && prevIcpForPlainEnglish.current !== 'first-gen') {
+      enablePlainEnglishForFirstGenBuyer()
+    }
+    prevIcpForPlainEnglish.current = icp
+  }, [quizMode, quickIcp, watchedValues.icpType, icpType])
+
+  /** Simultaneous sell+buy → move-up ICP; otherwise stay on repeat-buyer (Repeat Buyer Suite path). */
+  useEffect(() => {
+    if (transactionType !== 'repeat-buyer') return
+    const concurrent = watchedValues.repeatBuyerSellConcurrent as string | undefined
+    if (concurrent === 'yes') {
+      setIcpType('move-up')
+      setValue('icpType', 'move-up')
+    } else if (concurrent === 'no' || concurrent === 'already-sold') {
+      setIcpType('repeat-buyer')
+      setValue('icpType', 'repeat-buyer')
+    }
+  }, [transactionType, watchedValues.repeatBuyerSellConcurrent, setValue])
+
+  useEffect(() => {
+    if (transactionType !== 'first-time') return
+    const fg = watchedValues.firstGenFamilyOwned as string | undefined
+    if (fg === 'no-first') {
+      setIcpType('first-gen')
+      setValue('icpType', 'first-gen')
+    } else if (fg === 'yes' || fg === 'unsure') {
+      if ((watchedValues.icpType as IcpType) === 'first-gen') {
+        setIcpType('first-time')
+        setValue('icpType', 'first-time')
+      }
+    }
+  }, [transactionType, watchedValues.firstGenFamilyOwned, watchedValues.icpType, setValue])
+
+  // Long-form quiz deep link: ?type=full
+  useEffect(() => {
+    const t = searchParams.get('type')?.trim().toLowerCase()
+    if (t !== 'full') return
+    setQuizMode('full')
+    setTransactionType('first-time')
+    setValue('transactionType', 'first-time')
+    setIcpType('first-time')
+    setValue('icpType', 'first-time')
+  }, [searchParams, setValue])
+
+  // Sync URL ?type= → transaction + ICP (skips narrative-only slugs + full)
   useEffect(() => {
     const fromUrl = parseIcpTypeParam(searchParams.get('type'))
     const legacyTt = searchParams.get('transactionType') as TransactionType | null
@@ -313,8 +424,16 @@ export default function QuizPage() {
     } else if (legacyTt === 'first-time' || legacyTt === 'repeat-buyer' || legacyTt === 'refinance') {
       setTransactionType(legacyTt)
       setValue('transactionType', legacyTt)
-      setValue('icpType', legacyTt === 'repeat-buyer' ? 'move-up' : 'first-time')
-      setIcpType(legacyTt === 'repeat-buyer' ? 'move-up' : 'first-time')
+      if (legacyTt === 'repeat-buyer') {
+        setValue('icpType', 'repeat-buyer')
+        setIcpType('repeat-buyer')
+      } else if (legacyTt === 'refinance') {
+        setValue('icpType', 'refinance')
+        setIcpType('refinance')
+      } else {
+        setValue('icpType', 'first-time')
+        setIcpType('first-time')
+      }
     }
   }, [searchParams, setValue])
 
@@ -435,9 +554,9 @@ export default function QuizPage() {
 
   useEffect(() => {
     if (!showCompletionResults || completionSavings <= 0) return
-    setAnimatedSavings(1)
+    setAnimatedSavings(0)
     let start: number | null = null
-    const duration = 1800
+    const duration = 1500
     const to = completionSavings
     const tick = (now: number) => {
       if (start === null) start = now
@@ -445,7 +564,7 @@ export default function QuizPage() {
       const progress = Math.min(elapsed / duration, 1)
       const eased = 1 - Math.pow(1 - progress, 3)
       const raw = Math.floor(eased * to)
-      setAnimatedSavings(progress >= 1 ? to : Math.max(1, raw))
+      setAnimatedSavings(progress >= 1 ? to : raw)
       if (progress < 1) requestAnimationFrame(tick)
     }
     const id = requestAnimationFrame(tick)
@@ -461,10 +580,16 @@ export default function QuizPage() {
     return () => clearTimeout(timer)
   }, [showCompletionResults])
 
+  useEffect(() => {
+    if (!showCompletionResults || typeof window === 'undefined') return
+    setResultReferralSlug(getOrCreateReferralCode(null))
+  }, [showCompletionResults])
+
   const onSubmit = async (data: any) => {
     setIsLoading(true)
     const tt = transactionType || 'first-time'
     const icp = (data.icpType as IcpType) || icpType
+    if (icp === 'first-gen') enablePlainEnglishForFirstGenBuyer()
 
     let total = 12450
     try {
@@ -516,59 +641,48 @@ export default function QuizPage() {
       trackActivity('quiz_completed', { transactionType: tt, icpType: icp })
     }
 
+    if (tt === 'refinance') {
+      router.push('/refinance-optimizer')
+      return
+    }
+    if (tt === 'repeat-buyer' && icp === 'repeat-buyer') {
+      router.push('/repeat-buyer-suite')
+      return
+    }
+
     setCompletionSavings(total)
     setAnimatedSavings(0)
     setShowCompletionResults(true)
-    setEmailSubmitStatus('idle')
+    setResultPlanRevealed(false)
+    setResultEmailSaved(false)
     setResultEmail('')
     setIsLoading(false)
   }
 
-  const handlePlanEmailSubmit = async (e: React.FormEvent) => {
+  const handlePlanEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!resultEmail.trim()) return
     const trimmed = resultEmail.trim()
-    setEmailSubmitStatus('sending')
+    console.log('[quiz results] email capture:', trimmed)
     try {
-      try {
-        localStorage.setItem('quizLeadEmail', trimmed)
-        localStorage.setItem('quizLeadEmailCapturedAt', new Date().toISOString())
-      } catch {
-        /* ignore */
-      }
-      await fetch('/api/leads/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: trimmed, source: 'quiz-results' }),
-      }).catch(() => {})
-      trackActivity('tool_used', {
-        tool: 'quiz_result_email_capture',
-        email_length: trimmed.length,
-      })
+      localStorage.setItem('quizLeadEmail', trimmed)
+      localStorage.setItem('quizLeadEmailCapturedAt', new Date().toISOString())
     } catch {
-      /* still treat as captured if localStorage succeeded */
-    } finally {
-      setEmailSubmitStatus('sent')
+      /* ignore */
     }
+    trackActivity('tool_used', {
+      tool: 'quiz_result_email_capture',
+      email_length: trimmed.length,
+    })
+    setResultEmailSaved(true)
+    setResultPlanRevealed(true)
   }
 
   const authSignupRedirect = (path: string) =>
     SIGNUP_DISABLED ? path : `/auth?mode=signup&redirect=${encodeURIComponent(path)}`
 
-  const primaryJourneyPath =
-    transactionType === 'refinance'
-      ? '/homebuyer/refinance-journey'
-      : transactionType === 'repeat-buyer'
-        ? '/homebuyer/buy-sell-journey'
-        : '/customized-journey'
-  const primaryJourneyLabel =
-    transactionType === 'refinance'
-      ? 'Continue My Refinance Plan →'
-      : transactionType === 'repeat-buyer'
-        ? 'Get My Move-Up & Sell-Buy Plan →'
-        : 'Get My Full Personalized Plan →'
-
   const progress = filteredQuestions.length > 0 ? ((currentQuestion + 1) / filteredQuestions.length) * 100 : 0
+  const quizStageLine = quizStageLabel(filteredQuestions, currentQuestion, transactionType)
   const hasAnswer = currentQ && (
     currentQ.type === 'transaction-type' ? transactionType !== null :
     currentValue !== undefined && currentValue !== '' && currentValue !== null
@@ -581,6 +695,17 @@ export default function QuizPage() {
     Boolean(transactionType && currentQ?.id === FINANCIAL_ASSESSMENT_START_ID[transactionType])
 
   const teaserAssist = Math.min(25000, Math.round(quickIncome * 0.11 + quickPrice * 0.012))
+
+  const resultIcp = (watchedValues.icpType as IcpType) || icpType
+  const resultStateDisplay = getQuizStateDisplayName({
+    locationType,
+    city: String(watchedValues.city ?? ''),
+    zipCode,
+  })
+  const resultHeadline = getPersonalizedQuizHeadline(resultIcp, resultStateDisplay)
+  const sourceSplitDpa = Math.round(completionSavings * 0.6)
+  const sourceSplitNegotiation = Math.round(completionSavings * 0.25)
+  const sourceSplitProcess = Math.round(completionSavings * 0.15)
 
   const applyQuickDefaultsToForm = () => {
     const r = resolveTransactionAndIcp(quickIcp)
@@ -630,9 +755,18 @@ export default function QuizPage() {
         </div>
       </div>
 
+      {narrativeEntry ? (
+        <ConversationalIcpQuiz entry={narrativeEntry} />
+      ) : (
+      <>
       {quizMode === 'quick' && (
         <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <QuizCardProgressBar
+              left={<span>Step {quickStep + 1} of {QUICK_SCAN_STEPS}</span>}
+              right={<span>{Math.round((quickStep / QUICK_SCAN_STEPS) * 100)}% complete</span>}
+              percent={(quickStep / QUICK_SCAN_STEPS) * 100}
+            />
             <p className="text-sm font-semibold text-brand-sage">Quick scan · 3 questions</p>
             <h2 className="font-display mt-2 text-2xl font-bold text-brand-forest">
               {quickStep === 0 && 'What best describes your situation?'}
@@ -652,7 +786,12 @@ export default function QuizPage() {
                   <button
                     key={row.icp}
                     type="button"
-                    onClick={() => setQuickIcp(row.icp)}
+                    onClick={() => {
+                      setQuickIcp(row.icp)
+                      if (row.icp === 'first-gen') {
+                        enablePlainEnglishForFirstGenBuyer()
+                      }
+                    }}
                     className={`rounded-xl border-2 p-4 text-left transition ${
                       quickIcp === row.icp
                         ? 'border-brand-forest bg-brand-mist'
@@ -732,6 +871,11 @@ export default function QuizPage() {
       {quizMode === 'quick-teaser' && (
         <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-brand-gold bg-brand-gold/10 p-8 text-center shadow-sm">
+            <QuizCardProgressBar
+              left={<span className="font-semibold text-teal-600">Complete ✓</span>}
+              right={<span>100% complete</span>}
+              percent={100}
+            />
             <PlainEnglishText
               className="text-lg text-brand-forest"
               text="Based on your answers, you may qualify for up to"
@@ -781,6 +925,13 @@ export default function QuizPage() {
           animate={{ opacity: 1, y: 0 }}
           className="relative space-y-8 overflow-hidden rounded-2xl border border-[#e7e5e4] bg-[#fafaf9] p-6 shadow-sm sm:p-8"
         >
+          <div className="relative z-10">
+            <QuizCardProgressBar
+              left={<span className="font-semibold text-teal-600">Complete ✓</span>}
+              right={<span>100% complete</span>}
+              percent={100}
+            />
+          </div>
           {celebrateResults ? (
             <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
               {Array.from({ length: 18 }).map((_, i) => (
@@ -818,14 +969,14 @@ export default function QuizPage() {
           </div>
 
           <div className="relative z-10 text-center">
-            <p className="font-display text-2xl text-[#1c1917]">
-              You may qualify for up to
+            <p className="font-display text-xl font-semibold leading-snug text-[#1c1917] sm:text-2xl">
+              {resultHeadline}
             </p>
-            <div className="mt-3 inline-block rounded-2xl px-3 py-2 animate-savings-pulse">
-              <p className="text-5xl font-extrabold text-[#1a6b3c] font-display">{formatCurrency(animatedSavings)}</p>
-            </div>
-            <p className="mt-2 text-base font-medium text-[#57534e]">
-              in free money toward your down payment and closing cost savings
+            <p className="mt-6 text-6xl font-bold tabular-nums text-millennial-cta-primary font-display">
+              {formatCurrency(animatedSavings)}
+            </p>
+            <p className="mt-3 text-base font-medium text-[#57534e]">
+              in potential savings identified for your profile
             </p>
           </div>
 
@@ -833,129 +984,120 @@ export default function QuizPage() {
             {(
               [
                 {
-                  title: 'State DPA Grant',
-                  desc: 'Up to $10,000 for first-time buyers in your state. No repayment required.',
-                  savings: '$10,000',
+                  title: 'DPA Programs',
+                  line: `Up to ${formatCurrency(sourceSplitDpa)} in grants & assistance`,
+                  Icon: Landmark,
                 },
                 {
-                  title: 'FHA Advantage Program',
-                  desc: '3.5% down with flexible credit requirements. Estimated savings: $4,200.',
-                  savings: '$4,200',
+                  title: 'Negotiation & Fees',
+                  line: `Up to ${formatCurrency(sourceSplitNegotiation)} in fee reductions`,
+                  Icon: Percent,
                 },
                 {
-                  title: 'Closing Cost Assistance',
-                  desc: 'Up to $3,000 toward closing costs from local housing authority.',
-                  savings: '$3,000',
+                  title: 'Process Optimization',
+                  line: `Up to ${formatCurrency(sourceSplitProcess)} in process savings`,
+                  Icon: Waypoints,
                 },
               ] as const
-            ).map((card, cardIndex) => (
-              <div
+            ).map((card, cardIndex) => {
+              const CardIcon = card.Icon
+              return (
+              <motion.div
                 key={card.title}
-                className="relative z-10 rounded-xl border border-[#e7e5e4] border-l-4 border-l-[#0d9488] bg-white p-4 shadow-sm"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: cardIndex * 0.15, ease: 'easeOut' }}
+                className="flex h-full flex-col rounded-xl border-2 border-millennial-cta-primary bg-white p-5 shadow-sm"
               >
                 <div className="flex items-start gap-3">
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{
-                      delay: 0.55 + cardIndex * 0.08,
-                      type: 'spring',
-                      stiffness: 380,
-                      damping: 20,
-                    }}
-                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+                  <span
+                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-millennial-primary-light text-millennial-cta-primary"
                     aria-hidden
                   >
-                    <Check className="h-4 w-4" strokeWidth={2.5} />
-                  </motion.span>
-                  <div className="min-w-0 flex-1">
+                    <CardIcon className="h-5 w-5" strokeWidth={2} />
+                  </span>
+                  <div className="min-w-0 flex-1 text-left">
                     <p className="font-display font-semibold text-[#1c1917]">{card.title}</p>
-                    <p className="mt-2 text-sm font-medium leading-relaxed text-[#57534e]">
-                      {card.desc}
+                    <p className="mt-2 text-sm font-medium leading-relaxed text-[#57534e]">{card.line}</p>
+                    <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-millennial-cta-primary">
+                      <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+                      Included in your plan
                     </p>
-                    <p className="mt-3 text-sm font-bold text-[#c0622a]">Est. {card.savings}</p>
                   </div>
                 </div>
-              </div>
-            ))}
+              </motion.div>
+              )
+            })}
           </div>
+
+          <div className="relative z-10 mx-auto mt-4 max-w-lg">
+            <p className="mb-2 text-center text-sm text-[#57534e]">
+              Know someone who&apos;s also buying? Share NestQuest and you both save $50.
+            </p>
+            <ResultsReferralCard referralSlug={resultReferralSlug} />
+          </div>
+
           <p className="relative z-10 text-center text-xs leading-relaxed text-[#78716c]">
-            Program names and dollar amounts are illustrative examples for this prototype. Eligibility, benefits, and
-            savings vary by location and lender—confirm with housing agencies and licensed professionals before you rely
-            on them.
+            Illustrative breakdown of your total estimate for this prototype. Eligibility, benefits, and savings vary by
+            location and lender—confirm with housing agencies and licensed professionals before you rely on them.
           </p>
 
-          <div className="relative z-10 rounded-xl border border-[#e7e5e4] bg-white p-6 shadow-sm">
-            {emailSubmitStatus !== 'sent' ? (
-              <>
-                <h3 className="font-display text-lg font-semibold text-[#1c1917]">
-                  Get your personalized savings plan by email
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#57534e]">
-                  We&apos;ll send you a breakdown of every program you qualify for, plus a step-by-step action plan — free,
-                  no spam.
+          {!resultPlanRevealed ? (
+            <div className="relative z-10 mt-6 rounded-xl border border-teal-200 bg-white p-6">
+              <h3 className="mb-1 text-lg font-bold text-gray-900">Your savings estimate is ready.</h3>
+              <p className="mb-4 text-sm text-gray-600">
+                Enter your email to save your results and get your personalized action plan — free.
+              </p>
+              <form onSubmit={handlePlanEmailSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                <label htmlFor="quiz-result-email" className="sr-only">
+                  Email
+                </label>
+                <input
+                  id="quiz-result-email"
+                  type="email"
+                  autoComplete="email"
+                  value={resultEmail}
+                  onChange={(e) => setResultEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+                >
+                  Get My Plan →
+                </button>
+              </form>
+              <p className="mt-2 text-xs text-gray-400">No credit card. No spam. Unsubscribe anytime.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setResultEmailSaved(false)
+                  setResultPlanRevealed(true)
+                }}
+                className="mt-2 block text-xs text-gray-400 underline hover:text-gray-600"
+              >
+                Skip for now →
+              </button>
+            </div>
+          ) : (
+            <div className="relative z-10 space-y-4 text-center">
+              {resultEmailSaved ? (
+                <p className="text-base font-semibold text-gray-900" role="status">
+                  ✓ Saved! Your plan is ready.
                 </p>
-                <form onSubmit={handlePlanEmailSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <div className="min-w-0 flex-1">
-                    <label htmlFor="quiz-result-email" className="sr-only">
-                      Email
-                    </label>
-                    <input
-                      id="quiz-result-email"
-                      type="email"
-                      autoComplete="email"
-                      value={resultEmail}
-                      onChange={(e) => setResultEmail(e.target.value)}
-                      placeholder="you@email.com"
-                      className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-[#0d9488] focus:ring-2"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={emailSubmitStatus === 'sending'}
-                    className="rounded-xl bg-[#0d9488] px-6 py-3 font-semibold text-white transition hover:bg-[#0f766e] disabled:opacity-60"
-                  >
-                    {emailSubmitStatus === 'sending' ? 'Sending…' : 'Send My Free Plan'}
-                  </button>
-                </form>
-                <p className="mt-2 text-xs text-[#a8a29e]">We&apos;ll never share your email. Unsubscribe anytime.</p>
-              </>
-            ) : (
-              <div className="space-y-6 text-left">
-                <p className="text-base font-medium text-[#1a6b3c]">
-                  ✓ Check your inbox! Your plan is on its way.
-                </p>
-                <div className="rounded-xl border border-[#e7e5e4] bg-[#fafaf9] p-5">
-                  <h4 className="font-display text-base font-semibold text-[#1c1917]">
-                    Create your free account to track your progress
-                  </h4>
-                  <p className="mt-2 text-sm text-[#57534e]">
-                    Save your results, access your personalized journey hub, and get notified when new programs open in
-                    your area.
-                  </p>
-                  <Link
-                    href={authSignupRedirect(primaryJourneyPath)}
-                    className="mt-4 inline-flex items-center justify-center rounded-xl border-2 border-[#1a6b3c] bg-white px-6 py-3 text-sm font-semibold text-[#1a6b3c] transition hover:bg-[#1a6b3c]/5"
-                  >
-                    Create Free Account →
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="relative z-10 rounded-xl border border-[#e7e5e4] bg-white p-6 text-center shadow-sm">
-            <Link
-              href={primaryJourneyPath}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-[#1a6b3c] px-8 py-4 text-lg font-semibold text-white shadow-md transition hover:bg-[#155c33] sm:w-auto"
-            >
-              {primaryJourneyLabel}
-            </Link>
-            <p className="mt-3 text-sm text-[#57534e]">Free to start · Takes 2 minutes to set up your journey</p>
-            <p className="mt-4 text-center text-xs text-[#57534e]">
-              <span aria-hidden>🔒</span> No credit check · No affiliate kickbacks · Your data stays private
-            </p>
-          </div>
+              ) : null}
+              <Link
+                href={authSignupRedirect('/customized-journey')}
+                className="inline-flex w-full items-center justify-center rounded-lg bg-teal-600 px-8 py-4 text-base font-medium text-white shadow-md transition hover:bg-teal-700 sm:w-auto"
+              >
+                Get My Full Plan →
+              </Link>
+              <p className="text-sm text-[#57534e]">
+                Join 6,303 buyers who&apos;ve already found their savings
+              </p>
+            </div>
+          )}
 
           <div className="relative z-10 text-center">
             <Link
@@ -968,25 +1110,6 @@ export default function QuizPage() {
         </motion.div>
         ) : (
         <>
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-semibold text-slate-600">
-              Question {currentQuestion + 1} of {filteredQuestions.length}
-            </span>
-            <span className="text-sm font-semibold text-slate-600">{Math.round(progress)}%</span>
-          </div>
-          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-[rgb(var(--coral))]"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-          <p className="mt-2 text-sm text-brand-sage">{quizStageLabel(filteredQuestions, currentQuestion, transactionType)}</p>
-        </div>
-
         {/* Question Card */}
         {currentQ && (
         <motion.div
@@ -996,6 +1119,14 @@ export default function QuizPage() {
           exit={{ opacity: 0, x: -20 }}
           className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8"
         >
+          <QuizCardProgressBar
+            left={<span>Step {currentQuestion + 1} of {filteredQuestions.length}</span>}
+            right={<span>{Math.round(progress)}% complete</span>}
+            percent={progress}
+          />
+          {quizStageLine ? (
+            <p className="mb-6 text-sm text-brand-sage">{quizStageLine}</p>
+          ) : null}
           {isStartOfFinancialAssessment ? (
             <div
               className="mb-6 rounded-xl border border-teal-200 bg-gradient-to-r from-millennial-primary-light/50 to-teal-50/80 px-4 py-3 text-sm text-slate-800 shadow-sm sm:text-base"
@@ -1083,8 +1214,8 @@ export default function QuizPage() {
                     const type: TransactionType = 'repeat-buyer'
                     setTransactionType(type)
                     setValue('transactionType', type)
-                    setValue('icpType', 'move-up')
-                    setIcpType('move-up')
+                    setValue('icpType', 'repeat-buyer')
+                    setIcpType('repeat-buyer')
                   }}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     transactionType === 'repeat-buyer'
@@ -1093,9 +1224,9 @@ export default function QuizPage() {
                   }`}
                 >
                   <TrendingUp className="w-8 h-8 text-[#06b6d4] mb-3" />
-                  <h3 className="text-xl font-bold mb-2">Repeat Buyer</h3>
-                  <p className="text-sm text-slate-500 mb-1">Selling current home to buy next one</p>
-                  <p className="text-xs text-gray-500">Using equity from your current home</p>
+                  <h3 className="text-xl font-bold mb-2">I&apos;ve Bought Before</h3>
+                  <p className="text-sm text-slate-500 mb-1">Own a home now or sold recently — next purchase or upgrade</p>
+                  <p className="text-xs text-gray-500">We&apos;ll route you to equity tools; say if you&apos;re buying &amp; selling at once</p>
                 </button>
                 <button
                   type="button"
@@ -1103,8 +1234,8 @@ export default function QuizPage() {
                     const type: TransactionType = 'refinance'
                     setTransactionType(type)
                     setValue('transactionType', type)
-                    setValue('icpType', 'first-time')
-                    setIcpType('first-time')
+                    setValue('icpType', 'refinance')
+                    setIcpType('refinance')
                   }}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     transactionType === 'refinance'
@@ -1113,9 +1244,9 @@ export default function QuizPage() {
                   }`}
                 >
                   <RefreshCw className="w-8 h-8 text-[#06b6d4] mb-3" />
-                  <h3 className="text-xl font-bold mb-2">Refinance</h3>
-                  <p className="text-sm text-slate-500 mb-1">Refinancing your current mortgage</p>
-                  <p className="text-xs text-gray-500">Lower rate, cash-out, or change terms</p>
+                  <h3 className="text-xl font-bold mb-2">I Own &amp; Want to Refinance</h3>
+                  <p className="text-sm text-slate-500 mb-1">Lower my rate, reduce my payment, or access equity</p>
+                  <p className="text-xs text-gray-500">Quick scan, then open the refinance optimizer</p>
                 </button>
               </div>
             )}
@@ -1501,6 +1632,8 @@ export default function QuizPage() {
         </>
         )}
       </div>
+      )}
+      </>
       )}
 
       {/* Loading Screen */}

@@ -7,6 +7,7 @@ import { Lightbulb, Lock } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { formatCurrency } from '@/lib/calculations'
 import { SavingsOpportunitiesHeadline } from '@/components/results/SavingsOpportunitiesHeadline'
+import ResultsReferralCard from '@/components/results/ResultsReferralCard'
 import { SIGNUP_DISABLED } from '@/lib/auth-flags'
 
 type SavingsOppRow = {
@@ -56,6 +57,7 @@ export default function GuestResultsPreview({ results }: { results: Record<strin
             <div className="mb-2">
               <SavingsOpportunitiesHeadline firstName={null} count={savingsList.length} totalDollars={totalSavings} />
             </div>
+            <ResultsReferralCard referralSlug="yourname" />
 
             <div className="mt-6 rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 sm:p-6">
               <h3 className="text-lg font-bold text-[#1e293b]">Down Payment &amp; Closing Cost Assistance You Qualify For</h3>

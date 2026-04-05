@@ -36,11 +36,11 @@ const NEXT_BEST_ACTION_BY_TYPE: Record<
     secondaryLabel: 'Start with quiz',
   },
   refinance: {
-    title: 'Run your refinance break-even',
-    description: 'Compare rate scenarios and see if refinancing saves real money.',
-    href: '/homebuyer/refinance-journey',
-    secondaryHref: authSignupThenPath('/quiz?transactionType=refinance'),
-    secondaryLabel: 'Start with quiz',
+    title: 'Open your Refinance Optimizer',
+    description: 'Rate radar, break-even math, and cash-out scenarios — then use the roadmap for documents and timeline.',
+    href: '/refinance-optimizer',
+    secondaryHref: '/homebuyer/refinance-journey',
+    secondaryLabel: 'Checklist & timeline wizard',
   },
 }
 
@@ -398,16 +398,22 @@ export default function HomebuyerPage() {
                 </ul>
                 <div className="flex flex-col gap-2">
                   <Link
-                    href="/homebuyer/refinance-journey"
+                    href="/refinance-optimizer"
                     className="block w-full rounded-xl bg-[rgb(var(--navy))] py-3 text-center font-semibold text-white transition-opacity hover:opacity-95"
                   >
-                    Start Refinance Journey
+                    Open Refinance Optimizer
+                  </Link>
+                  <Link
+                    href="/homebuyer/refinance-journey"
+                    className="block w-full rounded-xl border-2 border-[rgb(var(--navy))]/40 py-2 text-center text-sm font-medium text-[rgb(var(--navy))] transition-colors hover:bg-slate-50"
+                  >
+                    Checklist &amp; timeline wizard
                   </Link>
                   <Link
                     href={quizRefi}
-                    className="block w-full rounded-xl border-2 border-[rgb(var(--navy))]/40 py-2 text-center text-sm font-medium text-[rgb(var(--navy))] transition-colors hover:bg-slate-50"
+                    className="block w-full rounded-xl border border-slate-200 py-2 text-center text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
                   >
-                    Get Quiz Guide
+                    Start with refinance quiz
                   </Link>
                 </div>
               </motion.div>
@@ -507,7 +513,7 @@ export default function HomebuyerPage() {
 
       <footer className="mt-10 border-t border-white/10 bg-[rgb(var(--navy))] py-8 text-white/80">
         <div className="mx-auto max-w-6xl px-4 text-center text-sm">
-          <p>© {new Date().getFullYear()} NestQuest. Made to help you understand home buying.</p>
+          <p>© {new Date().getFullYear()} NestQuest. Your Home Buying Advocate.</p>
         </div>
       </footer>
     </div>

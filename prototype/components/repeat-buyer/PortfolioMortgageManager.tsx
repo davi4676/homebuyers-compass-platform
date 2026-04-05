@@ -29,6 +29,7 @@ export default function PortfolioMortgageManager({
     (sum, prop) => sum + (prop.value - prop.balance),
     0
   )
+  const modeledPortfolioLift = Math.round(Math.min(35000, Math.max(12000, totalEquity * 0.028)))
 
   return (
     <motion.div
@@ -56,15 +57,18 @@ export default function PortfolioMortgageManager({
             <Lock className="w-6 h-6 text-yellow-400" />
             <h2 className="text-xl font-bold">Pro Feature</h2>
           </div>
-          <p className="text-gray-300 mb-4">
-            Upgrade to Pro to access portfolio management, multi-property optimization, and 1031
-            exchange tools.
+          <p className="text-gray-300 mb-2 font-semibold text-white">
+            Surface about {formatCurrency(modeledPortfolioLift)} in modeled tax- and rate-smart moves across your
+            properties (illustrative).
+          </p>
+          <p className="text-gray-400 mb-4 text-sm">
+            Navigator+ unlocks multi-loan modeling, 1031 checkpoints, and consolidated payoff strategies.
           </p>
           <button
             onClick={() => onUpgrade('navigator')}
             className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
           >
-            Upgrade to Pro
+            Open portfolio modeling
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 import type { UserTier } from '@/lib/tiers'
-import { TIER_DEFINITIONS, tierAtLeast } from '@/lib/tiers'
+import { TIER_DEFINITIONS, tierAtLeast, getMomentumToNavigatorUpgradeCopy } from '@/lib/tiers'
 import type { UserSnapshot } from '@/lib/user-snapshot'
 import TierBadge from '@/components/TierBadge'
 import MindsetTag from './MindsetTag'
@@ -47,6 +47,8 @@ type JourneyOnboardingWizardProps = {
   goTab: (t: JourneyTab) => void
   onComplete: () => void
   reduceMotion?: boolean
+  /** From stored quiz; used for solo-specific Navigator upgrade copy. */
+  quizIcpType?: string | null
 }
 
 export default function JourneyOnboardingWizard({
@@ -62,6 +64,7 @@ export default function JourneyOnboardingWizard({
   goTab,
   onComplete,
   reduceMotion = false,
+  quizIcpType = null,
 }: JourneyOnboardingWizardProps) {
   const [step, setStep] = useState(1)
   const def = TIER_DEFINITIONS[effectiveTier]
@@ -355,7 +358,7 @@ export default function JourneyOnboardingWizard({
             </div>
           </div>
           <div className="rounded-2xl border border-teal-200/80 bg-white/90 p-4 shadow-sm">
-            <p className="text-sm font-bold text-teal-900">Navigator+ unlocks a personalized affordability review.</p>
+            <p className="text-sm font-bold text-teal-900">Navigator+: {getMomentumToNavigatorUpgradeCopy(quizIcpType)}</p>
             <p className="mt-1 text-sm text-slate-600">&ldquo;{TIER_DEFINITIONS.navigator.mindset}&rdquo;</p>
           </div>
           <button

@@ -11,15 +11,35 @@ import {
   Shield,
 } from 'lucide-react'
 import Link from 'next/link'
-import { TIER_DEFINITIONS, type UserTier, formatTierPrice } from '@/lib/tiers'
-import { setUserTier } from '@/lib/user-tracking'
+import {
+  TIER_DEFINITIONS,
+  type UserTier,
+  formatTierPriceForCycle,
+  type TierBillingDisplayCycle,
+} from '@/lib/tiers'
+import {
+  markMomentumPaidLocal,
+  setUserTier,
+  TRIAL_END_DATE_LS,
+  isMomentumPaidLocal,
+} from '@/lib/user-tracking'
+
+const SUPPORT_MAIL = 'mailto:support@nestquest.com'
+
+function isStripeUnavailableError(res: Response, message: string): boolean {
+  return (
+    res.status === 503 ||
+    /not configured|stripe not configured/i.test(message) ||
+    /STRIPE_SECRET_KEY/i.test(message)
+  )
+}
 import { trackActivity } from '@/lib/track-activity'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function PaymentPage() {
   const searchParams = useSearchParams()
   const tierParam = searchParams.get('tier') as UserTier
-  const billingCycle = (searchParams.get('cycle') || 'one-time') as 'one-time' | 'monthly'
+  const billingCycle = (searchParams.get('cycle') || 'monthly') as 'one-time' | 'monthly' | 'yearly'
 
   const [selectedTier, setSelectedTier] = useState<UserTier>(tierParam || 'momentum')
   const [success, setSuccess] = useState(false)
@@ -28,7 +48,28 @@ export default function PaymentPage() {
   const [customerEmail, setCustomerEmail] = useState('')
 
   const tierDef = TIER_DEFINITIONS[selectedTier]
-  const priceLabel = formatTierPrice(tierDef)
+  const displayCycle: TierBillingDisplayCycle =
+    billingCycle === 'yearly' ? 'annual' : billingCycle === 'monthly' ? 'monthly' : 'one-time'
+  const priceLabel = formatTierPriceForCycle(tierDef, displayCycle)
+
+  const trialAlreadyScheduled =
+    typeof window !== 'undefined' && Boolean(localStorage.getItem(TRIAL_END_DATE_LS))
+  const momentumStripeTrial =
+    selectedTier === 'momentum' &&
+    (billingCycle === 'monthly' || billingCycle === 'yearly') &&
+    !isMomentumPaidLocal() &&
+    !trialAlreadyScheduled
+
+  const trialChargeDateLabel = (() => {
+    if (!momentumStripeTrial) return ''
+    const d = new Date(Date.now() + 7 * 86_400_000)
+    return d.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  })()
 
   useEffect(() => {
     const stripeSuccess = searchParams.get('success') === 'stripe'
@@ -54,7 +95,14 @@ export default function PaymentPage() {
           return
         }
         const tier = body.tier as UserTier
-        setUserTier(tier)
+        const trialEndIso = typeof body.trialEndIso === 'string' ? body.trialEndIso : null
+        if (tier === 'momentum' && trialEndIso) {
+          setUserTier(tier, { recordPurchaseDate: false })
+          localStorage.setItem(TRIAL_END_DATE_LS, trialEndIso)
+        } else {
+          if (tier === 'momentum') markMomentumPaidLocal()
+          setUserTier(tier)
+        }
         setSelectedTier(tier)
         localStorage.setItem('tierPurchaseDate', new Date().toISOString())
         localStorage.setItem('tierBillingCycle', searchParams.get('cycle') || 'monthly')
@@ -90,7 +138,12 @@ export default function PaymentPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Checkout failed')
+        const raw = typeof data.error === 'string' ? data.error : 'Checkout failed'
+        setError(
+          isStripeUnavailableError(res, raw)
+            ? 'SETUP_PENDING'
+            : raw
+        )
         setStripeRedirecting(false)
         return
       }
@@ -179,6 +232,18 @@ export default function PaymentPage() {
                 <span>{priceLabel}</span>
               </div>
             </div>
+            {momentumStripeTrial ? (
+              <div className="mt-4 space-y-2 rounded-xl border border-teal-200 bg-[#f0fdfa] p-4 text-sm text-[#134e4a]">
+                <p>
+                  Your <strong className="font-semibold">7-day free trial</strong> starts today. You won&apos;t be
+                  charged until <strong className="font-semibold">{trialChargeDateLabel}</strong>.
+                </p>
+                <p>
+                  Cancel anytime before <strong className="font-semibold">{trialChargeDateLabel}</strong> and you
+                  won&apos;t be charged.
+                </p>
+              </div>
+            ) : null}
           </div>
         </motion.div>
 
@@ -192,7 +257,12 @@ export default function PaymentPage() {
           <div className="mb-6 p-4 rounded-xl border border-[#0d9488]/30 bg-[#f0fdfa]">
             <h3 className="font-semibold text-[#1c1917] mb-2">Choose billing option</h3>
             <p className="text-sm text-[#57534e] mb-3">
-              Secure checkout with card support. Subscriptions can be cancelled anytime.
+              Secure checkout with card support. Subscriptions can be cancelled anytime — or pause for up to 3 months at
+              half the monthly rate from{' '}
+              <Link href="/account/billing" className="font-semibold text-[#0d9488] underline">
+                Billing &amp; subscription
+              </Link>
+              .
             </p>
             <input
               type="email"
@@ -218,25 +288,45 @@ export default function PaymentPage() {
                     disabled={stripeRedirecting}
                     className="px-4 py-2 rounded-lg border-2 border-[#0d9488] text-[#0d9488] hover:bg-[#0d9488]/10 disabled:opacity-50"
                   >
-                    Stripe — Yearly
+                    {stripeRedirecting ? 'Redirecting...' : 'Stripe — Annual (20% off)'}
                   </button>
                 </>
               )}
-              <button
-                type="button"
-                onClick={() => handleStripeCheckout('one-time')}
-                disabled={stripeRedirecting}
-                className="px-4 py-2 rounded-lg border-2 border-[#0d9488] text-[#0d9488] hover:bg-[#0d9488]/10 disabled:opacity-50"
-              >
-                Stripe — One-time
-              </button>
+              {billingCycle === 'yearly' && (
+                <button
+                  type="button"
+                  onClick={() => handleStripeCheckout('yearly')}
+                  disabled={stripeRedirecting}
+                  className="px-4 py-2 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] disabled:opacity-50"
+                >
+                  {stripeRedirecting ? 'Redirecting...' : 'Stripe — Annual (20% off)'}
+                </button>
+              )}
             </div>
           </div>
 
           {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-800">
-              <AlertCircle size={20} />
-              <span>{error}</span>
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
+              <div className="flex items-start gap-2">
+                <AlertCircle size={20} className="shrink-0 mt-0.5" />
+                <div className="min-w-0 space-y-2">
+                  {error === 'SETUP_PENDING' ? (
+                    <>
+                      <p>
+                        Payment processing is being set up. Please check back shortly or contact support.
+                      </p>
+                      <a
+                        href={SUPPORT_MAIL}
+                        className="inline-block font-semibold text-red-900 underline hover:no-underline"
+                      >
+                        Contact Support
+                      </a>
+                    </>
+                  ) : (
+                    <span>{error}</span>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

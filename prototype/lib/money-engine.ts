@@ -415,12 +415,36 @@ function phaseTriple(
         minTier: 'momentum',
       },
     },
+    8: {
+      savings: {
+        id: 'ph8-sav',
+        title: 'Refinance Monitor alerts',
+        description: 'Rate drops that could save $200+/month on your profile.',
+        category: 'savings',
+        estimatedValue: Math.round(4_800 + d * 1_800),
+      },
+      funding: {
+        id: 'ph8-fund',
+        title: 'Equity growth opportunities',
+        description: 'HELOC or second-home planning when equity supports it.',
+        category: 'funds',
+        estimatedValue: Math.round(3_000 + d * 1_000),
+        minTier: 'momentum',
+      },
+      alternative: {
+        id: 'ph8-alt',
+        title: 'Referral rewards',
+        description: 'Share NestQuest — perks for you and friends.',
+        category: 'alternative',
+        estimatedValue: Math.round(100 + d * 0),
+      },
+    },
   }
   return map[phaseOrder] ?? map[1]
 }
 
 export function getPhaseMoneyOpportunities(phaseOrder: number, userTier: UserTier): PhaseMoneyTriple {
-  const t = phaseTriple(Math.max(1, Math.min(7, phaseOrder)), userTier)
+  const t = phaseTriple(Math.max(1, Math.min(8, phaseOrder)), userTier)
   return {
     savings: t.savings,
     funding: {
@@ -440,7 +464,7 @@ export function getPhaseMoneyOpportunities(phaseOrder: number, userTier: UserTie
 
 /** Full-value phase row (Navigator+ depth) for lock/upsell copy. */
 export function getPhaseMoneyBlueprint(phaseOrder: number): PhaseMoneyTriple {
-  return phaseTriple(Math.max(1, Math.min(7, phaseOrder)), 'navigator_plus')
+  return phaseTriple(Math.max(1, Math.min(8, phaseOrder)), 'navigator_plus')
 }
 
 export function isMoneyOppLockedForTier(opp: MoneyOpportunity, userTier: UserTier): boolean {

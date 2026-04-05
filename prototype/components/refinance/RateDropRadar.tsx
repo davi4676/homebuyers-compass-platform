@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Bell, TrendingDown, DollarSign, AlertCircle, CheckCircle } from 'lucide-react'
-import { UserTier } from '@/lib/tiers'
+import { ArrowLeft, Bell, CheckCircle, Lock, ArrowRight } from 'lucide-react'
+import { UserTier, tierAtLeast, TIER_DEFINITIONS } from '@/lib/tiers'
 import { formatCurrency } from '@/lib/calculations'
 
 interface RefinanceData {
@@ -29,6 +29,7 @@ export default function RateDropRadar({
   onUpgrade,
 }: RateDropRadarProps) {
   const [data, setData] = useState(refinanceData)
+  const canUseAlerts = tierAtLeast(userTier, 'momentum')
   const currentMarketRate = 5.5 // Example market rate
   const rateDifference = data.currentRate - currentMarketRate
 
@@ -44,10 +45,11 @@ export default function RateDropRadar({
 
   return (
     <motion.div
+      id="rate-radar"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="space-y-8"
+      className="space-y-8 scroll-mt-28"
     >
       <div className="flex items-center gap-4">
         <button
@@ -108,32 +110,61 @@ export default function RateDropRadar({
         </div>
       </div>
 
-      {/* Alert Settings */}
-      <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-800">
+      {/* Alert Settings — Momentum+ (retention hook) */}
+      <div className="relative overflow-hidden rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+        {!canUseAlerts && (
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] bg-gray-950/75 backdrop-blur-[2px]"
+            aria-hidden
+          />
+        )}
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <Bell className="w-6 h-6 text-[#06b6d4]" />
           Rate Alert Settings
+          {!canUseAlerts && (
+            <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-200">
+              <Lock className="h-3.5 w-3.5" aria-hidden />
+              {TIER_DEFINITIONS.momentum.name}
+            </span>
+          )}
         </h2>
-        <div className="space-y-4">
-          <label className="flex items-center gap-3 p-4 rounded-lg bg-gray-800/50 cursor-pointer hover:bg-gray-800">
-            <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-gray-700" />
-            <div>
-              <div className="font-semibold">Rate Drop Alert</div>
-              <div className="text-sm text-gray-400">
-                Notify me when rates drop 0.5% or more
+        {canUseAlerts ? (
+          <div className="space-y-4">
+            <label className="flex items-center gap-3 p-4 rounded-lg bg-gray-800/50 cursor-pointer hover:bg-gray-800">
+              <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-gray-700" />
+              <div>
+                <div className="font-semibold">Rate Drop Alert</div>
+                <div className="text-sm text-gray-400">
+                  Notify me when rates drop 0.5% or more
+                </div>
               </div>
-            </div>
-          </label>
-          <label className="flex items-center gap-3 p-4 rounded-lg bg-gray-800/50 cursor-pointer hover:bg-gray-800">
-            <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-gray-700" />
-            <div>
-              <div className="font-semibold">Break-Even Alert</div>
-              <div className="text-sm text-gray-400">
-                Alert when break-even point is under 24 months
+            </label>
+            <label className="flex items-center gap-3 p-4 rounded-lg bg-gray-800/50 cursor-pointer hover:bg-gray-800">
+              <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-gray-700" />
+              <div>
+                <div className="font-semibold">Break-Even Alert</div>
+                <div className="text-sm text-gray-400">
+                  Alert when break-even point is under 24 months
+                </div>
               </div>
-            </div>
-          </label>
-        </div>
+            </label>
+          </div>
+        ) : (
+          <div className="relative z-[2] space-y-4">
+            <p className="text-sm text-gray-300">
+              Personalized rate and break-even alerts are included with {TIER_DEFINITIONS.momentum.name}. You still see
+              live savings math above; unlock alerts to come back when the market moves.
+            </p>
+            <button
+              type="button"
+              onClick={() => onUpgrade('momentum')}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+            >
+              Upgrade to unlock alerts
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-6 border-t border-gray-800">

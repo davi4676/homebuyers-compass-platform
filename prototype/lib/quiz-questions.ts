@@ -322,6 +322,20 @@ export const firstTimeQuestions: Question[] = [
 // Repeat Buyer Questions
 export const repeatBuyerQuestions: Question[] = [
   {
+    id: 'repeatBuyerSellConcurrent',
+    title: 'Are you selling your current home at the same time?',
+    tooltip:
+      'Buy-sell timing affects bridge loans, offer strategy, and how we estimate your equity and cash to close.',
+    type: 'radio',
+    options: [
+      { value: 'yes', label: 'Yes' },
+      { value: 'no', label: 'No' },
+      { value: 'already-sold', label: 'Already sold' },
+    ],
+    conditional: (values) =>
+      values.transactionType === 'repeat-buyer' && values.icpType === 'repeat-buyer',
+  },
+  {
     id: 'moveUpSellFirst',
     title: 'Do you need to sell your current home before purchasing the new one?',
     tooltip: 'Sell-first vs buy-first changes financing and timing risk.',
@@ -552,8 +566,36 @@ export const repeatBuyerQuestions: Question[] = [
   },
 ]
 
-// Refinance Questions
-export const refinanceQuestions: Question[] = [
+/** Two-question refinance entry path → then route to `/refinance-optimizer`. */
+export const refinanceQuestionsQuick: Question[] = [
+  {
+    id: 'refiPrimaryGoal',
+    title: "What's your main goal?",
+    tooltip: "We'll weight savings estimates toward the outcome that matters most to you.",
+    type: 'radio',
+    options: [
+      { value: 'lower-monthly', label: 'Lower my monthly payment' },
+      { value: 'access-equity', label: 'Access my home equity' },
+      { value: 'shorten-term', label: 'Shorten my loan term' },
+      { value: 'better-rate', label: 'Get a better rate' },
+    ],
+  },
+  {
+    id: 'refiYearsInHome',
+    title: 'How long have you been in your home?',
+    tooltip: 'Time in home affects break-even math and whether closing costs are worth it.',
+    type: 'radio',
+    options: [
+      { value: '<2', label: 'Less than 2 years' },
+      { value: '2-5', label: '2–5 years' },
+      { value: '5-10', label: '5–10 years' },
+      { value: '10+', label: '10+ years' },
+    ],
+  },
+]
+
+/** Full refinance assessment (optional deep dive; not in default quiz flow). */
+export const refinanceQuestionsExtended: Question[] = [
   {
     id: 'currentHomeValue',
     title: "What's your current home value?",
@@ -607,22 +649,6 @@ export const refinanceQuestions: Question[] = [
     placeholder: '25',
   },
   {
-    id: 'refinanceGoals',
-    title: "What are your refinance goals? (Select all that apply)",
-    tooltip: "Your goals determine the best refinance strategy. We'll show you options for each.",
-    type: 'radio',
-  options: [
-      { value: 'lower-payment', label: 'Lower my monthly payment' },
-      { value: 'lower-rate', label: 'Lower my interest rate' },
-      { value: 'shorter-term', label: 'Shorten my loan term (pay off faster)' },
-      { value: 'cashout-improvements', label: 'Cash out equity for home improvements' },
-      { value: 'cashout-debt', label: 'Cash out equity for debt consolidation' },
-      { value: 'cashout-investment', label: 'Cash out equity for investment/other' },
-      { value: 'remove-pmi', label: 'Remove PMI' },
-      { value: 'arm-to-fixed', label: 'Switch from ARM to fixed rate' },
-    ],
-  },
-  {
     id: 'cashoutAmount',
     title: "How much cash do you need?",
     tooltip: "Maximum available is typically 80% of home value minus current balance.",
@@ -630,10 +656,7 @@ export const refinanceQuestions: Question[] = [
     min: 0,
     max: 500000,
     placeholder: '$0',
-    conditional: (values) => {
-      const goals = values.refinanceGoals || []
-      return Array.isArray(goals) && goals.some((g: string) => g.includes('cashout'))
-    },
+    conditional: (values) => values.refiPrimaryGoal === 'access-equity',
   },
   {
     id: 'creditScore',
@@ -705,7 +728,7 @@ export function getQuestionsForTransactionType(transactionType: TransactionType 
     case 'repeat-buyer':
       return [...baseQuestions, ...repeatBuyerQuestions]
     case 'refinance':
-      return [...baseQuestions, ...refinanceQuestions]
+      return [...baseQuestions, ...refinanceQuestionsQuick]
     default:
       return baseQuestions
   }

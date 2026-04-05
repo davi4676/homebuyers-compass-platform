@@ -1,9 +1,10 @@
 'use client'
 
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import FirstGenHub from '@/components/results/FirstGenHub'
 import SoloAdvocateChecklist from '@/components/results/SoloAdvocateChecklist'
 import { SavingsOpportunitiesHeadline } from '@/components/results/SavingsOpportunitiesHeadline'
+import ResultsReferralCard from '@/components/results/ResultsReferralCard'
 import GlossaryTooltip from '@/components/GlossaryTooltip'
 import { usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
 import { applyPlainEnglishCopy } from '@/lib/plain-english'
@@ -26,6 +27,10 @@ import { getCachedFreddieMacRates } from '@/lib/freddie-mac-rates'
 import { formatNumberForInput, parseFormattedNumber } from '@/lib/number-format'
 import { JOURNEY_PHASES_DATA } from '@/lib/journey-phases-data'
 import ResultsAchievementBadgesRow from '@/components/results/ResultsAchievementBadgesRow'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { referralSlugFromUser } from '@/lib/referral-slug'
+import ReferralProgramModal from '@/components/referral/ReferralProgramModal'
+import { REFERRAL_PROMPT_LS } from '@/lib/referral-program'
 
 // Difficulty badge colours
 const difficultyColor: Record<string, string> = {
@@ -134,6 +139,8 @@ const ICP_RESULT_HEADLINES: Record<string, string> = {
   'first-gen': "You're Making History — Here's What We Found For You",
   solo: 'Your Solo Buyer Action Plan',
   'move-up': 'Your Move-Up Strategy & Equity Analysis',
+  'repeat-buyer': 'Your Repeat Buyer Equity & Next-Step Suite',
+  refinance: 'Your Refinance Snapshot & Optimizer Hub',
 }
 
 function normalizeIcpKey(raw: string): keyof typeof ICP_RESULT_HEADLINES | '' {
@@ -141,7 +148,9 @@ function normalizeIcpKey(raw: string): keyof typeof ICP_RESULT_HEADLINES | '' {
   if (p === 'first-gen' || p === 'firstgen') return 'first-gen'
   if (p === 'solo') return 'solo'
   if (p === 'move-up' || p === 'moveup') return 'move-up'
+  if (p === 'repeat-buyer' || p === 'repeatbuyer') return 'repeat-buyer'
   if (p === 'first-time' || p === 'firsttime') return 'first-time'
+  if (p === 'refinance') return 'refinance'
   return ''
 }
 
@@ -165,6 +174,34 @@ export default function ResultsPageBody() {
   const [showAllSavingsOpportunities, setShowAllSavingsOpportunities] = useState(false)
   const resultsExperiment = useExperiment('results_layout_v2')
   const state = useContext(ResultsPageStateContext)
+  const { user: sessionUser } = useAuth()
+  const referralSlug = useMemo(() => referralSlugFromUser(sessionUser ?? null), [sessionUser])
+
+  const referralQuizHasResults = Boolean(
+    state &&
+      state.results &&
+      typeof state.results === 'object' &&
+      (state.results as Record<string, unknown>).type &&
+      (state.results as Record<string, unknown>).type !== 'error'
+  )
+  const [referralQuizOpen, setReferralQuizOpen] = useState(false)
+
+  useEffect(() => {
+    if (!referralQuizHasResults || typeof window === 'undefined') return
+    let cancelled = false
+    try {
+      if (localStorage.getItem(REFERRAL_PROMPT_LS.afterQuizResults)) return
+    } catch {
+      return
+    }
+    const t = window.setTimeout(() => {
+      if (!cancelled) setReferralQuizOpen(true)
+    }, 800)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [referralQuizHasResults])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -200,8 +237,8 @@ export default function ResultsPageBody() {
     resType === 'repeat-buyer' || resType === 'refinance' ? resType : 'first-time'
   const journeyHomeHrefByType: Record<'first-time' | 'repeat-buyer' | 'refinance', string> = {
     'first-time': '/customized-journey',
-    'repeat-buyer': '/customized-journey',
-    'refinance': '/homebuyer/refinance-journey',
+    'repeat-buyer': '/repeat-buyer-suite',
+    'refinance': '/refinance-optimizer',
   }
 
   // First-time metrics
@@ -378,7 +415,10 @@ export default function ResultsPageBody() {
         : 'bg-rose-500'
   const topIntroByType: Record<'first-time' | 'repeat-buyer' | 'refinance', string> = {
     'first-time': '', // First-time uses roadmap banner instead
-    'repeat-buyer': 'Here is your buy-and-sell snapshot with the fastest next steps to reduce risk.',
+    'repeat-buyer':
+      effectiveIcpKey === 'move-up'
+        ? 'Here is your buy-and-sell snapshot with the fastest next steps to reduce risk.'
+        : 'Your repeat buyer hub: equity tools, timing, and financing — then your journey roadmap and lifecycle dashboard for the long run.',
     'refinance': 'Here is your refinance snapshot focused on monthly impact, break-even, and total payoff.',
   }
 
@@ -624,13 +664,18 @@ export default function ResultsPageBody() {
           {pathname === '/inbox' && <span className="w-1.5 h-1.5 rounded-full bg-white/90" aria-hidden="true" />}
           Inbox
         </Link>
-        <Link href="/customized-journey" className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 ${
-          pathname === '/customized-journey'
-            ? 'bg-[rgb(var(--navy))] text-white border-[rgb(var(--navy))] shadow-sm'
-            : 'bg-white border-slate-200 text-[#1e293b] hover:border-slate-300 hover:bg-slate-50'
-        }`}>
-          {pathname === '/customized-journey' && <span className="w-1.5 h-1.5 rounded-full bg-white/90" aria-hidden="true" />}
-          Action Roadmap
+        <Link
+          href={hasResults && resType === 'refinance' ? '/refinance-optimizer' : '/customized-journey'}
+          className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 ${
+            (hasResults && resType === 'refinance' ? pathname === '/refinance-optimizer' : pathname === '/customized-journey')
+              ? 'bg-[rgb(var(--navy))] text-white border-[rgb(var(--navy))] shadow-sm'
+              : 'bg-white border-slate-200 text-[#1e293b] hover:border-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          {(hasResults && resType === 'refinance' ? pathname === '/refinance-optimizer' : pathname === '/customized-journey') && (
+            <span className="w-1.5 h-1.5 rounded-full bg-white/90" aria-hidden="true" />
+          )}
+          {hasResults && resType === 'refinance' ? 'Refinance hub' : 'Action Roadmap'}
         </Link>
         <Link href="/resources" className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 ${
           pathname === '/resources'
@@ -648,9 +693,13 @@ export default function ResultsPageBody() {
           ABOVE FOLD: 3 core sections only
       ════════════════════════════════════════════════════════════════ */}
 
-      {effectiveIcpKey && ICP_RESULT_HEADLINES[effectiveIcpKey] ? (
+      {(
+        (effectiveIcpKey && ICP_RESULT_HEADLINES[effectiveIcpKey]) ||
+        (hasResults && resType === 'refinance' ? ICP_RESULT_HEADLINES.refinance : null)
+      ) ? (
         <p className="mb-4 text-center text-xl font-bold text-brand-forest sm:text-2xl">
-          {ICP_RESULT_HEADLINES[effectiveIcpKey]}
+          {(effectiveIcpKey && ICP_RESULT_HEADLINES[effectiveIcpKey]) ||
+            (hasResults && resType === 'refinance' ? ICP_RESULT_HEADLINES.refinance : '')}
         </p>
       ) : null}
 
@@ -678,6 +727,7 @@ export default function ResultsPageBody() {
                 <div className="mb-2">
                   <SavingsOpportunitiesHeadline firstName={firstName} count={savingsList.length} totalDollars={totalSavings} />
                 </div>
+                <ResultsReferralCard referralSlug={referralSlug} />
 
                 <div className="mt-6 rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 sm:p-6">
                   <h3 className="text-lg font-bold text-[#1e293b]">
@@ -1922,11 +1972,18 @@ export default function ResultsPageBody() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Link
-                href="/homebuyer/refinance-journey"
-                onClick={() => trackActivity('tool_used', { tool: 'results_open_action_roadmap' })}
+                href="/refinance-optimizer"
+                onClick={() => trackActivity('tool_used', { tool: 'results_open_refinance_optimizer' })}
                 className="rounded-xl bg-[rgb(var(--coral))] text-white px-4 py-3 font-semibold text-center hover:opacity-90 transition"
               >
-                Open refinance roadmap
+                Open Refinance Optimizer
+              </Link>
+              <Link
+                href="/homebuyer/refinance-journey"
+                onClick={() => trackActivity('tool_used', { tool: 'results_open_refi_journey' })}
+                className="rounded-xl border-2 border-slate-300 bg-white text-slate-800 px-4 py-3 font-semibold text-center hover:bg-slate-50 transition"
+              >
+                Step-by-step roadmap
               </Link>
               <Link
                 href="/inbox"
@@ -1935,26 +1992,43 @@ export default function ResultsPageBody() {
               >
                 Open action inbox
               </Link>
-              <div className="rounded-xl border border-slate-300 bg-white text-slate-700 px-4 py-3 text-sm">
-                Suggested option: <span className="font-semibold">{String(refiRecommendation?.bestOption ?? 'review options')}</span>
-              </div>
             </div>
+            <p className="mt-3 text-xs text-slate-600">
+              Suggested focus: <span className="font-semibold">{String(refiRecommendation?.bestOption ?? 'review options')}</span>
+              {' · '}
+              Use the optimizer for rate radar and math; use the roadmap for lender prep, documents, and appraisal.
+            </p>
           </div>
         </motion.div>
       )}
 
-      {/* Repeat buyer: simplified CTA */}
+      {/* Repeat buyer: suite first, roadmap second */}
       {hasResults && resType === 'repeat-buyer' && (
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Link
             href={journeyHomeHrefByType[resolvedJourneyType]}
-            onClick={() => trackActivity('tool_used', { tool: 'results_open_action_roadmap' })}
-            className="inline-flex items-center gap-2 bg-[rgb(var(--coral))] text-white px-6 py-3 rounded-xl font-bold text-base hover:opacity-90"
+            onClick={() => trackActivity('tool_used', { tool: 'results_open_repeat_buyer_suite' })}
+            className="inline-flex items-center justify-center gap-2 bg-[rgb(var(--coral))] text-white px-6 py-3 rounded-xl font-bold text-base hover:opacity-90"
           >
-            Open Action Roadmap <ArrowRight size={18} />
+            Open Repeat Buyer Suite <ArrowRight size={18} />
           </Link>
-          <p className="text-xs text-slate-500 mt-2">
-            Next best move: follow the first roadmap task now while your assumptions are fresh.
+          <Link
+            href="/customized-journey?tab=phase"
+            onClick={() => trackActivity('tool_used', { tool: 'results_open_action_roadmap' })}
+            className="inline-flex items-center justify-center gap-2 border-2 border-slate-300 bg-white text-slate-800 px-6 py-3 rounded-xl font-semibold text-base hover:bg-slate-50"
+          >
+            Open customized journey <ArrowRight size={18} />
+          </Link>
+          <Link
+            href="/lifecycle-dashboard"
+            onClick={() => trackActivity('tool_used', { tool: 'results_open_lifecycle' })}
+            className="inline-flex items-center justify-center gap-2 border-2 border-teal-200 bg-teal-50/80 text-teal-900 px-6 py-3 rounded-xl font-semibold text-base hover:bg-teal-50"
+          >
+            Lifecycle dashboard
+          </Link>
+          <p className="w-full text-xs text-slate-500">
+            Next best move: open the suite for equity &amp; timing tools, then follow your phase roadmap. After closing,
+            use lifecycle + refinance tools to stay ahead.
           </p>
         </motion.div>
       )}
@@ -2429,6 +2503,14 @@ export default function ResultsPageBody() {
           </Link>
         </div>
       )}
+
+      <ReferralProgramModal
+        open={referralQuizOpen}
+        onClose={() => setReferralQuizOpen(false)}
+        referralSlug={referralSlug}
+        milestone="quiz"
+        storageKeyOnDismiss={REFERRAL_PROMPT_LS.afterQuizResults}
+      />
 
       {decisionExplanation && (
         <div

@@ -105,13 +105,13 @@ export const BADGES: Badge[] = [
   {
     id: 'streak-warrior',
     name: 'Streak Warrior',
-    description: 'Maintained a 30-day action streak',
+    description: 'Maintained a 7-day action streak',
     icon: '🔥',
     category: 'streak',
-    rarity: 'legendary',
-    xpReward: 1000,
+    rarity: 'rare',
+    xpReward: 350,
     requirements: [
-      { type: 'streak-days', value: 30, description: 'Maintain 30-day streak' },
+      { type: 'streak-days', value: 7, description: 'Maintain 7-day streak' },
     ],
   },
   {
@@ -127,6 +127,18 @@ export const BADGES: Badge[] = [
     ],
   },
 ];
+
+/**
+ * Foundations earns XP and levels; badge unlocks are limited to starter categories.
+ * Momentum+ unlocks the full badge set (credit, savings, negotiation, streak, rare+).
+ */
+export function badgeEligibleForTier(tier: UserTier, badge: Badge): boolean {
+  if (tier !== 'foundations') return true
+  if (badge.id === 'first-steps' || badge.id === 'streak-warrior') return true
+  if (badge.category === 'milestone') return badge.rarity === 'common'
+  if (badge.category === 'education') return badge.rarity === 'common'
+  return false
+}
 
 /**
  * Calculate XP needed for a level
@@ -218,7 +230,7 @@ export function checkBadgeEligibility(progress: UserProgress, badge: Badge): boo
   for (const requirement of badge.requirements) {
     switch (requirement.type) {
       case 'action-complete':
-        // Would check action history
+        if (requirement.value === 'quiz-complete' && progress.stats.actionsCompleted < 1) return false
         break;
       case 'savings-amount':
         if (progress.stats.totalSavings < (requirement.value as number)) return false;

@@ -5,44 +5,45 @@ import Link from 'next/link'
 import { Settings, X, Zap, BarChart3 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserTier, TIER_DEFINITIONS, TIER_ORDER, formatTierPrice } from '@/lib/tiers'
-import { getUserTier, setUserTier } from '@/lib/user-tracking'
+import { clearMomentumTrialLocalFlags, getUserTier, setUserTier } from '@/lib/user-tracking'
+import { clearSubscriptionPauseLocal } from '@/lib/subscription-pause'
 
+/**
+ * Public entry: only mount the switcher in local `next dev`.
+ * Production (`next build` / `next start`, Vercel, etc.) never shows this widget.
+ */
 export default function DeveloperTierSwitcher() {
+  if (process.env.NODE_ENV !== 'development') {
+    return null
+  }
+  return <DeveloperTierSwitcherInner />
+}
+
+function DeveloperTierSwitcherInner() {
   const [isOpen, setIsOpen] = useState(false)
   const [currentTier, setCurrentTier] = useState<UserTier>('foundations')
-  const [isDevMode, setIsDevMode] = useState(false)
 
-  // Show switcher in dev, localStorage devMode, localhost, or tier-review/staging builds
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const devMode =
-        process.env.NEXT_PUBLIC_TIER_REVIEW_PUBLIC === 'true' ||
-        process.env.NODE_ENV === 'development' ||
-        localStorage.getItem('devMode') === 'true' ||
-        window.location.hostname === 'localhost'
-      setIsDevMode(devMode)
-      
-      // Load current tier
-      setCurrentTier(getUserTier())
-    }
+    if (typeof window === 'undefined') return
+    setCurrentTier(getUserTier())
   }, [])
 
   // Keyboard shortcut: Ctrl+Shift+T to toggle
   useEffect(() => {
-    if (!isDevMode) return
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'T') {
         e.preventDefault()
-        setIsOpen(prev => !prev)
+        setIsOpen((prev) => !prev)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isDevMode])
+  }, [])
 
   const handleTierChange = (tier: UserTier) => {
+    clearMomentumTrialLocalFlags()
+    clearSubscriptionPauseLocal()
     setUserTier(tier)
     setCurrentTier(tier)
     // Trigger a custom event so components can react
@@ -52,9 +53,6 @@ export default function DeveloperTierSwitcher() {
       window.location.reload()
     }, 300)
   }
-
-  // Don't render if not in dev mode
-  if (!isDevMode) return null
 
   const tiers = TIER_ORDER
 
@@ -128,7 +126,7 @@ export default function DeveloperTierSwitcher() {
                 {tiers.map((tier) => {
                   const tierDef = TIER_DEFINITIONS[tier]
                   const isActive = currentTier === tier
-                  
+
                   return (
                     <button
                       key={tier}

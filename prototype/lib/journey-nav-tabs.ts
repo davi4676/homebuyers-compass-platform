@@ -9,6 +9,7 @@ export type JourneyTab =
   | 'inbox'
   | 'upgrades'
   | 'assistance'
+  | 'firstgen'
 
 export const JOURNEY_TAB_IDS: JourneyTab[] = [
   'overview',
@@ -16,6 +17,7 @@ export const JOURNEY_TAB_IDS: JourneyTab[] = [
   'budget',
   'learn',
   'assistance',
+  'firstgen',
   'library',
   'inbox',
   'upgrades',
@@ -24,10 +26,11 @@ export const JOURNEY_TAB_IDS: JourneyTab[] = [
 /** Microcopy for tab tooltips (`title` / accessible descriptions). */
 export const JOURNEY_TAB_TOOLTIPS: Record<JourneyTab, string> = {
   overview: 'Where you stand today — readiness, numbers, next step.',
-  phase: 'Your current step in the 7‑phase journey.',
+  phase: 'Your current step in the 8‑phase journey.',
   budget: 'Stress‑test your monthly payment — every line is editable.',
   learn: 'Bite‑sized concepts that build confidence.',
   assistance: 'Down payment & closing cost programs matched to you.',
+  firstgen: 'First‑gen resources: counselors, glossary, gift funds, and family scripts.',
   library: 'Scripts, guides, and checklists.',
   inbox: 'Your alerts, tasks, and messages.',
   upgrades: 'Choose the support level that fits your journey.',

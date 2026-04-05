@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { getUserTier } from '@/lib/user-tracking'
 import { TIER_DEFINITIONS, type UserTier, TIER_ORDER } from '@/lib/tiers'
 import { EDUCATIONAL_VIDEO_IDS } from '@/lib/educational-videos'
-import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
+import ResourcesBackLink from '@/components/ResourcesBackLink'
 
 type ResourceCategory = {
   id: string
@@ -492,8 +492,11 @@ export default function ResourcesPage() {
 
   return (
     <div className="app-page-shell">
+      <div className="mx-auto max-w-5xl px-4 pt-4 sm:px-6">
+        <ResourcesBackLink />
+      </div>
       {/* Background strip */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-2">
         <div className="relative h-24 sm:h-28 overflow-hidden rounded-2xl mb-6">
           <div
             className="absolute inset-0 bg-cover bg-center"
@@ -512,9 +515,6 @@ export default function ResourcesPage() {
       </div>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
-        <div className="mb-4">
-          <BackToMyJourneyLink />
-        </div>
         <div className="bg-white border border-slate-200 rounded-xl px-4 sm:px-6 py-3 mb-4 flex flex-wrap items-center gap-2">
           <Link href="/results" className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 ${
             pathname === '/results'

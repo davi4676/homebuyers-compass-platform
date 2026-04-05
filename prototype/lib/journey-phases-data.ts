@@ -20,6 +20,8 @@ export interface PhaseData {
   description: string
   /** Optional longer phase blurb on feature detail page only. */
   detailDescription?: string
+  /** Display emoji for roadmap / hub headers (optional). */
+  iconEmoji?: string
   estimatedTime: string
   order: number
   features: FeatureData[]
@@ -335,6 +337,33 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Seasonal and system checks in one place.',
         detailDescription: 'Keep your home in shape with reminders for systems and seasonal tasks.',
         tierRequired: 'navigator',
+      },
+    ],
+  },
+  {
+    id: 'homeowner-hub',
+    title: 'Homeowner Hub',
+    description: 'You closed! Now protect your investment and plan your next move.',
+    detailDescription:
+      'After closing, use the Homeowner Hub to monitor refinance opportunities, track equity, and share NestQuest with friends.',
+    iconEmoji: '🏡',
+    estimatedTime: 'Ongoing',
+    order: 8,
+    features: [
+      {
+        id: 'refinance-monitor',
+        title: 'Refinance Monitor',
+        description: 'Alerts when rates could save you $200+/month on your loan profile.',
+      },
+      {
+        id: 'equity-tracker',
+        title: 'Equity Tracker',
+        description: 'Estimated equity from purchase price and market trends.',
+      },
+      {
+        id: 'refer-a-friend',
+        title: 'Refer a Friend',
+        description: 'Share your link — you both save on your next plan.',
       },
     ],
   },

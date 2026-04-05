@@ -34,6 +34,24 @@ export interface StoredUser {
   dataSharingConsent: boolean
   termsAcceptedAt?: string
   privacyPolicyAcceptedAt?: string
+  /** Set when Stripe Checkout completes (webhook or verify flow). */
+  stripeCustomerId?: string
+  stripeSubscriptionId?: string
+  /** Lifecycle email automation — see lib/email-sequences */
+  emailSequences?: {
+    onboarding?: { startedAt: string; stepsSent: number[] }
+    reengagement?: { sent: number }
+  }
+  /** 7-day Momentum trial (no card) — cron sends day-5 email, day-7 downgrade if unpaid */
+  momentumTrial?: {
+    startedAt: string
+    endingEmailSent?: boolean
+  }
+  /** Reduced-rate pause (churn prevention); client mirrors in localStorage */
+  subscriptionPause?: {
+    startedAt: string
+    until: string
+  }
 }
 
 const DATA_DIR = path.join(process.cwd(), '.data')
@@ -54,6 +72,11 @@ function readUsers(): StoredUser[] {
   } catch {
     return []
   }
+}
+
+/** All stored users (for cron jobs: email sequences, etc.). */
+export function listUsers(): StoredUser[] {
+  return readUsers()
 }
 
 function writeUsers(users: StoredUser[]) {

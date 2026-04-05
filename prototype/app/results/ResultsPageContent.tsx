@@ -677,6 +677,10 @@ function ResultsPageContent() {
             // Continue even if progress/notifications fail
           }
 
+          if (isAuthenticated) {
+            fetch('/api/email/sequences/onboarding-start', { method: 'POST', credentials: 'include' }).catch(() => {})
+          }
+
           const resultsData = {
             type: 'first-time',
             affordability,
@@ -819,6 +823,7 @@ function ResultsPageContent() {
               const dataToSave = {
                 ...refinanceData,
                 transactionType: 'refinance',
+                icpType: 'refinance',
                 timeline: '6-months', // Default for refinance
                 readinessScore: 50, // Default readiness score for refinance
                 analysis

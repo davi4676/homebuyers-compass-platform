@@ -8,6 +8,7 @@ import {
   LogOut,
   LogIn,
   CreditCard,
+  Wallet,
   Bell,
   Shield,
   HelpCircle,
@@ -156,6 +157,11 @@ export function UserMenu({ className = '' }: UserMenuProps) {
                     label="Upgrade plans"
                     onClick={() => handleNavigation('/upgrade')}
                     badge={normalizeUserTier(user?.subscriptionTier) === 'foundations' ? 'Upgrade' : undefined}
+                  />
+                  <MenuItem
+                    icon={Wallet}
+                    label="Billing & subscription"
+                    onClick={() => handleNavigation('/account/billing')}
                   />
                   <MenuItem
                     icon={Bell}

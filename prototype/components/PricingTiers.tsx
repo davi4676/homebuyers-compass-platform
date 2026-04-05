@@ -36,6 +36,7 @@ export default function PricingTiers({
         'Basic cost breakdown',
         'Readiness score',
         '3 savings opportunities',
+        'XP, levels & starter badges',
         'Watermarked PDF export',
       ],
       limitations: [

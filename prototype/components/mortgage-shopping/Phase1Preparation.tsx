@@ -14,7 +14,7 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react'
-import { UserTier } from '@/lib/tiers'
+import { UserTier, tierHasCalculator } from '@/lib/tiers'
 import { formatCurrency } from '@/lib/calculations'
 import Link from 'next/link'
 
@@ -47,8 +47,10 @@ export default function Phase1Preparation({
     w2: false,
   })
 
-  const isPremium = userTier === 'momentum' || userTier === 'navigator'
+  const isPremium =
+    userTier === 'momentum' || userTier === 'navigator' || userTier === 'navigator_plus'
   const isPro = userTier === 'navigator'
+  const canUseDtiCalculator = tierHasCalculator(userTier, 'dti')
 
   // Calculate credit impact
   const calculateCreditImpact = () => {
@@ -200,14 +202,14 @@ export default function Phase1Preparation({
             <Calculator className="w-6 h-6 text-[#06b6d4]" />
             <h2 className="text-xl font-bold">Debt-to-Income (DTI) Calculator</h2>
           </div>
-          {!isPremium && (
+          {!canUseDtiCalculator && (
             <span className="text-xs px-2 py-1 rounded-full bg-gray-800 text-gray-500">
-              Premium Feature
+              Momentum+
             </span>
           )}
         </div>
 
-        {isPremium ? (
+        {canUseDtiCalculator ? (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -252,14 +254,14 @@ export default function Phase1Preparation({
         ) : (
           <div className="p-6 rounded-lg bg-gray-800/50 border border-gray-700">
             <p className="text-gray-400 mb-4">
-              Upgrade to Premium to access the DTI calculator and see how your ratio affects your
-              rate options.
+              Upgrade to Momentum to access the DTI calculator and see how your ratio affects your rate
+              options. Foundations includes the affordability calculator on your results snapshot.
             </p>
             <button
               onClick={() => onUpgrade('momentum')}
               className="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
             >
-              Upgrade to Premium
+              Upgrade to Momentum
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

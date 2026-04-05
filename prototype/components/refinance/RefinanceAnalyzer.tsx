@@ -1,8 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowLeft, Calculator, CheckCircle, AlertTriangle, Lock, ArrowRight } from 'lucide-react'
-import { UserTier } from '@/lib/tiers'
+import Link from 'next/link'
+import { ArrowLeft, CheckCircle, AlertTriangle, Lock, ArrowRight } from 'lucide-react'
+import { UserTier, tierAtLeast } from '@/lib/tiers'
 import { formatCurrency } from '@/lib/calculations'
 
 interface RefinanceData {
@@ -127,6 +128,50 @@ export default function RefinanceAnalyzer({
                     ? '✓ You can eliminate PMI with refinance'
                     : 'You may still need PMI after refinance'}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#06b6d4]/40 bg-[#06b6d4]/10 p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Your Next Steps</h2>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Link
+                href="/mortgage-shopping"
+                className="rounded-lg border border-gray-700 bg-gray-900/50 p-4 transition hover:border-[#06b6d4]/50"
+              >
+                <p className="font-semibold text-white">Compare Lenders</p>
+                <p className="mt-2 text-sm text-gray-400">Shop rates and fees with a structured checklist.</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#22d3ee]">
+                  Open <ArrowRight className="h-4 w-4" aria-hidden />
+                </span>
+              </Link>
+              <Link
+                href="/homebuyer/refinance-journey"
+                className="rounded-lg border border-gray-700 bg-gray-900/50 p-4 transition hover:border-[#06b6d4]/50"
+              >
+                <p className="font-semibold text-white">Get Your Documents Ready</p>
+                <p className="mt-2 text-sm text-gray-400">Wizard for paperwork and timeline.</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#22d3ee]">
+                  Start <ArrowRight className="h-4 w-4" aria-hidden />
+                </span>
+              </Link>
+              <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+                <p className="font-semibold text-white">Set a Rate Alert</p>
+                <p className="mt-2 text-sm text-gray-400">
+                  {tierAtLeast(userTier, 'momentum')
+                    ? 'Open Rate Drop Radar to configure alerts.'
+                    : 'Unlock with Momentum — get notified when rates move enough to matter.'}
+                </p>
+                <Link
+                  href={
+                    tierAtLeast(userTier, 'momentum')
+                      ? '/refinance-optimizer#rate-radar'
+                      : '/upgrade?source=rate-radar&tier=momentum'
+                  }
+                  className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#22d3ee]"
+                >
+                  {tierAtLeast(userTier, 'momentum') ? 'Configure alerts →' : 'Upgrade for alerts →'}
+                </Link>
               </div>
             </div>
           </div>

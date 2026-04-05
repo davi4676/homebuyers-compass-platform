@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Check,
-  X,
   ArrowRight,
   Sparkles,
   Lock,
@@ -19,25 +18,188 @@ import {
   Users,
   MessageSquare,
   Phone,
-  Star
+  Star,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
-import { TIER_DEFINITIONS, type UserTier, TIER_ORDER, formatTierPrice } from '@/lib/tiers'
-import { getUserTier } from '@/lib/user-tracking'
+import {
+  TIER_DEFINITIONS,
+  type UserTier,
+  TIER_ORDER,
+  formatTierPriceForCycle,
+  type TierBillingDisplayCycle,
+} from '@/lib/tiers'
+import {
+  getMomentumTrialInfo,
+  getUserTier,
+  startMomentumTrialLocal,
+} from '@/lib/user-tracking'
 import { trackActivity } from '@/lib/track-activity'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
+import { startSubscriptionPauseLocal, type PauseMonths } from '@/lib/subscription-pause'
+import { cn } from '@/lib/design-system'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { isStripePublishableConfigured } from '@/lib/stripe-public'
+
+const ANNUAL_CARD_PROMO: Partial<Record<UserTier, { equiv: string; save: string }>> = {
+  momentum: { equiv: '$23/mo', save: 'Save $70/year' },
+  navigator: { equiv: '$47/mo', save: 'Save $142/year' },
+  navigator_plus: { equiv: '$119/mo', save: 'Save $358/year' },
+}
+
+const WAITLIST_LS = 'nestquest_upgrade_waitlist'
+const RETENTION_FREE_MONTH_LS = 'nestquest_retention_free_month_credit'
+
+function pushUpgradeWaitlist(email: string, tier: UserTier) {
+  try {
+    const raw = localStorage.getItem(WAITLIST_LS)
+    const arr = (raw ? JSON.parse(raw) : []) as { email: string; tier: UserTier; at: string }[]
+    arr.push({ email: email.trim(), tier, at: new Date().toISOString() })
+    localStorage.setItem(WAITLIST_LS, JSON.stringify(arr))
+  } catch {
+    /* ignore */
+  }
+}
+
+function CardWaitlistForm({ tier }: { tier: UserTier }) {
+  const [email, setEmail] = useState('')
+  const [done, setDone] = useState(false)
+  if (done) {
+    return <p className="text-center text-sm font-semibold text-teal-800">You&apos;re on the list — we&apos;ll notify you soon.</p>
+  }
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!email.trim()) return
+        pushUpgradeWaitlist(email, tier)
+        setDone(true)
+      }}
+    >
+      <input
+        type="email"
+        required
+        autoComplete="email"
+        placeholder="Email for waitlist"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+      />
+      <button
+        type="submit"
+        className="w-full rounded-xl bg-slate-800 py-3 text-sm font-semibold text-white hover:bg-slate-900"
+      >
+        Join Waitlist
+      </button>
+      <p className="text-center text-xs text-slate-500">Payment checkout is being configured.</p>
+    </form>
+  )
+}
+
+function FooterWaitlistForm({ defaultTier }: { defaultTier: UserTier }) {
+  const [email, setEmail] = useState('')
+  const [tier, setTier] = useState<UserTier>(defaultTier === 'foundations' ? 'momentum' : defaultTier)
+  const [done, setDone] = useState(false)
+  const paidTiers = TIER_ORDER.filter((t) => t !== 'foundations')
+  if (done) {
+    return <p className="text-center font-semibold text-teal-800">Thanks — you&apos;re on the waitlist.</p>
+  }
+  return (
+    <form
+      className="mx-auto flex max-w-md flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!email.trim()) return
+        pushUpgradeWaitlist(email, tier)
+        setDone(true)
+      }}
+    >
+      <select
+        value={tier}
+        onChange={(e) => setTier(e.target.value as UserTier)}
+        className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+      >
+        {paidTiers.map((t) => (
+          <option key={t} value={t}>
+            {TIER_DEFINITIONS[t].name}
+          </option>
+        ))}
+      </select>
+      <input
+        type="email"
+        required
+        placeholder="Your email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+      />
+      <button
+        type="submit"
+        className="rounded-xl bg-slate-800 py-3 text-sm font-semibold text-white hover:bg-slate-900"
+      >
+        Join Waitlist
+      </button>
+    </form>
+  )
+}
+
+/** Unicode + explicit colors — Lucide SVGs in <td> were not reliably visible in all table layouts. */
+function ComparisonCheckMark() {
+  return (
+    <span
+      className="inline-flex min-h-[1.25rem] w-full items-center justify-center text-base font-semibold leading-none text-green-600"
+      aria-label="Included"
+    >
+      {'\u2713'}
+    </span>
+  )
+}
+
+function ComparisonEmDash() {
+  return (
+    <span
+      className="inline-flex min-h-[1.25rem] w-full items-center justify-center text-base font-normal leading-none text-gray-300"
+      aria-label="Not included"
+    >
+      {'\u2014'}
+    </span>
+  )
+}
+
+/** Matches “Most popular for active buyers” on the Momentum tier card. */
+const COMPARISON_HIGHLIGHT_TIER: UserTier = 'momentum'
 
 export default function UpgradePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { isAuthenticated } = useAuth()
   const targetTier = (searchParams.get('tier') || 'momentum') as UserTier
   const [selectedTier, setSelectedTier] = useState<UserTier>(targetTier)
-  const [billingCycle, setBillingCycle] = useState<'one-time' | 'monthly'>('one-time')
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
+  const stripeReady = isStripePublishableConfigured()
 
   const [currentTier, setCurrentTier] = useState<UserTier>('foundations')
+  const [churnModalOpen, setChurnModalOpen] = useState(false)
+  const [churnStep, setChurnStep] = useState<'pick' | 'pause' | 'cancel-offer' | 'done'>('pick')
+  const [pauseMonths, setPauseMonths] = useState<PauseMonths>(1)
+  const [pauseMessage, setPauseMessage] = useState<string | null>(null)
+  const [trialUi, setTrialUi] = useState(() =>
+    typeof window === 'undefined'
+      ? { onTrial: false, paid: false, endsAtIso: null as string | null, daysRemaining: 0 }
+      : getMomentumTrialInfo()
+  )
+
+  const bumpTierAndTrial = () => {
+    setCurrentTier(getUserTier())
+    setTrialUi(getMomentumTrialInfo())
+  }
 
   useEffect(() => {
-    setCurrentTier(getUserTier())
+    bumpTierAndTrial()
+    const onTier = () => bumpTierAndTrial()
+    window.addEventListener('tierChanged', onTier)
+    return () => window.removeEventListener('tierChanged', onTier)
   }, [])
 
   const tiers = TIER_ORDER
@@ -47,6 +209,7 @@ export default function UpgradePage() {
     const tierToUpgrade = tier || selectedTier
 
     if (tierToUpgrade === 'foundations') return
+    if (!stripeReady) return
 
     trackActivity('tool_used', {
       tool: 'upgrade_plan_selected',
@@ -56,7 +219,24 @@ export default function UpgradePage() {
     })
 
     // Paid tier: send to payment page (Stripe) so they can complete purchase
-    router.push(`/payment?tier=${tierToUpgrade}&cycle=${billingCycle}`)
+    const cycleParam = billingCycle === 'annual' ? 'yearly' : 'monthly'
+    router.push(`/payment?tier=${tierToUpgrade}&cycle=${cycleParam}`)
+  }
+
+  const handleStartMomentumTrial = async () => {
+    trackActivity('tool_used', {
+      tool: 'momentum_trial_started',
+      source: 'upgrade_page',
+      authenticated: isAuthenticated,
+    })
+    startMomentumTrialLocal()
+    try {
+      await fetch('/api/trial/momentum/start', { method: 'POST', credentials: 'include' })
+    } catch {
+      /* server sync optional for anonymous users */
+    }
+    bumpTierAndTrial()
+    router.push('/customized-journey')
   }
 
   const getTierIcon = (tier: UserTier) => {
@@ -122,24 +302,36 @@ export default function UpgradePage() {
           <p className="text-xl text-[#57534e] max-w-2xl mx-auto">
             Unlock powerful tools to save thousands on your home purchase
           </p>
+          <p className="mt-4 text-base font-medium text-[#0f766e] max-w-xl mx-auto">
+            Momentum includes a <strong className="font-semibold text-[#0d9488]">7-day free trial</strong> — no credit
+            card required. We&apos;ll email you before it ends; after day 7 you&apos;ll move to Foundations unless you
+            subscribe.
+          </p>
+          {trialUi.onTrial && currentTier === 'momentum' ? (
+            <div
+              className="mt-6 mx-auto max-w-lg rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+              role="status"
+            >
+              <span className="font-semibold">Momentum trial active</span> —{' '}
+              {trialUi.daysRemaining} day{trialUi.daysRemaining === 1 ? '' : 's'} left. Day 5: we email what you&apos;ll
+              lose; day 7: back to Foundations without payment.{' '}
+              <Link href="/payment?tier=momentum&cycle=monthly" className="font-semibold text-[#0d9488] underline">
+                Keep Momentum
+              </Link>
+            </div>
+          ) : null}
         </motion.div>
 
         {/* Billing Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex gap-1 rounded-lg border border-[#e7e5e4] bg-white p-1 shadow-sm">
+        <div className="mb-8 flex flex-col items-center">
+          <div className="mb-3 w-full max-w-lg rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center text-sm font-medium text-emerald-900">
+            <span aria-hidden>💡</span> Annual plans save you up to $358/year
+          </div>
+          <div className="flex flex-wrap justify-center gap-1 rounded-lg border border-[#e7e5e4] bg-white p-1 shadow-sm">
             <button
-              onClick={() => setBillingCycle('one-time')}
-              className={`px-6 py-2 rounded-md font-semibold transition-all ${
-                billingCycle === 'one-time'
-                  ? 'bg-[#0d9488] text-white'
-                  : 'text-[#57534e] hover:text-[#1c1917]'
-              }`}
-            >
-              One-Time
-            </button>
-            <button
+              type="button"
               onClick={() => setBillingCycle('monthly')}
-              className={`px-6 py-2 rounded-md font-semibold transition-all ${
+              className={`rounded-md px-4 py-2 text-sm font-semibold transition-all sm:px-5 ${
                 billingCycle === 'monthly'
                   ? 'bg-[#0d9488] text-white'
                   : 'text-[#57534e] hover:text-[#1c1917]'
@@ -147,14 +339,42 @@ export default function UpgradePage() {
             >
               Monthly
             </button>
+            <button
+              type="button"
+              onClick={() => setBillingCycle('annual')}
+              className={`relative rounded-md px-4 py-2 text-sm font-semibold transition-all sm:px-5 ${
+                billingCycle === 'annual'
+                  ? 'bg-[#0d9488] text-white'
+                  : 'text-[#57534e] hover:text-[#1c1917]'
+              }`}
+            >
+              Annual
+              <span
+                className={`ml-1.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  billingCycle === 'annual'
+                    ? 'bg-white/25 text-white'
+                    : 'bg-amber-100 text-amber-900'
+                }`}
+              >
+                Save 20%
+              </span>
+            </button>
           </div>
+          <p className="mt-4 max-w-xl text-center text-sm leading-relaxed text-[#57534e]">
+            <strong className="font-semibold text-[#44403c]">Monthly</strong> fits buyers who want flexibility.{' '}
+            <strong className="font-semibold text-[#44403c]">Annual</strong> is billed once per year with{' '}
+            <strong className="font-semibold text-[#44403c]">20% off</strong> the monthly×12 rate (shown as a monthly
+            equivalent on each plan).
+          </p>
         </div>
 
         {/* Tier Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {tiers.map((tier) => {
             const tierDef = TIER_DEFINITIONS[tier]
-            const priceLabel = formatTierPrice(tierDef)
+            const displayCycle: TierBillingDisplayCycle =
+              billingCycle === 'annual' ? 'annual' : 'monthly'
+            const priceLabel = formatTierPriceForCycle(tierDef, displayCycle)
             const isSelected = selectedTier === tier
             const isFree = tier === 'foundations'
             const isCurrentTier = currentTier === tier
@@ -171,7 +391,7 @@ export default function UpgradePage() {
                       return
                     }
                     setSelectedTier(tier)
-                    handleUpgrade(tier)
+                    if (stripeReady) handleUpgrade(tier)
                   }
                 }}
                 className={`relative rounded-xl border-2 p-6 cursor-pointer transition-all shadow-sm ${
@@ -198,6 +418,25 @@ export default function UpgradePage() {
                     </div>
                   </div>
                 )}
+                {tier === 'momentum' && !isFree ? (
+                  <div className="absolute -right-1 top-10 z-10 max-w-[11rem] sm:right-2 sm:top-12 sm:max-w-[13rem]">
+                    <span className="mb-1 inline-block w-full rounded-lg bg-amber-100 px-2 py-1 text-center text-[10px] font-bold uppercase leading-tight text-amber-950 ring-1 ring-amber-300/60 sm:text-xs">
+                      7-day free trial
+                    </span>
+                    {billingCycle === 'monthly' ? (
+                      <span className="inline-block w-full rounded-lg bg-[#0f766e] px-2.5 py-1 text-center text-[10px] font-bold uppercase leading-tight text-white shadow-md ring-1 ring-teal-900/20 sm:text-xs">
+                        Most popular for active buyers
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+                {tier === 'navigator_plus' ? (
+                  <div className="absolute -right-1 top-12 z-10 max-w-[11.5rem] sm:right-2 sm:top-14 sm:max-w-[13.5rem]">
+                    <span className="inline-block rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-center text-[10px] font-semibold leading-tight text-amber-900 shadow-sm ring-1 ring-amber-900/10 sm:text-xs">
+                      ⚡ Most buyers start here before pre-approval
+                    </span>
+                  </div>
+                ) : null}
 
                 <div className="flex items-center gap-3 mb-4">
                   <div className={getTierColor(tier)}>
@@ -210,28 +449,45 @@ export default function UpgradePage() {
                 </div>
 
                 <div className="mb-6">
-                  <div className="text-3xl font-bold">{priceLabel}</div>
-                  <p className="text-sm text-[#57534e] mt-1">{tierDef.description}</p>
+                  {isFree ? (
+                    <>
+                      <div className="text-3xl font-bold">{priceLabel}</div>
+                      <p className="mt-1 text-sm text-[#57534e]">{tierDef.description}</p>
+                    </>
+                  ) : billingCycle === 'annual' && ANNUAL_CARD_PROMO[tier] ? (
+                    <>
+                      <div className="text-3xl font-bold text-[#1c1917]">{ANNUAL_CARD_PROMO[tier]!.equiv}</div>
+                      <p className="mt-0.5 text-xs font-medium text-slate-600">billed annually</p>
+                      <p className="mt-2 inline-flex rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200">
+                        {ANNUAL_CARD_PROMO[tier]!.save}
+                      </p>
+                      <p className="mt-2 text-xs leading-snug text-[#57534e]">{tierDef.price.annualBlurb}</p>
+                      {tierDef.price.displayAnnual ? (
+                        <p className="mt-1 text-xs font-medium text-[#57534e]">{tierDef.price.displayAnnual}</p>
+                      ) : null}
+                      {tierDef.price.displayMonthly ? (
+                        <p className="mt-1 text-xs text-[#57534e]">
+                          Or {tierDef.price.displayMonthly} month-to-month
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-sm text-[#57534e]">{tierDef.description}</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-3xl font-bold">{priceLabel}</div>
+                      <p className="mt-1 text-sm text-[#57534e]">{tierDef.description}</p>
+                    </>
+                  )}
                 </div>
 
                 <ul className="space-y-2 mb-6">
-                  {/* Free tier: explicit starter inclusions */}
-                  {isFree && (
-                    <>
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="w-4 h-4 text-[#0d9488]" />
-                        <span>Basic cost breakdown</span>
+                  {isFree &&
+                    tierDef.journeyHighlights.map((line) => (
+                      <li key={line} className="flex items-center gap-2 text-sm">
+                        <Check className="w-4 h-4 shrink-0 text-[#0d9488]" />
+                        <span>{line}</span>
                       </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="w-4 h-4 text-[#0d9488]" />
-                        <span>PDF export (watermarked)</span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="w-4 h-4 text-[#0d9488]" />
-                        <span>Blog access</span>
-                      </li>
-                    </>
-                  )}
+                    ))}
                   {!isFree && (
                     <>
                       {tierDef.features.hosa.optimizationScore && (
@@ -353,22 +609,53 @@ export default function UpgradePage() {
                   )}
                 </ul>
 
-                {!isFree && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedTier(tier)
-                      // Trigger upgrade with the selected tier
-                      handleUpgrade(tier)
-                    }}
-                    className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                      isSelected
-                        ? 'bg-[#0d9488] text-white hover:bg-[#0f766e]'
-                        : 'border border-[#e7e5e4] bg-[#fafaf9] text-[#44403c] hover:bg-[#f5f5f4]'
-                    }`}
-                  >
-                    {isSelected ? 'Selected' : 'Select Plan'}
-                  </button>
+                {!isFree && !isCurrentTier && (
+                  <div className="space-y-2">
+                    {!stripeReady ? (
+                      <CardWaitlistForm tier={tier} />
+                    ) : tier === 'momentum' && !isCurrentTier ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedTier(tier)
+                            handleUpgrade(tier)
+                          }}
+                          className="w-full rounded-xl bg-[#0d9488] py-3 font-semibold text-white transition-all hover:bg-[#0f766e]"
+                        >
+                          Start Free Trial →
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedTier(tier)
+                            void handleStartMomentumTrial()
+                          }}
+                          className="w-full rounded-xl border border-slate-200 bg-white py-2 text-sm font-medium text-[#57534e] hover:bg-slate-50"
+                        >
+                          Try without a card (7 days)
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedTier(tier)
+                          handleUpgrade(tier)
+                        }}
+                        className={`w-full rounded-xl py-3 font-semibold transition-all ${
+                          isSelected
+                            ? 'bg-[#0d9488] text-white hover:bg-[#0f766e]'
+                            : 'border border-[#e7e5e4] bg-[#fafaf9] text-[#44403c] hover:bg-[#f5f5f4]'
+                        }`}
+                      >
+                        {isSelected ? 'Selected' : 'Select Plan'}
+                      </button>
+                    )}
+                  </div>
                 )}
               </motion.div>
             )
@@ -383,174 +670,311 @@ export default function UpgradePage() {
           className="mb-12 rounded-xl border border-[#e7e5e4] bg-white p-8 shadow-sm"
         >
           <h2 className="font-display text-3xl font-bold mb-6 text-center text-[#1c1917]">Feature Comparison</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="max-h-[min(75vh,720px)] overflow-auto rounded-lg border border-[#e7e5e4]">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-[#e7e5e4]">
-                  <th className="text-left py-4 px-4">Feature</th>
+                  <th
+                    scope="col"
+                    className="sticky top-0 z-20 bg-white py-4 pl-4 pr-2 text-left font-semibold text-[#1c1917] shadow-[0_1px_0_0_#e7e5e4]"
+                  >
+                    Feature
+                  </th>
                   {tiers.map((tier) => (
-                    <th key={tier} className="text-center py-4 px-4">
+                    <th
+                      key={tier}
+                      scope="col"
+                      className={cn(
+                        'sticky top-0 z-20 whitespace-nowrap bg-white px-3 py-4 text-center font-semibold text-[#1c1917] shadow-[0_1px_0_0_#e7e5e4]',
+                        tier === COMPARISON_HIGHLIGHT_TIER &&
+                          'border-l-2 border-l-teal-500 bg-teal-50/70 text-[#0f766e]'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].name}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">HOSA Optimization Score</td>
-                  {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
-                      {TIER_DEFINITIONS[tier].features.hosa.optimizationScore ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
-                      ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
-                      )}
-                    </td>
-                  ))}
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    HOSA / optimization score
+                  </th>
+                  {tiers.map((tier) => {
+                    const h = TIER_DEFINITIONS[tier].features.hosa
+                    const preview = h.savingsScorePreview === true
+                    const full = h.optimizationScore === true
+                    return (
+                      <td
+                        key={tier}
+                        className={cn(
+                          'px-3 py-3 text-center align-middle text-[#44403c]',
+                          tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                        )}
+                      >
+                        {full ? (
+                          <ComparisonCheckMark />
+                        ) : preview ? (
+                          <span className="font-semibold text-green-600">Preview</span>
+                        ) : (
+                          <ComparisonEmDash />
+                        )}
+                      </td>
+                    )
+                  })}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Savings Opportunities</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Savings Opportunities
+                  </th>
                   {tiers.map((tier) => {
                     const count = TIER_DEFINITIONS[tier].features.hosa.savingsOpportunities
                     return (
-                      <td key={tier} className="text-center py-4 px-4">
+                      <td
+                        key={tier}
+                        className={cn(
+                          'px-3 py-3 text-center align-middle tabular-nums text-[#44403c]',
+                          tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                        )}
+                      >
                         {count === Infinity ? '∞' : count}
                       </td>
                     )
                   })}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Personalized Action Plan</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Personalized Action Plan
+                  </th>
                   {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
+                    <td
+                      key={tier}
+                      className={cn(
+                        'px-3 py-3 text-center align-middle',
+                        tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].features.hosa.actionPlan ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
+                        <ComparisonCheckMark />
                       ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
+                        <ComparisonEmDash />
                       )}
                     </td>
                   ))}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Week-by-Week Plan</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Week-by-Week Plan
+                  </th>
                   {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
+                    <td
+                      key={tier}
+                      className={cn(
+                        'px-3 py-3 text-center align-middle',
+                        tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].features.hosa.weekByWeekPlan ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
+                        <ComparisonCheckMark />
                       ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
+                        <ComparisonEmDash />
                       )}
                     </td>
                   ))}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Personalized Journey / Roadmap</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Personalized Journey / Roadmap
+                  </th>
                   {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
+                    <td
+                      key={tier}
+                      className={cn(
+                        'px-3 py-3 text-center align-middle',
+                        tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].features.personalizedJourney ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
+                        <ComparisonCheckMark />
                       ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
+                        <ComparisonEmDash />
                       )}
                     </td>
                   ))}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Calculators</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Calculators
+                  </th>
                   {tiers.map((tier) => {
                     const n = TIER_DEFINITIONS[tier].features.tools.calculators.length
                     return (
-                      <td key={tier} className="text-center py-4 px-4">
+                      <td
+                        key={tier}
+                        className={cn(
+                          'px-3 py-3 text-center align-middle tabular-nums text-[#44403c]',
+                          tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                        )}
+                      >
                         {n}
                       </td>
                     )
                   })}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Lender Comparison</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Lender Comparison
+                  </th>
                   {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
+                    <td
+                      key={tier}
+                      className={cn(
+                        'px-3 py-3 text-center align-middle',
+                        tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].features.tools.lenderComparison ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
+                        <ComparisonCheckMark />
                       ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
+                        <ComparisonEmDash />
                       )}
                     </td>
                   ))}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Deal Analyzer</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Deal Analyzer
+                  </th>
                   {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
+                    <td
+                      key={tier}
+                      className={cn(
+                        'px-3 py-3 text-center align-middle',
+                        tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].features.tools.dealAnalyzer ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
+                        <ComparisonCheckMark />
                       ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
+                        <ComparisonEmDash />
                       )}
                     </td>
                   ))}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Document Vault</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Document Vault
+                  </th>
                   {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
+                    <td
+                      key={tier}
+                      className={cn(
+                        'px-3 py-3 text-center align-middle',
+                        tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].features.tools.documentVault ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
+                        <ComparisonCheckMark />
                       ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
+                        <ComparisonEmDash />
                       )}
                     </td>
                   ))}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">AI Assistant</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    AI Assistant
+                  </th>
                   {tiers.map((tier) => {
                     const ai = TIER_DEFINITIONS[tier].features.aiAssistant
-                    const label = !ai.enabled
-                      ? '—'
-                      : ai.dailyMessageLimit === Infinity
-                        ? 'Unlimited'
-                        : `${ai.dailyMessageLimit}/day`
+                    if (!ai.enabled) {
+                      return (
+                        <td
+                          key={tier}
+                          className={cn(
+                            'px-3 py-3 text-center align-middle',
+                            tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                          )}
+                        >
+                          <ComparisonEmDash />
+                        </td>
+                      )
+                    }
+                    const aiLabel =
+                      ai.dailyMessageLimit === Infinity ? 'Unlimited' : `${ai.dailyMessageLimit}/day`
                     return (
-                      <td key={tier} className="text-center py-4 px-4 text-sm">
-                        {label}
+                      <td
+                        key={tier}
+                        className={cn(
+                          'px-3 py-3 text-center align-middle text-[#44403c]',
+                          tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                        )}
+                      >
+                        {aiLabel}
                       </td>
                     )
                   })}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Crowdsourced Down Payment</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Crowdsourced Down Payment
+                  </th>
                   {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
+                    <td
+                      key={tier}
+                      className={cn(
+                        'px-3 py-3 text-center align-middle',
+                        tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].features.crowdsourcedDownPayment.enabled ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
+                        <ComparisonCheckMark />
                       ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
+                        <ComparisonEmDash />
                       )}
                     </td>
                   ))}
                 </tr>
-                <tr className="border-b border-[#e7e5e4]">
-                  <td className="py-4 px-4">Dedicated Expert</td>
+                <tr className="border-b border-[#e7e5e4] odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Dedicated Expert
+                  </th>
                   {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4">
+                    <td
+                      key={tier}
+                      className={cn(
+                        'px-3 py-3 text-center align-middle',
+                        tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                      )}
+                    >
                       {TIER_DEFINITIONS[tier].features.support.expertAccess ? (
-                        <Check className="w-5 h-5 text-[#0d9488] mx-auto" />
+                        <ComparisonCheckMark />
                       ) : (
-                        <X className="w-5 h-5 text-[#a8a29e] mx-auto" />
+                        <ComparisonEmDash />
                       )}
                     </td>
                   ))}
                 </tr>
-                <tr>
-                  <td className="py-4 px-4">Support Response Time</td>
-                  {tiers.map((tier) => (
-                    <td key={tier} className="text-center py-4 px-4 text-sm">
-                      {TIER_DEFINITIONS[tier].features.support.responseTime === Infinity
-                        ? 'FAQ Only'
-                        : `${TIER_DEFINITIONS[tier].features.support.responseTime}h`}
-                    </td>
-                  ))}
+                <tr className="odd:bg-white even:bg-gray-50">
+                  <th scope="row" className="py-3 pl-4 pr-2 text-left font-normal text-[#44403c]">
+                    Support Response Time
+                  </th>
+                  {tiers.map((tier) => {
+                    const rt = TIER_DEFINITIONS[tier].features.support.responseTime
+                    const label =
+                      rt === Infinity ? 'FAQ Only' : `${rt}h`
+                    return (
+                      <td
+                        key={tier}
+                        className={cn(
+                          'px-3 py-3 text-center align-middle text-[#44403c]',
+                          tier === COMPARISON_HIGHLIGHT_TIER && 'border-l-2 border-l-teal-500 bg-teal-50/30'
+                        )}
+                      >
+                        {label}
+                      </td>
+                    )
+                  })}
                 </tr>
               </tbody>
             </table>
@@ -569,31 +993,199 @@ export default function UpgradePage() {
               Ready to Upgrade to {selectedTierDef.name}?
             </h2>
             <p className="mb-6 text-lg text-[#57534e]">
-              {`Pricing: ${formatTierPrice(selectedTierDef)}`}
+              {`Pricing: ${formatTierPriceForCycle(
+                selectedTierDef,
+                billingCycle === 'annual' ? 'annual' : 'monthly'
+              )}`}
+              {billingCycle === 'annual' ? (
+                <span className="mt-1 block text-base font-normal text-[#57534e]">
+                  Billed annually (20% off monthly×12)
+                </span>
+              ) : null}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button
-                onClick={() => handleUpgrade()}
-                className="px-8 py-4 bg-[#0d9488] text-white rounded-xl text-lg font-semibold hover:bg-[#0f766e] transition-all hover:scale-105 flex items-center gap-2"
-              >
-                Upgrade Now <ArrowRight className="w-5 h-5" />
-              </button>
-              <Link
-                href="/results"
-                className="px-8 py-4 rounded-xl border border-[#e7e5e4] bg-white text-lg font-semibold text-[#1c1917] transition-all hover:bg-[#f5f5f4]"
-              >
-                Maybe Later
-              </Link>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+              <p className="text-amber-800 font-semibold text-sm">
+                ⏰ Every week without a plan costs you money.
+              </p>
+              <p className="text-amber-700 text-sm mt-1">
+                Buyers who start NestQuest before pre-approval save an average of $2,400 more than those who start
+                after. DPA programs in your state have limited funding — some close when their annual allocation runs
+                out.
+              </p>
             </div>
+            {stripeReady ? (
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => handleUpgrade()}
+                  className="flex items-center gap-2 rounded-xl bg-[#0d9488] px-8 py-4 text-lg font-semibold text-white transition-all hover:scale-105 hover:bg-[#0f766e]"
+                >
+                  {selectedTier === 'momentum' ? 'Start Free Trial →' : 'Upgrade Now'}{' '}
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+                <Link
+                  href="/results"
+                  className="rounded-xl border border-[#e7e5e4] bg-white px-8 py-4 text-lg font-semibold text-[#1c1917] transition-all hover:bg-[#f5f5f4]"
+                >
+                  Maybe Later
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-center text-sm text-[#57534e]">
+                  Checkout is being configured — join the waitlist and we&apos;ll email you when you can subscribe.
+                </p>
+                <FooterWaitlistForm defaultTier={selectedTier} />
+              </div>
+            )}
             <p className="mt-4 text-sm text-[#57534e]">
               30-day money-back guarantee • Cancel anytime
             </p>
-            <p className="mt-2 text-xs italic text-[#78716c]">
-              Best time to act: before you lock a pre-approval.
-            </p>
           </motion.div>
         )}
+
+        {currentTier !== 'foundations' ? (
+          <div className="mt-10 rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
+            <p className="text-sm font-semibold text-slate-800">Already subscribed?</p>
+            <button
+              type="button"
+              onClick={() => {
+                setChurnStep('pick')
+                setPauseMessage(null)
+                setChurnModalOpen(true)
+              }}
+              className="mt-2 text-sm font-bold text-teal-800 underline underline-offset-2 hover:text-teal-950"
+            >
+              Manage or cancel my plan
+            </button>
+          </div>
+        ) : null}
       </div>
+
+      {churnModalOpen ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Manage subscription"
+        >
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-start justify-between gap-2">
+              <h2 className="text-lg font-bold text-[#1c1917]">We&apos;re sorry to see you go</h2>
+              <button
+                type="button"
+                className="rounded-lg p-1 text-slate-500 hover:bg-slate-100"
+                aria-label="Close"
+                onClick={() => setChurnModalOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {pauseMessage ? (
+              <div className="space-y-4">
+                <p className="text-sm text-slate-700">{pauseMessage}</p>
+                <button
+                  type="button"
+                  onClick={() => setChurnModalOpen(false)}
+                  className="w-full rounded-xl bg-slate-800 py-3 text-sm font-bold text-white hover:bg-slate-900"
+                >
+                  Close
+                </button>
+              </div>
+            ) : churnStep === 'pick' ? (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setChurnStep('pause')}
+                  className="w-full rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-left text-sm font-semibold text-teal-950"
+                >
+                  Pause for 1–3 months <span className="font-normal text-teal-800">(50% of monthly rate during pause)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChurnStep('cancel-offer')}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-semibold text-slate-900"
+                >
+                  Cancel my plan
+                </button>
+              </div>
+            ) : churnStep === 'pause' ? (
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-slate-700">
+                  Pause duration (months)
+                  <select
+                    value={pauseMonths}
+                    onChange={(e) => setPauseMonths(Number(e.target.value) as PauseMonths)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value={1}>1 month</option>
+                    <option value={2}>2 months</option>
+                    <option value={3}>3 months</option>
+                  </select>
+                </label>
+                <p className="text-sm text-slate-600">
+                  You&apos;ll be charged <strong className="text-slate-900">$14.50/month</strong> during your pause (50% of
+                  $29). Your progress and data are saved.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const state = startSubscriptionPauseLocal(pauseMonths, currentTier)
+                    const until = new Date(state.until)
+                    setPauseMessage(
+                      `Your plan is paused until ${until.toLocaleDateString()}. Your progress and data are saved.`
+                    )
+                    setChurnStep('done')
+                  }}
+                  className="w-full rounded-xl bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700"
+                >
+                  Pause My Plan →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChurnStep('pick')}
+                  className="w-full text-sm font-semibold text-slate-600 underline"
+                >
+                  Back
+                </button>
+              </div>
+            ) : churnStep === 'cancel-offer' ? (
+              <div className="space-y-4">
+                <p className="text-sm text-slate-700">
+                  Before you go — get <strong>1 month free</strong> if you stay.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem(RETENTION_FREE_MONTH_LS, '1')
+                    } catch {
+                      /* ignore */
+                    }
+                    setPauseMessage('Your free month credit has been applied locally — thanks for staying with NestQuest.')
+                    setChurnStep('done')
+                  }}
+                  className="w-full rounded-xl bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700"
+                >
+                  Claim My Free Month →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPauseMessage(
+                      'Cancellation flow is a prototype — in production this would continue to your billing portal.'
+                    )
+                    setChurnStep('done')
+                  }}
+                  className="w-full text-sm font-semibold text-slate-500 underline"
+                >
+                  No thanks, cancel anyway →
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

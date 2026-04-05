@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -12,6 +12,7 @@ import {
   Inbox,
   Crown,
   PiggyBank,
+  Sprout,
   type LucideIcon,
 } from 'lucide-react'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
@@ -34,6 +35,7 @@ const TAB_ICONS: Record<JourneyTab, LucideIcon> = {
   budget: Calculator,
   learn: BookOpen,
   assistance: PiggyBank,
+  firstgen: Sprout,
   library: Library,
   inbox: Inbox,
   upgrades: Crown,
@@ -45,6 +47,7 @@ const TAB_LABELS: Record<JourneyTab, string> = {
   budget: 'Budget Sketch',
   learn: 'Learn',
   assistance: 'Assistance',
+  firstgen: 'First-Gen Hub',
   library: 'Library',
   inbox: 'Inbox',
   upgrades: 'Upgrades',
@@ -56,6 +59,7 @@ const TAB_SHORT_LABELS: Record<JourneyTab, string> = {
   budget: 'Budget',
   learn: 'Learn',
   assistance: 'Funds',
+  firstgen: 'Hub',
   library: 'Library',
   inbox: 'Inbox',
   upgrades: 'Upgrades',
@@ -130,6 +134,7 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
   const tabRefs = useRef<(HTMLAnchorElement | null)[]>([])
   const plainEnglish = usePlainEnglish()
   const [showRefinanceJourneyLink, setShowRefinanceJourneyLink] = useState(false)
+  const [journeyIcpType, setJourneyIcpType] = useState<string | null>(null)
 
   useEffect(() => {
     const bump = () => {
@@ -137,6 +142,7 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
       setShowRefinanceJourneyLink(
         m.transactionType === 'refinance' || m.icpType === 'refinance'
       )
+      setJourneyIcpType(m.icpType)
     }
     bump()
     window.addEventListener('storage', bump)
@@ -146,6 +152,11 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
       window.removeEventListener('focus', bump)
     }
   }, [])
+
+  const visibleTabIds = useMemo(() => {
+    if (journeyIcpType === 'first-gen') return JOURNEY_TAB_IDS
+    return JOURNEY_TAB_IDS.filter((id) => id !== 'firstgen')
+  }, [journeyIcpType])
 
   const persistTab = useCallback((t: JourneyTab) => {
     try {
@@ -157,7 +168,7 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent, index: number) => {
-      const len = JOURNEY_TAB_IDS.length
+      const len = visibleTabIds.length
       let next = index
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault()
@@ -174,12 +185,12 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
       } else {
         return
       }
-      const t = JOURNEY_TAB_IDS[next]
+      const t = visibleTabIds[next]
       persistTab(t)
       router.push(journeyTabHrefPreservingSearch(tabLinkBase, searchKey, t), { scroll: false })
       requestAnimationFrame(() => tabRefs.current[next]?.focus())
     },
-    [persistTab, router, searchKey, tabLinkBase]
+    [persistTab, router, searchKey, tabLinkBase, visibleTabIds]
   )
 
   return (
@@ -189,7 +200,7 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
         role="tablist"
         aria-label="Journey sections"
       >
-      {JOURNEY_TAB_IDS.map((id, index) => {
+      {visibleTabIds.map((id, index) => {
         const active = activeTab === id
         const Icon = TAB_ICONS[id]
         const tooltip = applyPlainEnglishCopy(JOURNEY_TAB_TOOLTIPS[id], plainEnglish)
@@ -232,12 +243,20 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
       })}
       </div>
       {showRefinanceJourneyLink ? (
-        <Link
-          href="/homebuyer/refinance-journey"
-          className="shrink-0 self-center whitespace-nowrap rounded-xl border border-teal-200 bg-white px-3 py-2 text-xs font-semibold text-teal-800 shadow-sm transition hover:border-teal-300 hover:bg-teal-50 md:text-sm"
-        >
-          Refinance Journey
-        </Link>
+        <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 self-center">
+          <Link
+            href="/refinance-optimizer"
+            className="whitespace-nowrap rounded-xl border border-[#1a6b3c]/30 bg-[#1a6b3c]/10 px-3 py-2 text-xs font-semibold text-[#14532d] shadow-sm transition hover:border-[#1a6b3c]/50 hover:bg-[#1a6b3c]/15 md:text-sm"
+          >
+            Refinance Optimizer
+          </Link>
+          <Link
+            href="/homebuyer/refinance-journey"
+            className="whitespace-nowrap rounded-xl border border-teal-200 bg-white px-3 py-2 text-xs font-semibold text-teal-800 shadow-sm transition hover:border-teal-300 hover:bg-teal-50 md:text-sm"
+          >
+            Refinance roadmap
+          </Link>
+        </div>
       ) : null}
     </div>
   )

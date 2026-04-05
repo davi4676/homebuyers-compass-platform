@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { MapPin, HelpCircle, Search } from 'lucide-react'
+import { ExternalLink, MapPin, HelpCircle, Search } from 'lucide-react'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 type ScoreBundle = {
@@ -67,6 +67,8 @@ export default function MapPage() {
   const [lat, setLat] = useState<number | null>(null)
   const [lon, setLon] = useState<number | null>(null)
   const [scores, setScores] = useState<ScoreBundle | null>(null)
+  /** Official Walk Score report URL from API when available. */
+  const [walkScoreReportUrl, setWalkScoreReportUrl] = useState<string | null>(null)
   const [walk, setWalk] = useState(true)
   const [transit, setTransit] = useState(true)
   const [bikeOn, setBikeOn] = useState(true)
@@ -94,7 +96,13 @@ export default function MapPage() {
         const wsRes = await fetch(
           `/api/walkscore?lat=${geo.lat}&lon=${geo.lon}&address=${encodeURIComponent(geo.displayName)}`
         )
-        const ws = await wsRes.json()
+        const ws = (await wsRes.json()) as {
+          mock?: boolean
+          walkscore?: number | null
+          transit?: number | null
+          bike?: number | null
+          ws_link?: string
+        }
         if (!ws.mock && ws.walkscore != null) {
           setScores({
             walk: ws.walkscore,
@@ -102,8 +110,10 @@ export default function MapPage() {
             bike: ws.bike ?? null,
             mock: false,
           })
+          setWalkScoreReportUrl(typeof ws.ws_link === 'string' && ws.ws_link ? ws.ws_link : null)
         } else {
           setScores(mockScores(geo.displayName))
+          setWalkScoreReportUrl(null)
         }
       } catch {
         setError('Something went wrong. Try again.')
@@ -117,12 +127,19 @@ export default function MapPage() {
   const applyMock = useCallback(() => {
     const label = locationLabel || query || 'Demo area'
     setScores(mockScores(label))
+    setWalkScoreReportUrl(null)
     if (lat == null || lon == null) {
       setLat(30.2672)
       setLon(-97.7431)
       setLocationLabel(label)
     }
   }, [locationLabel, query, lat, lon])
+
+  const areaVibesSearchUrl = useMemo(() => {
+    const label = locationLabel?.trim()
+    if (!label) return null
+    return `https://www.areavibes.com/search/?q=${encodeURIComponent(label)}`
+  }, [locationLabel])
 
   const embedSrc =
     lat != null && lon != null
@@ -150,8 +167,9 @@ export default function MapPage() {
           Neighborhood walkability &amp; safety
         </h1>
         <p className="mx-auto mb-8 max-w-lg text-center text-[#57534e]">
-          Search a location to center the map and load Walk Score data when an API key is configured. Use demo scores
-          to explore the UI anytime.
+          Search a location to center the map. With <code className="rounded bg-[#f5f5f4] px-1">WALK_SCORE_API_KEY</code>{' '}
+          set, Walk Score returns live walk, transit, and bike scores. We also link out to AreaVibes for livability and
+          crime context (third-party site — always verify before you decide).
         </p>
 
         <form onSubmit={search} className="mb-6 rounded-xl border border-[#e7e5e4] bg-white p-3 shadow-sm">
@@ -205,6 +223,38 @@ export default function MapPage() {
           </p>
         ) : scores && !scores.mock ? (
           <p className="mb-4 text-center text-xs font-medium text-[#0d9488]">Live Walk Score data loaded.</p>
+        ) : null}
+
+        {locationLabel && areaVibesSearchUrl ? (
+          <div className="mb-6 rounded-xl border border-[#e7e5e4] bg-white p-4 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-[#78716c]">Official &amp; partner views</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              {walkScoreReportUrl ? (
+                <a
+                  href={walkScoreReportUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#1a6b3c] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#155c33]"
+                >
+                  Open Walk Score report
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                </a>
+              ) : null}
+              <a
+                href={areaVibesSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#e7e5e4] bg-[#fafaf9] px-4 py-2.5 text-sm font-semibold text-[#1c1917] transition hover:bg-[#f5f5f4]"
+              >
+                AreaVibes livability search
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+              </a>
+            </div>
+            <p className="mt-2 text-xs text-[#78716c]">
+              AreaVibes publishes livability grades and crime comparisons by place name — use it alongside your agent,
+              not as a guarantee.
+            </p>
+          </div>
         ) : null}
 
         <div className="mb-6 flex flex-wrap justify-center gap-3">
@@ -268,16 +318,27 @@ export default function MapPage() {
             className={`mt-4 rounded-xl border px-3 py-3 ${crime ? 'border-[#e7e5e4] bg-[#fafaf9]' : 'opacity-50'}`}
           >
             <div className="flex items-center gap-1 text-xs font-semibold text-[#57534e]">
-              Crime Index (illustrative)
+              Neighborhood safety signal (illustrative)
               <span className="group relative inline-flex">
                 <HelpCircle className="h-3.5 w-3.5 cursor-help text-[#a8a29e]" />
                 <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 hidden w-56 rounded-lg border border-[#e7e5e4] bg-[#1c1917] px-2 py-1.5 text-[11px] font-normal leading-snug text-white shadow-lg group-hover:block">
-                  NestQuest does not provide legal or security guarantees. In production, connect a certified crime-data
-                  provider; use this view with your agent to compare walkability and safety signals side by side.
+                  This bar is a prototype placeholder. For crime and livability grades, use AreaVibes (linked above) or
+                  your agent&apos;s local sources — NestQuest does not provide legal or security guarantees.
                 </span>
               </span>
             </div>
             <p className="mt-1 text-sm font-semibold text-[#1c1917]">{crime ? crimeLabel : '—'}</p>
+            {crime && areaVibesSearchUrl ? (
+              <a
+                href={areaVibesSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#0d9488] underline underline-offset-2 hover:text-[#0f766e]"
+              >
+                Compare crime &amp; livability on AreaVibes
+                <ExternalLink className="h-3 w-3" aria-hidden />
+              </a>
+            ) : null}
           </div>
         </div>
 

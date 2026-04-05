@@ -12,6 +12,8 @@ type DynamicRoadmapProps = {
   canAccessPhase: (phaseOrder: number) => boolean
   onSelectPhase: (phaseOrder: number) => void
   isPhaseComplete: (phaseOrder: number) => boolean
+  /** When set, shown instead of the generic tier lock copy for locked phases. */
+  getPhaseBlockedHint?: (phaseOrder: number) => string | undefined
 }
 
 export default function DynamicRoadmap({
@@ -21,10 +23,12 @@ export default function DynamicRoadmap({
   canAccessPhase,
   onSelectPhase,
   isPhaseComplete,
+  getPhaseBlockedHint,
 }: DynamicRoadmapProps) {
+  const phaseCountLabel = `${phaseOrders.length}-phase roadmap`
   return (
     <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-white/90 p-4 shadow-sm sm:p-5">
-      <p className="text-xs font-bold uppercase tracking-wide text-slate-600">7-phase roadmap</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-600">{phaseCountLabel}</p>
       <p className="text-sm text-slate-600">
         Tap a phase to jump ahead when it&apos;s unlocked for your tier.
       </p>
@@ -37,6 +41,7 @@ export default function DynamicRoadmap({
           const current = currentPhaseOrder === phaseOrder
           const lockedBeyondFoundations =
             !accessible && phaseOrder > 2 && effectiveTier === 'foundations'
+          const blockedHint = getPhaseBlockedHint?.(phaseOrder)
 
           return (
             <li key={phaseOrder}>
@@ -73,7 +78,9 @@ export default function DynamicRoadmap({
                   </span>
                   {!accessible ? (
                     <span className="mt-1 block text-xs leading-snug text-slate-600">
-                      {lockedBeyondFoundations ? (
+                      {blockedHint ? (
+                        <>{blockedHint}</>
+                      ) : lockedBeyondFoundations ? (
                         <>
                           Momentum is for buyers who want clarity beyond Phase 2.{' '}
                           <span className="italic">&ldquo;{TIER_DEFINITIONS.momentum.mindset}&rdquo;</span>

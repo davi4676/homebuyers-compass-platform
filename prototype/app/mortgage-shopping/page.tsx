@@ -146,8 +146,8 @@ export default function MortgageShoppingPage() {
     <div className="app-page-shell">
       {/* Header */}
       <header className="border-b border-[#e7e5e4] sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <BackToMyJourneyLink className="mb-2" />
+        <div className="mx-auto max-w-7xl px-4 py-3 text-left sm:px-6 lg:px-8">
+          <BackToMyJourneyLink />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
           <div className="flex items-center justify-between">
@@ -169,6 +169,22 @@ export default function MortgageShoppingPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <UserJourneyTracker />
         <TrustSignals />
+
+        {searchParams.get('icp') === 'solo' ? (
+          <div
+            className="mb-6 rounded-xl border border-teal-200 bg-teal-50/90 p-4 shadow-sm sm:p-5"
+            role="region"
+            aria-label="Solo buyer mortgage tips"
+          >
+            <p className="text-sm font-bold text-teal-950">Personalized for buying on one income</p>
+            <p className="mt-2 text-sm text-teal-900/95">
+              Underwriters will stress-test <strong className="font-semibold">debt-to-income</strong> and{' '}
+              <strong className="font-semibold">post-closing reserves</strong> with only your income on the application.
+              Gather two years of consistent earnings documentation, avoid new credit before pre-approval, and ask each
+              lender for your max <em>comfortable</em> payment — not just the max you can qualify for.
+            </p>
+          </div>
+        ) : null}
 
         {/* Navigation Buttons */}
         <div className="mb-6 flex items-center justify-between sticky top-20 z-40 bg-[#fafaf9]/90 backdrop-blur-sm py-3 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 rounded-lg">

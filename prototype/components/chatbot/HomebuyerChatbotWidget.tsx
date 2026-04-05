@@ -26,6 +26,12 @@ export function HomebuyerChatbotWidget() {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    const onOpen = () => setIsOpen(true)
+    window.addEventListener('nestquest-open-chat', onOpen)
+    return () => window.removeEventListener('nestquest-open-chat', onOpen)
+  }, [])
+
   const displayMessages = [
     ...(messages.length === 0 ? [{ id: 'welcome', role: 'assistant' as const, content: OPENING_GREETING.content, timestamp: new Date() }] : []),
     ...messages,

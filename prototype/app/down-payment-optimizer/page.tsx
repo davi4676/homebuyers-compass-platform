@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 import { markDpaOptimizerVisited } from '@/lib/dpa-optimizer-visit'
+import { useAuth } from '@/lib/hooks/useAuth'
+import { tierHasCalculator } from '@/lib/tiers'
 
 const TIMELINE_MONTHS: Record<string, number> = {
   '6': 6,
@@ -18,6 +19,11 @@ function formatMoney(n: number) {
 }
 
 export default function DownPaymentOptimizerPage() {
+  const { user, isAuthenticated, isLoading } = useAuth()
+  const tier = user?.subscriptionTier ?? 'foundations'
+  const canUseOptimizer =
+    !isAuthenticated || tierHasCalculator(tier, 'down-payment')
+
   useEffect(() => {
     markDpaOptimizerVisited()
   }, [])
@@ -51,26 +57,45 @@ export default function DownPaymentOptimizerPage() {
   return (
     <div className="app-page-shell">
       <header className="sticky top-0 z-10 border-b border-[#e7e5e4] bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-[#57534e] transition-colors hover:text-[#1c1917]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
+        <div className="mx-auto flex max-w-3xl items-center px-4 py-3">
+          <BackToMyJourneyLink />
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-10">
-        <div className="mb-4">
-          <BackToMyJourneyLink />
-        </div>
         <h1 className="font-display text-3xl font-bold text-[#1c1917]">Down Payment Optimizer</h1>
         <p className="mt-2 text-[#57534e]">
           Estimate how much you need to save for common loan types and how long it could take at your current pace.
         </p>
 
+        {isLoading ? (
+          <p className="mt-8 text-sm text-[#78716c]">Loading…</p>
+        ) : null}
+
+        {!isLoading && !canUseOptimizer ? (
+          <div className="mt-8 rounded-xl border border-amber-200/90 bg-amber-50/90 p-6 text-center shadow-sm sm:p-8">
+            <h2 className="font-display text-xl font-bold text-[#1c1917]">Included with Momentum</h2>
+            <p className="mt-2 text-sm text-[#57534e]">
+              Foundations includes the affordability calculator on your results snapshot and in My Journey. Upgrade
+              to unlock this down payment optimizer and the rest of the calculator suite.
+            </p>
+            <Link
+              href="/upgrade?source=down-payment-optimizer&tier=momentum"
+              className="mt-5 inline-flex items-center justify-center rounded-lg bg-[#0d9488] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#0f766e]"
+            >
+              Upgrade to Momentum
+            </Link>
+            <Link
+              href="/results"
+              className="mt-4 block text-sm font-semibold text-[#0d9488] hover:underline"
+            >
+              Open your free affordability snapshot →
+            </Link>
+          </div>
+        ) : null}
+
+        {!isLoading && canUseOptimizer ? (
+          <>
         <div className="mt-8 rounded-xl border border-[#e7e5e4] bg-white p-6 shadow-sm">
           <label className="block text-sm font-semibold text-[#57534e]">
             Home price target: {formatMoney(homePrice)}
@@ -178,6 +203,8 @@ export default function DownPaymentOptimizerPage() {
             Open Assistance tab in My Journey →
           </Link>
         </div>
+          </>
+        ) : null}
       </main>
     </div>
   )

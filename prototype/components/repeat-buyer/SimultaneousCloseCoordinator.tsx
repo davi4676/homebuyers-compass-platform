@@ -38,6 +38,8 @@ export default function SimultaneousCloseCoordinator({
   const overlapDays = 30 // Example overlap
   const currentMortgagePayment = 2000 // Example
   const overlapCost = (overlapDays / 30) * currentMortgagePayment
+  const availableEquity = equityData.currentHomeValue - equityData.mortgageBalance
+  const modeledOverlapSave = Math.round(Math.min(40000, Math.max(8000, availableEquity * 0.018)))
 
   return (
     <motion.div
@@ -65,15 +67,18 @@ export default function SimultaneousCloseCoordinator({
             <Lock className="w-6 h-6 text-yellow-400" />
             <h2 className="text-xl font-bold">Premium Feature</h2>
           </div>
-          <p className="text-gray-300 mb-4">
-            Upgrade to Premium to access the simultaneous close coordinator, bridge financing
-            recommendations, and overlap cost analysis.
+          <p className="text-gray-300 mb-2 font-semibold text-white">
+            Tighten buy-sell timing — modeled members avoid about {formatCurrency(modeledOverlapSave)} in overlap costs vs.
+            a loose schedule.
+          </p>
+          <p className="text-gray-400 mb-4 text-sm">
+            Momentum unlocks the coordinator, bridge options, and day-by-day overlap math tied to your equity.
           </p>
           <button
             onClick={() => onUpgrade('momentum')}
             className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#06b6d4] to-[#22d3ee] text-white font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
           >
-            Upgrade to Premium
+            Coordinate my closing dates
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -194,7 +199,7 @@ export default function SimultaneousCloseCoordinator({
         </>
       )}
 
-      <div className="flex items-center justify-between pt-6 border-t border-gray-800">
+      <div className="flex flex-col gap-4 border-t border-gray-800 pt-6 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={onBack}
           className="px-6 py-3 rounded-lg bg-gray-900 hover:bg-gray-800 transition-colors flex items-center gap-2"
@@ -202,6 +207,22 @@ export default function SimultaneousCloseCoordinator({
           <ArrowLeft className="w-5 h-5" />
           Back to Suite
         </button>
+        {isPremium ? (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/lifecycle-dashboard"
+              className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800/80"
+            >
+              Lifecycle dashboard
+            </Link>
+            <Link
+              href="/refinance-optimizer"
+              className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800/80"
+            >
+              Refinance optimizer
+            </Link>
+          </div>
+        ) : null}
       </div>
     </motion.div>
   )

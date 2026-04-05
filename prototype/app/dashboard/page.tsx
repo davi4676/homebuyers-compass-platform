@@ -7,7 +7,7 @@ import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 /**
  * Dashboard has been realigned into the personalized journey pages.
  * First-time & repeat buyer: /customized-journey (journey hub)
- * Refinance: /homebuyer/refinance-journey (wizard)
+ * Refinance: /refinance-optimizer (hub; wizard at /homebuyer/refinance-journey)
  */
 export default function DashboardPage() {
   const router = useRouter()
@@ -30,7 +30,7 @@ export default function DashboardPage() {
     const routeByType: Record<typeof transactionType, string> = {
       'first-time': '/customized-journey',
       'repeat-buyer': '/customized-journey',
-      'refinance': '/homebuyer/refinance-journey',
+      'refinance': '/refinance-optimizer',
     }
     router.replace(routeByType[transactionType])
   }, [router])

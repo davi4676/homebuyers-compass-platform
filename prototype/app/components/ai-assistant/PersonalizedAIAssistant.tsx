@@ -812,7 +812,10 @@ export default function PersonalizedAIAssistant({
                       <>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="text-green-400 flex-shrink-0 mt-0.5" size={16} />
-                          <span><strong>50 messages/day</strong> with Concierge ($149 one-time)</span>
+                          <span>
+                            <strong>50 messages/day</strong> with Navigator+ (
+                            {TIER_DEFINITIONS.navigator.price.displayOneTime} one-time)
+                          </span>
                         </li>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="text-green-400 flex-shrink-0 mt-0.5" size={16} />
@@ -828,7 +831,10 @@ export default function PersonalizedAIAssistant({
                       <>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="text-green-400 flex-shrink-0 mt-0.5" size={16} />
-                          <span><strong>Unlimited messages</strong> with Concierge+ ($299 one-time)</span>
+                          <span>
+                            <strong>Unlimited messages</strong> with Concierge+ (
+                            {TIER_DEFINITIONS.navigator_plus.price.displayOneTime} one-time)
+                          </span>
                         </li>
                         <li className="flex items-start gap-2">
                           <CheckCircle className="text-green-400 flex-shrink-0 mt-0.5" size={16} />

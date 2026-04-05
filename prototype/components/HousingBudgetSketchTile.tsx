@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Info, RotateCcw } from 'lucide-react'
+import { Info, Lock, RotateCcw } from 'lucide-react'
 import type { QuizData } from '@/lib/calculations'
 import {
   calculateAffordability,
@@ -65,6 +66,15 @@ function sumLines(l: LineState): number {
     l.maintenanceReserveMonthly
   )
 }
+
+const BUDGET_LINE_ORDER: (keyof LineState)[] = [
+  'principalAndInterest',
+  'propertyTaxMonthly',
+  'homeownersInsuranceMonthly',
+  'pmiMonthly',
+  'hoaMonthly',
+  'maintenanceReserveMonthly',
+]
 
 function makeBasisKey(price: number, down: number, rate: number, hoaGeoKey: string): string {
   return `${Math.round(price)}|${Math.round(down)}|${rate.toFixed(5)}|hoa:${hoaGeoKey}`
@@ -146,12 +156,17 @@ export default function HousingBudgetSketchTile({
   snapshot,
   onSketchDirtyChange,
   onSketchMonthlyCompare,
+  maxEditableLineItems = BUDGET_LINE_ORDER.length,
+  budgetUpgradeHref = '/upgrade?source=budget-sketch-lines&tier=momentum',
 }: {
   snapshot: UserSnapshot | null
   /** True when any line differs from snapshot defaults (drives “Updated” in journey header). */
   onSketchDirtyChange?: (dirty: boolean) => void
   /** Current sketch monthly total vs snapshot baseline (for savings impact UI). */
   onSketchMonthlyCompare?: (sketchMonthlyTotal: number, baselineMonthlyTotal: number) => void
+  /** Foundations: first N lines are editable; remaining lines stay at snapshot defaults. */
+  maxEditableLineItems?: number
+  budgetUpgradeHref?: string
 }) {
   const [clientQuiz, setClientQuiz] = useState<QuizData | null>(null)
 
@@ -319,6 +334,20 @@ export default function HousingBudgetSketchTile({
   }, [basisKey, defaultLines])
 
   useEffect(() => {
+    setLines((prev) => {
+      const next = { ...prev }
+      let changed = false
+      BUDGET_LINE_ORDER.forEach((k, i) => {
+        if (i >= maxEditableLineItems && next[k] !== defaultLines[k]) {
+          next[k] = defaultLines[k]
+          changed = true
+        }
+      })
+      return changed ? next : prev
+    })
+  }, [basisKey, defaultLines, maxEditableLineItems])
+
+  useEffect(() => {
     if (typeof window === 'undefined') return
     try {
       const payload: StoredSketch = { basisKey, ...lines }
@@ -360,17 +389,14 @@ export default function HousingBudgetSketchTile({
     return () => cancelAnimationFrame(raf)
   }, [total, reduceMotion])
 
+  const editableKeys = useMemo(() => {
+    const n = Math.max(0, Math.min(maxEditableLineItems, BUDGET_LINE_ORDER.length))
+    return new Set(BUDGET_LINE_ORDER.slice(0, n))
+  }, [maxEditableLineItems])
+
   const isDirty = useMemo(() => {
-    const keys: (keyof LineState)[] = [
-      'principalAndInterest',
-      'propertyTaxMonthly',
-      'homeownersInsuranceMonthly',
-      'pmiMonthly',
-      'hoaMonthly',
-      'maintenanceReserveMonthly',
-    ]
-    return keys.some((k) => lines[k] !== defaultLines[k])
-  }, [lines, defaultLines])
+    return BUDGET_LINE_ORDER.filter((k) => editableKeys.has(k)).some((k) => lines[k] !== defaultLines[k])
+  }, [lines, defaultLines, editableKeys])
 
   useEffect(() => {
     onSketchDirtyChange?.(isDirty)
@@ -381,15 +407,79 @@ export default function HousingBudgetSketchTile({
     onSketchMonthlyCompare?.(total, baselineTotal)
   }, [total, baselineTotal, onSketchMonthlyCompare])
 
+  if (maxEditableLineItems <= 0) {
+    const priceLabel =
+      (quiz.targetHomePrice ?? 0) > 0 ? 'Target home (snapshot)' : 'Comfortable max home price'
+    const priceValue =
+      (quiz.targetHomePrice ?? 0) > 0
+        ? Math.round(quiz.targetHomePrice!)
+        : Math.round(affordability.realisticMax)
+
+    return (
+      <div className="relative mt-5 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/40 p-4 shadow-md ring-1 ring-emerald-100/60 sm:p-5">
+        <div className="mb-3">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-emerald-900">
+            Affordability calculator (included with Foundations)
+          </h3>
+          <p className="mt-1 text-sm leading-snug text-slate-600">
+            Your comfortable range and monthly payment come from your savings snapshot. Open results to
+            adjust income, debts, down payment, and target price — then see your numbers update here.
+          </p>
+        </div>
+        <div className="grid gap-3 rounded-xl border border-slate-100 bg-white/90 p-4 sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{priceLabel}</p>
+            <p className="mt-1 text-2xl font-black tabular-nums text-slate-900">
+              {formatCurrency(priceValue)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Est. monthly (PITI + PMI)
+            </p>
+            <p className="mt-1 text-2xl font-black tabular-nums text-slate-900">
+              {formatCurrency(Math.round(affordability.monthlyPayment))}
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/results"
+          className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
+        >
+          Open full results and adjust inputs
+        </Link>
+        <div className="mt-6 border-t border-teal-100/90 pt-4">
+          <p className="text-sm font-semibold text-slate-800">Line-by-line budget sketch</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Stress-test PMI, HOA, taxes, and maintenance line by line — included with Momentum.
+          </p>
+          <Link
+            href={budgetUpgradeHref}
+            className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
+          >
+            Unlock Budget Sketch with Momentum
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   const row = (id: keyof LineState, label: string) => {
     const edited = lines[id] !== defaultLines[id]
+    const locked = !editableKeys.has(id)
     return (
-      <div className="space-y-1.5">
+      <div className={`space-y-1.5 ${locked ? 'opacity-80' : ''}`}>
         <div className="flex items-center gap-1">
           <label htmlFor={`budget-${id}`} className="text-sm font-semibold text-slate-800">
             {label}
           </label>
-          <AssumptionHint fieldKey={id} />
+          {locked ? (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-teal-900 ring-1 ring-teal-100">
+              <Lock className="h-3 w-3" aria-hidden />
+              Momentum
+            </span>
+          ) : null}
+          {!locked ? <AssumptionHint fieldKey={id} /> : null}
         </div>
         <div className="relative">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
@@ -401,8 +491,11 @@ export default function HousingBudgetSketchTile({
             min={0}
             step={1}
             inputMode="numeric"
+            readOnly={locked}
+            aria-readonly={locked}
             value={lines[id]}
             onChange={(e) => {
+              if (locked) return
               const v = Number(e.target.value)
               setLines((prev) => ({
                 ...prev,
@@ -410,9 +503,11 @@ export default function HousingBudgetSketchTile({
               }))
             }}
             className={`w-full rounded-lg border py-2 pl-7 pr-2 text-right text-base font-semibold text-slate-900 shadow-inner outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-300/50 ${
-              edited
-                ? 'border-amber-300/90 bg-amber-50/50 ring-2 ring-amber-200/70'
-                : 'border-slate-200 bg-white ring-teal-200'
+              locked
+                ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-500'
+                : edited
+                  ? 'border-amber-300/90 bg-amber-50/50 ring-2 ring-amber-200/70'
+                  : 'border-slate-200 bg-white ring-teal-200'
             }`}
           />
         </div>
@@ -431,7 +526,11 @@ export default function HousingBudgetSketchTile({
               {formatCurrency(Math.round(defaults.homePriceBasis))}
             </strong>
             {' — '}
-            <span className="text-slate-500">Info icons explain each line.</span>
+            <span className="text-slate-500">
+              {maxEditableLineItems < BUDGET_LINE_ORDER.length
+                ? 'Foundations includes core lines; unlock the rest with Momentum.'
+                : 'Info icons explain each line.'}
+            </span>
           </p>
           {hoaAcsHint ? (
             <p className="mt-1 text-xs leading-snug text-slate-500">{hoaAcsHint}</p>
@@ -458,6 +557,20 @@ export default function HousingBudgetSketchTile({
             {row('hoaMonthly', 'HOA / condo fees')}
             {row('maintenanceReserveMonthly', 'Maintenance reserve')}
           </div>
+          {maxEditableLineItems < BUDGET_LINE_ORDER.length ? (
+            <div className="border-t border-teal-100/90 bg-teal-50/50 p-4">
+              <p className="flex items-center gap-2 text-sm font-bold text-teal-950">
+                <Lock className="h-4 w-4 shrink-0 text-teal-700" aria-hidden />
+                Stress-test PMI, HOA, and maintenance with Momentum
+              </p>
+              <Link
+                href={budgetUpgradeHref}
+                className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
+              >
+                Upgrade to unlock all line items
+              </Link>
+            </div>
+          ) : null}
           <div className="sticky bottom-0 z-10 border-t-2 border-emerald-300/50 bg-gradient-to-r from-emerald-800 via-[rgb(var(--navy))] to-teal-800 px-4 py-4 text-white shadow-[0_-6px_24px_rgba(15,23,42,0.18)] sm:flex sm:items-end sm:justify-between sm:gap-4 sm:px-5 sm:py-5">
             <div>
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-100/95 sm:text-sm">

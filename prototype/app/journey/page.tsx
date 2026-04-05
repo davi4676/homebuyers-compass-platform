@@ -296,7 +296,7 @@ function JourneyPageContent() {
     setCompletedTasks(newCompleted)
 
     // Award XP
-    if (effectiveTier !== 'foundations' && hasFeature(effectiveTier, 'gamification.xp')) {
+    if (hasFeature(effectiveTier, 'gamification.xp')) {
       const { newProgress, leveledUp, newLevel, badgesUnlocked } = awardXpForAction('journey-task', xpReward)
       setUserProgress(newProgress)
       if (isAuthenticated) syncProgressToApi(newProgress)
