@@ -20,6 +20,7 @@ import {
   Phone,
   Star,
   X,
+  ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -35,6 +36,7 @@ import {
   startMomentumTrialLocal,
 } from '@/lib/user-tracking'
 import { trackActivity } from '@/lib/track-activity'
+import { track } from '@/lib/analytics'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 import { startSubscriptionPauseLocal, type PauseMonths } from '@/lib/subscription-pause'
 import { cn } from '@/lib/design-system'
@@ -204,6 +206,7 @@ export default function UpgradePage() {
 
   const tiers = TIER_ORDER
   const selectedTierDef = TIER_DEFINITIONS[selectedTier]
+  const momentumMonthlyLabel = formatTierPriceForCycle(TIER_DEFINITIONS.momentum, 'monthly')
 
   const handleUpgrade = (tier?: UserTier) => {
     const tierToUpgrade = tier || selectedTier
@@ -224,6 +227,7 @@ export default function UpgradePage() {
   }
 
   const handleStartMomentumTrial = async () => {
+    track.trialStarted('upgrade_page')
     trackActivity('tool_used', {
       tool: 'momentum_trial_started',
       source: 'upgrade_page',
@@ -322,54 +326,105 @@ export default function UpgradePage() {
           ) : null}
         </motion.div>
 
-        {/* Billing Toggle */}
-        <div className="mb-8 flex flex-col items-center">
-          <div className="mb-3 w-full max-w-lg rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center text-sm font-medium text-emerald-900">
-            <span aria-hidden>💡</span> Annual plans save you up to $358/year
+        <div className="mb-10 grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Start simple</p>
+            <h2 className="mt-2 font-display text-2xl font-bold text-[#1c1917]">
+              {TIER_DEFINITIONS.foundations.name}
+            </h2>
+            <p className="mt-2 flex-1 text-sm leading-relaxed text-[#57534e]">
+              Roadmap preview, quiz snapshot, and a taste of programs — enough to orient before you commit.
+            </p>
+            <Link
+              href="/customized-journey"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-xl border-2 border-slate-200 py-3 text-sm font-bold text-[#44403c] transition hover:border-teal-300 hover:bg-teal-50/50"
+            >
+              Continue on free →
+            </Link>
           </div>
-          <div className="flex flex-wrap justify-center gap-1 rounded-lg border border-[#e7e5e4] bg-white p-1 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setBillingCycle('monthly')}
-              className={`rounded-md px-4 py-2 text-sm font-semibold transition-all sm:px-5 ${
-                billingCycle === 'monthly'
-                  ? 'bg-[#0d9488] text-white'
-                  : 'text-[#57534e] hover:text-[#1c1917]'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              onClick={() => setBillingCycle('annual')}
-              className={`relative rounded-md px-4 py-2 text-sm font-semibold transition-all sm:px-5 ${
-                billingCycle === 'annual'
-                  ? 'bg-[#0d9488] text-white'
-                  : 'text-[#57534e] hover:text-[#1c1917]'
-              }`}
-            >
-              Annual
-              <span
-                className={`ml-1.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                  billingCycle === 'annual'
-                    ? 'bg-white/25 text-white'
-                    : 'bg-amber-100 text-amber-900'
-                }`}
+          <div className="flex flex-col rounded-2xl border-2 border-[#0d9488]/45 bg-gradient-to-br from-[#ecfdf5] to-white p-6 shadow-md ring-1 ring-teal-100/80">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#0f766e]">Most active buyers</p>
+            <h2 className="mt-2 font-display text-2xl font-bold text-[#0f766e]">{TIER_DEFINITIONS.momentum.name}</h2>
+            <p className="mt-2 flex-1 text-sm leading-relaxed text-[#57534e]">
+              Full roadmap depth, budget sketch lines, library, inbox, and assistance matching —{' '}
+              <strong className="font-semibold text-[#44403c]">7-day free trial</strong>, no card, then{' '}
+              <strong className="font-semibold text-[#44403c]">{momentumMonthlyLabel}</strong> if you stay.
+            </p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <Link
+                href="/payment?tier=momentum&cycle=monthly"
+                className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#0d9488] py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#0f766e]"
               >
-                Save 20%
-              </span>
-            </button>
+                Checkout with trial →
+              </Link>
+              <button
+                type="button"
+                onClick={() => void handleStartMomentumTrial()}
+                className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-[#44403c] hover:bg-slate-50"
+              >
+                Try 7 days (no card)
+              </button>
+            </div>
           </div>
-          <p className="mt-4 max-w-xl text-center text-sm leading-relaxed text-[#57534e]">
-            <strong className="font-semibold text-[#44403c]">Monthly</strong> fits buyers who want flexibility.{' '}
-            <strong className="font-semibold text-[#44403c]">Annual</strong> is billed once per year with{' '}
-            <strong className="font-semibold text-[#44403c]">20% off</strong> the monthly×12 rate (shown as a monthly
-            equivalent on each plan).
-          </p>
         </div>
 
-        {/* Tier Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <details
+          id="compare-all-plans"
+          className="group mb-12 overflow-hidden rounded-2xl border border-[#e7e5e4] bg-[#fafaf9] shadow-sm"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-left font-display text-lg font-bold text-[#1c1917] transition hover:bg-white/60 sm:px-6 [&::-webkit-details-marker]:hidden">
+            <span>Compare all plans side by side</span>
+            <ChevronDown className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-open:rotate-180" aria-hidden />
+          </summary>
+          <div className="border-t border-[#e7e5e4] bg-white px-3 pb-8 pt-6 sm:px-5">
+            {/* Billing Toggle */}
+            <div className="mb-8 flex flex-col items-center">
+              <div className="mb-3 w-full max-w-lg rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center text-sm font-medium text-emerald-900">
+                <span aria-hidden>💡</span> Annual plans save you up to $358/year
+              </div>
+              <div className="flex flex-wrap justify-center gap-1 rounded-lg border border-[#e7e5e4] bg-white p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('monthly')}
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition-all sm:px-5 ${
+                    billingCycle === 'monthly'
+                      ? 'bg-[#0d9488] text-white'
+                      : 'text-[#57534e] hover:text-[#1c1917]'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('annual')}
+                  className={`relative rounded-md px-4 py-2 text-sm font-semibold transition-all sm:px-5 ${
+                    billingCycle === 'annual'
+                      ? 'bg-[#0d9488] text-white'
+                      : 'text-[#57534e] hover:text-[#1c1917]'
+                  }`}
+                >
+                  Annual
+                  <span
+                    className={`ml-1.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                      billingCycle === 'annual'
+                        ? 'bg-white/25 text-white'
+                        : 'bg-amber-100 text-amber-900'
+                    }`}
+                  >
+                    Save 20%
+                  </span>
+                </button>
+              </div>
+              <p className="mt-4 max-w-xl text-center text-sm leading-relaxed text-[#57534e]">
+                <strong className="font-semibold text-[#44403c]">Monthly</strong> fits buyers who want flexibility.{' '}
+                <strong className="font-semibold text-[#44403c]">Annual</strong> is billed once per year with{' '}
+                <strong className="font-semibold text-[#44403c]">20% off</strong> the monthly×12 rate (shown as a monthly
+                equivalent on each plan).
+              </p>
+            </div>
+
+            {/* Tier Cards */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {tiers.map((tier) => {
             const tierDef = TIER_DEFINITIONS[tier]
             const displayCycle: TierBillingDisplayCycle =
@@ -660,7 +715,9 @@ export default function UpgradePage() {
               </motion.div>
             )
           })}
-        </div>
+            </div>
+          </div>
+        </details>
 
         {/* Feature Comparison */}
         <motion.div

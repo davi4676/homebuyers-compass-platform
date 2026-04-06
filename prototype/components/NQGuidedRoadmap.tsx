@@ -34,6 +34,9 @@ import {
   Gift,
   BookOpen,
   ExternalLink,
+  Map,
+  Calculator,
+  ChevronRight,
 } from 'lucide-react'
 import { ChatPopover } from '@/components/chatbot/ChatPopover'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
@@ -80,19 +83,31 @@ import {
 } from '@/lib/user-snapshot'
 import HousingBudgetSketchTile from '@/components/HousingBudgetSketchTile'
 import AssistanceProgramsTab from '@/components/journey/AssistanceProgramsTab'
+import { useMilestoneGate } from '@/components/journey/MilestoneGate'
 import FirstGenJourneyHub from '@/components/journey/FirstGenJourneyHub'
 import TierPreviewSwitcher from '@/components/TierPreviewSwitcher'
 import TierBadge from '@/components/TierBadge'
 import { useTierMindset } from '@/components/tier-mindset/TierMindsetProvider'
 import MindsetTag from '@/components/journey/MindsetTag'
-import UpsellCard from '@/components/journey/UpsellCard'
 import DynamicRoadmap from '@/components/journey/DynamicRoadmap'
+import { useICP } from '@/lib/icp-context'
 import LearningCard from '@/components/journey/LearningCard'
 import LockedFeatureCard from '@/components/journey/LockedFeatureCard'
+import UpgradeLockCallout, {
+  upgradeLockSecondaryLinkClass,
+} from '@/components/monetization/UpgradeLockCallout'
 import JourneyOnboardingFlow from '@/components/journey/JourneyOnboardingFlow'
 import MoneyInsights from '@/components/journey/MoneyInsights'
 import WhyItMattersCard from '@/components/journey/WhyItMattersCard'
 import NextStepCard from '@/components/journey/NextStepCard'
+import { SocialProofPulse } from '@/components/journey/SocialProofPulse'
+import { CertificatePreview } from '@/components/journey/CertificatePreview'
+import { MomentumScoreHeader } from '@/components/journey/MomentumScoreHeader'
+import { DailySignalCard } from '@/components/journey/DailySignalCard'
+import { SavingsLedger } from '@/components/journey/SavingsLedger'
+import { readNqActivityLog } from '@/lib/nq-activity-log'
+import { syncNqUnreadFromInboxState } from '@/lib/nq-unread-alerts'
+import { startMomentumTrialFromUi } from '@/lib/start-momentum-trial-client'
 import HomeownerHubSection from '@/components/journey/HomeownerHubSection'
 import ReferralProgramModal from '@/components/referral/ReferralProgramModal'
 import {
@@ -119,6 +134,60 @@ import MoneyTag from '@/components/journey/MoneyTag'
 import { formatCurrency } from '@/lib/calculations'
 import type { ReadinessScore } from '@/lib/calculations'
 import { consumeMoveUpWizardJourneySync } from '@/lib/move-up-journey-sync'
+
+function OverviewRecentActivity() {
+  const [items, setItems] = useState<{ at: number; label: string }[]>([])
+
+  useEffect(() => {
+    const load = () => setItems(readNqActivityLog().slice(0, 3))
+    load()
+    const onStorage = () => load()
+    const onLog = () => load()
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('nq-activity-log-updated', onLog)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('nq-activity-log-updated', onLog)
+    }
+  }, [])
+
+  return (
+    <section
+      className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
+      aria-labelledby="journey-recent-activity-heading"
+    >
+      <h2 id="journey-recent-activity-heading" className="text-sm font-semibold text-slate-800">
+        Recent activity
+      </h2>
+      {items.length === 0 ? (
+        <p className="mt-2 text-sm text-slate-500">No recent activity yet.</p>
+      ) : (
+        <ul className="mt-3 list-none space-y-3 p-0">
+          {items.map((e, i) => (
+            <li
+              key={`${e.at}-${i}`}
+              className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 last:border-0 last:pb-0"
+            >
+              <span className="text-sm text-slate-800">{e.label}</span>
+              <time
+                className="text-xs text-slate-400"
+                dateTime={new Date(e.at).toISOString()}
+              >
+                {new Date(e.at).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </time>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
 
 function ReadinessScoreReveal({ readiness }: { readiness: ReadinessScore }) {
   const reduceMotion = useReducedMotion() ?? false
@@ -171,6 +240,16 @@ function ReadinessScoreReveal({ readiness }: { readiness: ReadinessScore }) {
       </div>
     </span>
   )
+}
+
+function getOverviewWarmth(snapshot: UserSnapshot | null): string {
+  if (snapshot == null) {
+    return 'Run your snapshot once and this page becomes a calm home base for your numbers.'
+  }
+  const total = snapshot.readiness.total
+  if (total >= 60) return "You're making progress!"
+  if (total >= 40) return "You're building momentum."
+  return "You're building a strong foundation."
 }
 
 interface NQGuidedRoadmapProps {
@@ -356,6 +435,7 @@ export default function NQGuidedRoadmap({
   activeTab: activeTabProp,
   requestReferralModalOpen = 0,
 }: NQGuidedRoadmapProps) {
+  const { content } = useICP()
   const { userTier, effectiveTier, previewTier, setPreviewTier, resetPreviewToAccount, mindsetFor } =
     useTierMindset()
   const reduceMotion = useReducedMotion() ?? false
@@ -369,6 +449,7 @@ export default function NQGuidedRoadmap({
   )
   const activeTab = activeTabProp ?? activeTabFromUrl
   const { setJourneyNavChrome } = useJourneyNavChrome()
+  const { tryOpenGate } = useMilestoneGate()
 
   const goTab = useCallback(
     (t: JourneyTab) => {
@@ -421,6 +502,21 @@ export default function NQGuidedRoadmap({
     dismissStartHereCard()
     goTab('budget')
   }, [dismissStartHereCard, goTab])
+
+  const handleCertificatePurchase = useCallback(async () => {
+    try {
+      const res = await fetch('/api/checkout/completion-certificate', { method: 'POST' })
+      const data = (await res.json()) as { url?: string; error?: string }
+      if (!res.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Checkout failed')
+      if (data.url) {
+        window.location.href = data.url
+        return
+      }
+      throw new Error('No checkout URL')
+    } catch {
+      router.push('/upgrade?source=certificate-preview&tier=momentum')
+    }
+  }, [router])
 
   const prevJourneyTabRef = useRef<JourneyTab>(activeTab)
   useEffect(() => {
@@ -612,6 +708,11 @@ export default function NQGuidedRoadmap({
       altUnlock: true,
     },
   ])
+
+  useEffect(() => {
+    syncNqUnreadFromInboxState(activeTab, inboxTasks)
+  }, [activeTab, inboxTasks])
+
   const [learnMoneyFilter, setLearnMoneyFilter] = useState<LearnMoneyFilterId>('all')
   const [budgetMonthlyPair, setBudgetMonthlyPair] = useState({ sketch: 0, base: 0 })
   const [onboardingComplete, setOnboardingComplete] = useState(false)
@@ -726,6 +827,15 @@ export default function NQGuidedRoadmap({
     [step, snapshot]
   )
 
+  useEffect(() => {
+    if (!step || step.phaseOrder !== 1) return
+    const items = personalizeNqStep(step, snapshot).nqPhaseChecklist
+    if (!items?.length) return
+    if (phaseChecklistDone.length !== items.length) return
+    if (!phaseChecklistDone.every(Boolean)) return
+    tryOpenGate('progress', '100')
+  }, [step, snapshot, phaseChecklistDone, tryOpenGate])
+
   const canAccess = useCallback(
     (idx: number) => {
       if (!hasAccessToStep(idx, effectiveTier)) return false
@@ -750,6 +860,29 @@ export default function NQGuidedRoadmap({
     const idx = getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess)
     if (idx !== null) setCurrentStepIndex(idx)
   }
+
+  const [phaseLockModal, setPhaseLockModal] = useState<'trial' | 'hint' | null>(null)
+  const [phaseLockHintText, setPhaseLockHintText] = useState('')
+
+  const onRoadmapLockedPhase = useCallback(
+    (phaseOrder: number) => {
+      const hint =
+        phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)
+          ? 'Complete all milestones in Post-Closing first.'
+          : undefined
+      if (hint) {
+        setPhaseLockHintText(hint)
+        setPhaseLockModal('hint')
+        return
+      }
+      setPhaseLockModal('trial')
+    },
+    [completedSteps]
+  )
+
+  const handleStartTrialFromPhaseLock = useCallback(() => {
+    void startMomentumTrialFromUi('phase_lock', router.push).finally(() => setPhaseLockModal(null))
+  }, [router])
 
   const displayPhaseOrderSafe = step ? Math.max(1, step.phaseOrder) : 1
 
@@ -865,6 +998,11 @@ export default function NQGuidedRoadmap({
   const milestoneIndexInPhase = Math.max(1, indicesInCurrentPhase.indexOf(currentStepIndex) + 1)
   const milestonesInPhase = indicesInCurrentPhase.length
   const phasesDoneCount = countNqGuidedPhasesFullyComplete(completedSteps)
+  const certificatePhasesCompleted = useMemo(
+    () =>
+      ([1, 2, 3, 4, 5, 6, 7] as const).filter((o) => isNqGuidedPhaseFullyComplete(o, completedSteps)).length,
+    [completedSteps]
+  )
 
   const refinancePhaseTitle =
     isRefinanceUser && REFINANCE_PHASE_TITLES[displayPhaseOrder]
@@ -898,18 +1036,11 @@ export default function NQGuidedRoadmap({
 
   const nextStepTitles = NQ_GUIDED_STEPS.slice(currentStepIndex + 1, currentStepIndex + 3).map((s) => s.title)
 
-  const overviewWarmth =
-    snapshot == null
-      ? 'Run your snapshot once and this page becomes a calm home base for your numbers.'
-      : snapshot.readiness.total >= 60
-        ? "You're making progress!"
-        : snapshot.readiness.total >= 40
-          ? "You're building momentum."
-          : "You're building a strong foundation."
-
   const hosaFeatures = TIER_DEFINITIONS[effectiveTier].features.hosa
   const showFullHosaBreakdown =
     Boolean(hosaFeatures.optimizationScore) && tierAtLeast(effectiveTier, 'momentum')
+
+  const overviewWarmth = getOverviewWarmth(snapshot)
 
   const quizEstimatedSavings = useMemo(() => {
     const q = loadQuizDataFromLocalStorage() as { estimatedSavings?: number } | null
@@ -925,6 +1056,17 @@ export default function NQGuidedRoadmap({
   const [soloAdvocateOpen, setSoloAdvocateOpen] = useState(false)
   const [referralCopied, setReferralCopied] = useState(false)
   const [firstGenGlossaryOpen, setFirstGenGlossaryOpen] = useState(false)
+
+  const [xpLeaderboardLockReason, setXpLeaderboardLockReason] = useState(
+    'Complete the quiz to start earning XP. Momentum unlocks levels and the leaderboard.'
+  )
+  useEffect(() => {
+    const p = getUserProgress()
+    if (!p) return
+    setXpLeaderboardLockReason(
+      `${p.totalXp} XP total · ${p.currentStreak}-day streak. Momentum unlocks levels and the leaderboard.`
+    )
+  }, [])
 
   const hasLearnContent = Boolean(
     (displayStep.nqWhyItMattersCards && displayStep.nqWhyItMattersCards.length > 0) ||
@@ -1021,6 +1163,86 @@ export default function NQGuidedRoadmap({
             </motion.div>
           ) : null}
 
+          <DailySignalCard className="!mx-0 !mt-0 max-w-none p-3 sm:p-4" />
+          <SavingsLedger className="!mx-0 mt-0 max-w-none" compact />
+          <MomentumScoreHeader />
+
+          <section
+            className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
+            aria-labelledby="journey-icp-welcome"
+          >
+            <h2
+              id="journey-icp-welcome"
+              className="font-display text-xl font-bold sm:text-2xl"
+              style={{ color: content.accentColor }}
+            >
+              {content.welcomeHeadline}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">{content.welcomeSubtext}</p>
+            {quizTxnMeta.icpType === 'first-gen' ? (
+              <button
+                type="button"
+                onClick={() => goTab('firstgen')}
+                className="mt-4 text-sm font-semibold underline decoration-2 underline-offset-2"
+                style={{ color: content.accentColor }}
+              >
+                First-Gen Hub
+                <ChevronRight className="ml-0.5 inline h-4 w-4 align-text-bottom" aria-hidden />
+              </button>
+            ) : null}
+          </section>
+
+          <section aria-label="Quick actions">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Quick actions</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => goTab('budget')}
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300"
+                style={{ backgroundColor: content.accentColorLight }}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
+                    <span className="font-display text-base font-bold text-slate-900">My Numbers</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">Budget sketch and payment stress-test</p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={() => goTab('assistance')}
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300"
+                style={{ backgroundColor: content.accentColorLight }}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
+                    <span className="font-display text-base font-bold text-slate-900">Free Money</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">DPA and assistance matched to you</p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={() => goTab('phase')}
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300"
+                style={{ backgroundColor: content.accentColorLight }}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Map className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
+                    <span className="font-display text-base font-bold text-slate-900">My Roadmap</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">Phases and next steps</p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+              </button>
+            </div>
+          </section>
+
           <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-start">
             <div className="flex flex-wrap items-center gap-2">
               <TierBadge tier={effectiveTier} className="max-w-sm" />
@@ -1036,50 +1258,21 @@ export default function NQGuidedRoadmap({
             upgradeHref="/upgrade?source=journey-overview-insights&tier=momentum"
           />
           {unclaimedSavingsAmount != null ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-1">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <span className="text-2xl" aria-hidden>
-                  💰
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-amber-900 text-sm">
-                    You have {formatCurrency(unclaimedSavingsAmount)} in unclaimed savings
-                  </p>
-                  <p className="text-amber-700 text-xs">
-                    Based on your profile, you qualify for programs and optimizations you haven&apos;t accessed yet.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => router.push('/upgrade')}
-                  className="shrink-0 bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                >
-                  Claim Now →
-                </button>
-              </div>
-            </div>
+            <UpgradeLockCallout
+              className="mb-1"
+              lockedLabel={`${formatCurrency(unclaimedSavingsAmount)} in unclaimed savings`}
+              reason={"Based on your profile, you qualify for programs and optimizations you haven't accessed yet."}
+              ctaLabel="Claim now — see plans →"
+              ctaHref="/upgrade?source=journey-unclaimed"
+            />
           ) : null}
           {!tierAtLeast(effectiveTier, 'momentum') && activeTab === 'overview' ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Your momentum</p>
-              {(() => {
-                const p = typeof window !== 'undefined' ? getUserProgress() : null
-                if (!p) return <p className="mt-2 text-sm text-slate-600">Complete the quiz to start earning XP.</p>
-                return (
-                  <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-800">
-                    <span>
-                      <strong className="tabular-nums">{p.totalXp}</strong> XP total
-                    </span>
-                    <span>
-                      <strong className="tabular-nums">{p.currentStreak}</strong>-day streak
-                    </span>
-                  </div>
-                )
-              })()}
-              <p className="mt-2 text-xs text-slate-500">
-                Level up to Momentum to unlock levels and the leaderboard.
-              </p>
-            </div>
+            <UpgradeLockCallout
+              lockedLabel="Levels & leaderboard"
+              reason={xpLeaderboardLockReason}
+              ctaLabel="Upgrade to Momentum"
+              ctaHref="/upgrade?source=journey-xp&tier=momentum"
+            />
           ) : null}
           {isRefinanceUser ? (
             <section
@@ -1134,36 +1327,12 @@ export default function NQGuidedRoadmap({
                     </Link>
                   </div>
                 ) : (
-                  <div className="rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-gray-900">Your HOSA Savings Score</h3>
-                      <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full">Preview</span>
-                    </div>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="relative">
-                        <div className="w-20 h-20 rounded-full bg-teal-600 flex items-center justify-center blur-sm">
-                          <span className="text-white font-bold text-2xl">{Math.round(snapshot.readiness.total)}</span>
-                        </div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Lock className="text-teal-700 w-8 h-8" aria-hidden />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-gray-700 text-sm">
-                          Your score is calculated. Upgrade to see your full breakdown and the 3 actions that would
-                          increase it the most.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => router.push('/upgrade')}
-                      className="w-full bg-teal-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-teal-700"
-                    >
-                      Unlock My Full Score →
-                    </button>
-                    <p className="text-xs text-gray-500 text-center mt-2">Includes your top 3 savings opportunities</p>
-                  </div>
+                  <UpgradeLockCallout
+                    lockedLabel="Your HOSA Savings Score (full breakdown)"
+                    reason={`Your score is about ${Math.round(snapshot.readiness.total)}/100. Upgrade to see the full breakdown and the three actions that would increase it the most — including your top savings opportunities.`}
+                    ctaLabel="Unlock my full score →"
+                    ctaHref="/upgrade?source=journey-hosa-preview&tier=momentum"
+                  />
                 )}
               </div>
             ) : (
@@ -1330,7 +1499,7 @@ export default function NQGuidedRoadmap({
           </motion.div>
 
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
-            <p className="text-sm font-bold uppercase tracking-wide text-slate-600">Your phase</p>
+            <p className="text-sm font-bold uppercase tracking-wide text-slate-600">{content.phaseFraming}</p>
             <p className="mt-1 text-sm text-slate-700">
               Phase {displayPhaseOrder} of {phaseTotalForDisplay}. A simple step now keeps your momentum steady.
             </p>
@@ -1342,30 +1511,8 @@ export default function NQGuidedRoadmap({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => goTab('phase')}
-              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-5 py-3 text-sm font-bold text-white shadow-md transition hover:shadow-lg sm:text-base"
-            >
-              View your phase
-            </button>
-            <button
-              type="button"
-              onClick={() => goTab('budget')}
-              className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 sm:text-base"
-            >
-              {budgetSketchLineCap <= 0 ? 'Affordability calculator' : 'Open Budget Sketch'}
-            </button>
-            <button
-              type="button"
-              disabled={!hasLearnContent}
-              onClick={() => goTab('learn')}
-              className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition enabled:hover:border-violet-300 enabled:hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-45 sm:text-base"
-            >
-              Learn along the way
-            </button>
-          </div>
+          <SocialProofPulse />
+          <OverviewRecentActivity />
         </div>
       ) : null}
 
@@ -1391,28 +1538,19 @@ export default function NQGuidedRoadmap({
             upgradeHref="/upgrade?source=journey-budget-insights&tier=momentum"
           />
           {!hasJourneyFeature(effectiveTier, 'affordability_review') ? (
-            <div className="rounded-2xl border border-teal-100/90 bg-millennial-primary-light/30 p-4 shadow-sm sm:p-5">
-              <p className="text-sm font-semibold text-slate-900">
-                {getMomentumToNavigatorUpgradeCopy(quizTxnMeta.icpType)}
-              </p>
-              <MindsetTag className="mt-2 border-teal-100 bg-white/90" mindset={TIER_DEFINITIONS.navigator.mindset} />
-              <Link
-                href="/upgrade?source=budget-inline&tier=navigator"
-                className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2 hover:text-teal-950"
-              >
-                {quizTxnMeta.icpType === 'first-gen' ? 'Get Expert Review →' : 'Explore Navigator+'}
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </div>
+            <UpgradeLockCallout
+              lockedLabel="Expert affordability review"
+              reason={`${getMomentumToNavigatorUpgradeCopy(quizTxnMeta.icpType)} Navigator mindset: “${TIER_DEFINITIONS.navigator.mindset}”`}
+              ctaLabel={quizTxnMeta.icpType === 'first-gen' ? 'Get expert review →' : 'Explore Navigator'}
+              ctaHref="/upgrade?source=budget-inline&tier=navigator"
+            />
           ) : null}
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white/90 p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
             <div>
               <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Stress-test your monthly payment
+                {content.budgetHeadline}
               </h2>
-              <p className="mt-2 text-sm text-slate-600 sm:text-base">
-                Every line is editable. Reset snaps back to your quiz snapshot baseline.
-              </p>
+              <p className="mt-2 text-sm text-slate-600 sm:text-base">{content.budgetSubtext}</p>
             </div>
             <button
               type="button"
@@ -1432,6 +1570,9 @@ export default function NQGuidedRoadmap({
             }}
             onSketchMonthlyCompare={(sketch, base) => {
               setBudgetMonthlyPair({ sketch, base })
+            }}
+            onBudgetSketchFirstCustomized={(monthlyTotal) => {
+              tryOpenGate('discovery', String(Math.round(monthlyTotal)))
             }}
           />
           {budgetMonthlyPair.base > 0 && budgetMonthlyPair.sketch < budgetMonthlyPair.base ? (
@@ -1531,7 +1672,7 @@ export default function NQGuidedRoadmap({
             <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-center sm:gap-3">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-slate-300 sm:max-w-[min(100%,12rem)]" aria-hidden />
               <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
-                Current phase
+                {content.phaseFraming}
               </p>
               <div className="h-px flex-1 bg-gradient-to-l from-transparent via-slate-300 to-slate-300 sm:from-slate-300 sm:via-slate-300" aria-hidden />
             </div>
@@ -1539,7 +1680,10 @@ export default function NQGuidedRoadmap({
             <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 px-5 py-5 shadow-lg ring-1 ring-slate-200/50 sm:px-6 sm:py-6 md:px-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-teal-800/90">
+                  <p
+                    className="text-[11px] font-bold uppercase tracking-[0.22em]"
+                    style={{ color: content.accentColor }}
+                  >
                     Phase {displayPhaseOrder} of {phaseTotalForDisplay}
                   </p>
                   <h1
@@ -1560,12 +1704,21 @@ export default function NQGuidedRoadmap({
                 </div>
               </div>
 
-              <div className="my-4 h-[3px] w-full rounded-full bg-gradient-to-r from-millennial-cta-primary via-teal-500 to-slate-200/80 sm:my-5" aria-hidden />
+              <div
+                className="my-4 h-[3px] w-full rounded-full sm:my-5"
+                aria-hidden
+                style={{
+                  background: `linear-gradient(to right, transparent, ${content.accentColor}, ${content.accentColor}, transparent)`,
+                }}
+              />
 
               <div className="h-1.5 w-full max-w-xl overflow-hidden rounded-full bg-slate-200/90">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-millennial-cta-primary to-teal-600 transition-[width] duration-500 ease-out motion-reduce:transition-none"
-                  style={{ width: `${progressPct}%` }}
+                  className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
+                  style={{
+                    width: `${progressPct}%`,
+                    background: `linear-gradient(to right, ${content.accentColor}, ${content.accentColor})`,
+                  }}
                 />
               </div>
             </div>
@@ -1611,6 +1764,7 @@ export default function NQGuidedRoadmap({
                 getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess) !== null
               }
               onSelectPhase={goToPhase}
+              onLockedPhaseClick={onRoadmapLockedPhase}
               isPhaseComplete={(phaseOrder) => isNqGuidedPhaseFullyComplete(phaseOrder, completedSteps)}
               getPhaseBlockedHint={(phaseOrder) =>
                 phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)
@@ -1627,19 +1781,12 @@ export default function NQGuidedRoadmap({
           {phasesDoneCount >= 3 &&
           tierAtLeast(effectiveTier, 'navigator') &&
           !tierAtLeast(effectiveTier, 'navigator_plus') ? (
-            <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50/90 to-white p-4 shadow-sm sm:p-5">
-              <p className="text-sm font-bold text-amber-950">Major milestone — add a strategy session?</p>
-              <p className="mt-1 text-sm text-slate-700">
-                Navigator+ includes personalized strategy sessions when you&apos;re deep in the journey.
-              </p>
-              <p className="mt-2 text-xs italic text-slate-600">&ldquo;{TIER_DEFINITIONS.navigator_plus.mindset}&rdquo;</p>
-              <Link
-                href="/upgrade?source=phase-milestone&tier=navigator_plus"
-                className="mt-2 inline-flex text-sm font-bold text-amber-900 underline underline-offset-2 hover:text-amber-950"
-              >
-                Upgrade to Navigator+
-              </Link>
-            </div>
+            <UpgradeLockCallout
+              lockedLabel="Major milestone — strategy sessions"
+              reason={`Navigator+ includes personalized strategy sessions when you're deep in the journey. “${TIER_DEFINITIONS.navigator_plus.mindset}”`}
+              ctaLabel="Upgrade to Navigator+"
+              ctaHref="/upgrade?source=phase-milestone&tier=navigator_plus"
+            />
           ) : null}
 
           {nextRefiTitle || nextRepeatBuyerTitle || nextLibraryPhase ? (
@@ -1682,24 +1829,13 @@ export default function NQGuidedRoadmap({
 
                 <div className="relative z-10 border-l-4 border-millennial-cta-primary bg-gradient-to-b from-transparent to-white/70 p-4 pl-4 sm:p-6 sm:pl-6">
                   {showMomentumRoadmapBanner ? (
-                    <div className="mb-4 rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50 to-emerald-50/90 p-4 shadow-sm ring-1 ring-teal-100/80 sm:p-5">
-                      <p className="flex items-start gap-2 text-sm font-semibold text-teal-950">
-                        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-teal-700" aria-hidden />
-                        <span>
-                          You&apos;re viewing a later-phase milestone. Full scripts, checklists, and weekly rhythm for
-                          House Hunting onward are included in{' '}
-                          <strong className="font-bold">{TIER_DEFINITIONS.momentum.name}</strong> — browse the step
-                          below, then upgrade when you want NQ to go deeper with you.
-                        </span>
-                      </p>
-                      <Link
-                        href="/upgrade?source=nq-guided-phase&tier=momentum"
-                        className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
-                      >
-                        Unlock full roadmap with Momentum
-                        <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-                      </Link>
-                    </div>
+                    <UpgradeLockCallout
+                      className="mb-4"
+                      lockedLabel="Later-phase milestone (preview)"
+                      reason={`Full scripts, checklists, and weekly rhythm for House Hunting onward are included in ${TIER_DEFINITIONS.momentum.name}. Browse the step below, then upgrade when you want NQ to go deeper with you.`}
+                      ctaLabel="Unlock full roadmap with Momentum"
+                      ctaHref="/upgrade?source=nq-guided-phase&tier=momentum"
+                    />
                   ) : null}
                   <motion.div variants={itemVariants} className="mb-4 flex items-start gap-3 sm:gap-4">
                       <div className="relative">
@@ -1865,7 +2001,8 @@ export default function NQGuidedRoadmap({
                                     type="checkbox"
                                     checked={done}
                                     onChange={() => togglePhaseChecklist(i)}
-                                    className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
+                                    className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 focus:ring-2 focus:ring-offset-0"
+                                    style={{ accentColor: content.accentColor }}
                                   />
                                   <label
                                     htmlFor={cid}
@@ -1963,6 +2100,12 @@ export default function NQGuidedRoadmap({
               </button>
             </div>
           </section>
+
+          <CertificatePreview
+            phasesCompleted={certificatePhasesCompleted}
+            onPurchase={() => void handleCertificatePurchase()}
+            firstNameFallback={userFirstName}
+          />
         </div>
       ) : null}
 
@@ -2069,23 +2212,29 @@ export default function NQGuidedRoadmap({
                 <p className="mt-1">Extra picks below — then the rest of the Learn library still applies.</p>
               </div>
               <div className="grid gap-3 md:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="font-bold text-slate-900">Qualifying on One Income</p>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Lenders look at your debt-to-income ratio. Here&apos;s how to maximize your qualification on a single
-                    income.
-                  </p>
-                  <Link
-                    href={
-                      tierAtLeast(effectiveTier, 'momentum')
-                        ? '/mortgage-shopping'
-                        : '/upgrade?source=solo-dti&tier=momentum'
-                    }
-                    className="mt-3 inline-flex text-sm font-semibold text-teal-800 underline"
-                  >
-                    Calculate My DTI →
-                  </Link>
-                </div>
+                {tierAtLeast(effectiveTier, 'momentum') ? (
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="font-bold text-slate-900">Qualifying on One Income</p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Lenders look at your debt-to-income ratio. Here&apos;s how to maximize your qualification on a
+                      single income.
+                    </p>
+                    <Link
+                      href="/mortgage-shopping"
+                      className="mt-3 inline-flex text-sm font-semibold text-teal-800 underline"
+                    >
+                      Calculate My DTI →
+                    </Link>
+                  </div>
+                ) : (
+                  <UpgradeLockCallout
+                    className="h-full"
+                    lockedLabel="Qualifying on one income (DTI)"
+                    reason="Lenders size you on debt-to-income. Momentum unlocks the full mortgage-shopping workspace to calculate and stress-test your DTI."
+                    ctaLabel="Calculate my DTI →"
+                    ctaHref="/upgrade?source=solo-dti&tier=momentum"
+                  />
+                )}
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                   <p className="font-bold text-slate-900">The Solo Buyer Advocate Checklist</p>
                   <p className="mt-2 text-sm text-slate-600">
@@ -2107,18 +2256,13 @@ export default function NQGuidedRoadmap({
                     </ol>
                   ) : null}
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="font-bold text-slate-900">Negotiating Without a Partner</p>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Solo buyers can actually negotiate harder — here&apos;s why, and how to use it to your advantage.
-                  </p>
-                  <Link
-                    href="/upgrade?source=solo-negotiation&tier=momentum"
-                    className="mt-3 inline-flex text-sm font-semibold text-teal-800 underline"
-                  >
-                    Get Negotiation Scripts →
-                  </Link>
-                </div>
+                <UpgradeLockCallout
+                  className="h-full"
+                  lockedLabel="Negotiating without a partner"
+                  reason="Solo buyers can negotiate effectively with the right scripts — included with Momentum."
+                  ctaLabel="Get negotiation scripts →"
+                  ctaHref="/upgrade?source=solo-negotiation&tier=momentum"
+                />
               </div>
             </section>
           ) : null}
@@ -2190,19 +2334,12 @@ export default function NQGuidedRoadmap({
           ) : null}
 
           {tierAtLeast(effectiveTier, 'navigator') && !tierAtLeast(effectiveTier, 'navigator_plus') ? (
-            <div className="rounded-2xl border border-violet-200/80 bg-violet-50/70 p-4 sm:p-5">
-              <p className="text-sm font-bold text-violet-950">Want unlimited expert back-and-forth?</p>
-              <p className="mt-1 text-sm text-slate-700">
-                Navigator+ adds unlimited Q&amp;A and weekly check-ins when questions start piling up.
-              </p>
-              <p className="mt-2 text-xs italic text-slate-600">&ldquo;{TIER_DEFINITIONS.navigator_plus.mindset}&rdquo;</p>
-              <Link
-                href="/upgrade?source=learn-human&tier=navigator_plus"
-                className="mt-2 inline-flex text-sm font-bold text-violet-900 underline underline-offset-2 hover:text-violet-950"
-              >
-                Explore Navigator+
-              </Link>
-            </div>
+            <UpgradeLockCallout
+              lockedLabel="Unlimited expert back-and-forth"
+              reason={`Navigator+ adds unlimited Q&A and weekly check-ins when questions start piling up. “${TIER_DEFINITIONS.navigator_plus.mindset}”`}
+              ctaLabel="Explore Navigator+"
+              ctaHref="/upgrade?source=learn-human&tier=navigator_plus"
+            />
           ) : null}
 
           <div>
@@ -2511,33 +2648,12 @@ export default function NQGuidedRoadmap({
                     className="space-y-4 overflow-hidden"
                   >
                     {!tierAtLeast(effectiveTier, 'momentum') ? (
-                      <div className="rounded-2xl border border-[#0d9488]/25 bg-gradient-to-br from-teal-50/90 to-white p-5 shadow-sm">
-                        <h3 className="text-lg font-bold text-slate-900">Unlock the full library</h3>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Momentum unlocks every script and deep guide in this tab — one upgrade instead of repeated
-                          nudges.
-                        </p>
-                        <ul className="mt-3 list-none space-y-2 text-sm text-slate-700">
-                          <li className="flex gap-2">
-                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" aria-hidden />
-                            <span>All scripts &amp; checklists across phases</span>
-                          </li>
-                          <li className="flex gap-2">
-                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" aria-hidden />
-                            <span>Money Finder, savings strategies, and weekly plans</span>
-                          </li>
-                        </ul>
-                        <p className="mt-4 text-lg font-bold text-slate-900">
-                          {TIER_DEFINITIONS.momentum.price.displayMonthly}{' '}
-                          <span className="text-sm font-semibold text-slate-500">billed monthly · cancel anytime</span>
-                        </p>
-                        <Link
-                          href="/upgrade?source=library-bundle&tier=momentum"
-                          className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[#1a6b3c] px-6 py-3.5 text-center text-base font-bold text-white shadow-md transition hover:bg-[#155c33] sm:w-auto"
-                        >
-                          Upgrade to Momentum — $29/mo
-                        </Link>
-                      </div>
+                      <UpgradeLockCallout
+                        lockedLabel="Full journey library"
+                        reason={`All scripts and checklists across phases, Money Finder, savings strategies, and weekly plans — one upgrade instead of repeated nudges. ${TIER_DEFINITIONS.momentum.price.displayMonthly} billed monthly · cancel anytime.`}
+                        ctaLabel="Upgrade to Momentum"
+                        ctaHref="/upgrade?source=library-bundle&tier=momentum"
+                      />
                     ) : (
                       <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
                         You&apos;re on <strong>{TIER_DEFINITIONS.momentum.name}</strong> or higher — open any resource below
@@ -2583,7 +2699,7 @@ export default function NQGuidedRoadmap({
                                   (minT === 'navigator' || minT === 'navigator_plus') ? (
                                     <Link
                                       href={`/upgrade?source=library-item&tier=${minT}`}
-                                      className="ml-2 font-bold text-teal-800 underline underline-offset-2"
+                                      className={`ml-2 text-sm ${upgradeLockSecondaryLinkClass}`}
                                     >
                                       Upgrade to {unlockDef.name}
                                     </Link>
@@ -2669,12 +2785,11 @@ export default function NQGuidedRoadmap({
           </div>
 
           {docTaskTouched && !hasJourneyFeature(effectiveTier, 'journey_concierge') ? (
-            <UpsellCard
-              id="nq-inbox-doc-concierge"
-              title="Documents piling up?"
-              valueLine="Navigator+ adds full journey concierge and weekly check-ins when paperwork gets heavy."
-              nextTier="navigator_plus"
-              upgradeHref="/upgrade?source=inbox-docs&tier=navigator_plus"
+            <UpgradeLockCallout
+              lockedLabel="Documents piling up?"
+              reason={`Navigator+ adds full journey concierge and weekly check-ins when paperwork gets heavy. “${TIER_DEFINITIONS.navigator_plus.mindset}”`}
+              ctaLabel="Upgrade to Navigator+"
+              ctaHref="/upgrade?source=inbox-docs&tier=navigator_plus"
             />
           ) : null}
 
@@ -2796,6 +2911,21 @@ export default function NQGuidedRoadmap({
           aria-labelledby="journey-tab-upgrades"
           className="scroll-mt-28 space-y-6"
         >
+          <div className="mx-4 mt-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 p-5 text-white">
+            <p className="mb-1 text-xs uppercase tracking-widest opacity-80">Limited time</p>
+            <h2 className="mb-1 text-xl font-bold">Try Momentum free for 7 days</h2>
+            <p className="mb-4 text-sm opacity-90">
+              Full access. No credit card required. Cancel anytime.
+            </p>
+            <button
+              type="button"
+              onClick={() => void startMomentumTrialFromUi('upgrades_tab', router.push)}
+              className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-blue-700"
+            >
+              Start my free 7-day trial →
+            </button>
+            <p className="mt-2 text-center text-xs text-white/80">No credit card required · Cancel anytime</p>
+          </div>
           <TierPreviewSwitcher
             currentTier={userTier}
             previewTier={previewTier}
@@ -2819,6 +2949,57 @@ export default function NQGuidedRoadmap({
               : REFERRAL_PROMPT_LS.afterPreApprovalPhase
         }
       />
+
+      {phaseLockModal === 'trial' ? (
+        <div
+          className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="phase-lock-trial-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+            <Lock className="mx-auto mb-3 h-8 w-8 text-slate-300" aria-hidden />
+            <h3 id="phase-lock-trial-title" className="mb-1 text-base font-bold text-slate-900">
+              This phase is part of Momentum
+            </h3>
+            <p className="mb-4 text-sm text-slate-500">Try it free for 7 days. No credit card required.</p>
+            <button
+              type="button"
+              onClick={handleStartTrialFromPhaseLock}
+              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white"
+            >
+              Start my free 7-day trial →
+            </button>
+            <p className="mt-2 text-center text-xs text-slate-400">No credit card required · Cancel anytime</p>
+            <button
+              type="button"
+              onClick={() => setPhaseLockModal(null)}
+              className="mt-3 w-full text-sm text-slate-500"
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {phaseLockModal === 'hint' ? (
+        <div
+          className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/80 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+            <p className="text-sm text-slate-700">{phaseLockHintText}</p>
+            <button
+              type="button"
+              onClick={() => setPhaseLockModal(null)}
+              className="mt-4 w-full rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -2838,18 +3019,12 @@ function ToolTierLockCallout({
   if (userIdx >= reqIdx) return null
   const def = TIER_DEFINITIONS[requiredTier]
   return (
-    <div className="relative mt-4 flex w-full flex-col items-center gap-2 rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-3 text-center">
-      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800">
-        <Lock className="h-4 w-4 text-amber-600" aria-hidden />
-        {toolLabel ?? 'This tool'} is included in {def.name}
-      </span>
-      <p className="text-xs italic text-amber-900/90">&ldquo;{def.mindset}&rdquo;</p>
-      <Link
-        href={`/upgrade?source=nq-guided-tool&tier=${requiredTier}`}
-        className="text-sm font-bold text-amber-800 underline underline-offset-2 hover:text-amber-950"
-      >
-        Upgrade to {def.name}
-      </Link>
-    </div>
+    <UpgradeLockCallout
+      className="mt-4 text-left"
+      lockedLabel={`${toolLabel ?? 'This tool'} (${def.name})`}
+      reason={`This tool is included with ${def.name}. “${def.mindset}”`}
+      ctaLabel={`Upgrade to ${def.name}`}
+      ctaHref={`/upgrade?source=nq-guided-tool&tier=${requiredTier}`}
+    />
   )
 }

@@ -1,9 +1,11 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { Lock } from 'lucide-react'
 import type { UserTier } from '@/lib/tiers'
 import { TIER_DEFINITIONS } from '@/lib/tiers'
 import { getJourneyPhaseByOrder } from '@/lib/journey-phases-data'
+import { useICP } from '@/lib/icp-context'
 
 type DynamicRoadmapProps = {
   phaseOrders: readonly number[]
@@ -11,7 +13,12 @@ type DynamicRoadmapProps = {
   effectiveTier: UserTier
   canAccessPhase: (phaseOrder: number) => boolean
   onSelectPhase: (phaseOrder: number) => void
+  /** Locked phase tapped (tier / access) — e.g. show trial CTA. */
+  onLockedPhaseClick?: (phaseOrder: number) => void
   isPhaseComplete: (phaseOrder: number) => boolean
+  /** Overrides ICP accent from context (rare). */
+  accentColor?: string
+  accentColorLight?: string
   /** When set, shown instead of the generic tier lock copy for locked phases. */
   getPhaseBlockedHint?: (phaseOrder: number) => string | undefined
 }
@@ -22,9 +29,16 @@ export default function DynamicRoadmap({
   effectiveTier,
   canAccessPhase,
   onSelectPhase,
+  onLockedPhaseClick,
   isPhaseComplete,
+  accentColor: accentOverride,
+  accentColorLight: lightOverride,
   getPhaseBlockedHint,
 }: DynamicRoadmapProps) {
+  const { content } = useICP()
+  const accentColor = accentOverride ?? content.accentColor
+  const accentColorLight = lightOverride ?? content.accentColorLight
+
   const phaseCountLabel = `${phaseOrders.length}-phase roadmap`
   return (
     <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-white/90 p-4 shadow-sm sm:p-5">
@@ -43,26 +57,36 @@ export default function DynamicRoadmap({
             !accessible && phaseOrder > 2 && effectiveTier === 'foundations'
           const blockedHint = getPhaseBlockedHint?.(phaseOrder)
 
+          const badgeStyle: CSSProperties | undefined =
+            complete || current ? { backgroundColor: accentColorLight, color: accentColor } : undefined
+
+          const currentRingStyle: CSSProperties | undefined =
+            current && accessible ? { boxShadow: `0 0 0 2px ${accentColor}` } : undefined
+
+          const buttonStyle: CSSProperties = {
+            ['--roadmap-accent' as string]: accentColor,
+            ...currentRingStyle,
+          }
+
           return (
             <li key={phaseOrder}>
               <button
                 type="button"
-                disabled={!accessible}
-                onClick={() => onSelectPhase(phaseOrder)}
-                className={`flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50 ${
+                onClick={() =>
+                  accessible ? onSelectPhase(phaseOrder) : onLockedPhaseClick?.(phaseOrder)
+                }
+                className={`flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--roadmap-accent)] focus-visible:ring-offset-1 ${
                   accessible
-                    ? 'border-slate-200/90 bg-white hover:border-teal-200 hover:bg-teal-50/40'
-                    : 'cursor-not-allowed border-slate-100 bg-slate-50/80 opacity-90'
-                } ${current ? 'ring-2 ring-teal-300/80' : ''}`}
+                    ? 'border-slate-200/90 bg-white hover:border-slate-300'
+                    : 'cursor-pointer border-slate-100 bg-slate-50/80 opacity-90'
+                }`}
+                style={buttonStyle}
               >
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
-                    complete
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : current
-                        ? 'bg-teal-100 text-teal-800'
-                        : 'bg-slate-100 text-slate-600'
+                    complete || current ? '' : 'bg-slate-100 text-slate-600'
                   }`}
+                  style={badgeStyle}
                 >
                   {phaseOrder}
                 </span>

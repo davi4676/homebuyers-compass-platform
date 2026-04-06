@@ -1,11 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Lock } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import type { UserTier } from '@/lib/tiers'
 import { TIER_DEFINITIONS } from '@/lib/tiers'
 import { tierAtLeast } from '@/lib/tiers'
-import MindsetTag from '@/components/journey/MindsetTag'
+import UpgradeLockCallout from '@/components/monetization/UpgradeLockCallout'
 
 type LearningCardProps = {
   userTier: UserTier
@@ -34,26 +34,13 @@ export default function LearningCard({
 
   if (!unlocked) {
     return (
-      <div
-        className={`relative overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/90 p-4 shadow-sm ring-1 ring-slate-100/80 ${className}`}
-      >
-        <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-50/88 p-4 text-center backdrop-blur-[1px]">
-          <Lock className="h-5 w-5 text-slate-500" aria-hidden />
-          <p className="text-sm font-semibold text-slate-800">Included in {def.name}</p>
-          <MindsetTag compact mindset={def.mindset} className="max-w-[95%]" />
-          <Link
-            href={`/upgrade?source=learn-card&tier=${minTier}`}
-            className="mt-1 text-sm font-bold text-teal-700 underline underline-offset-2 hover:text-teal-900"
-          >
-            Upgrade to {def.name}
-          </Link>
-        </div>
-        <span className="inline-block rounded-full bg-violet-100/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900 opacity-60">
-          {tag}
-        </span>
-        <p className="mt-2 font-bold text-slate-400">{title}</p>
-        <p className="mt-1 text-sm text-slate-400">{sub}</p>
-      </div>
+      <UpgradeLockCallout
+        className={className}
+        lockedLabel={`${title} · ${tag}`}
+        reason={`${sub} Included in ${def.name}. “${def.mindset}”`}
+        ctaLabel={`Upgrade to ${def.name}`}
+        ctaHref={`/upgrade?source=learn-card&tier=${minTier}`}
+      />
     )
   }
 

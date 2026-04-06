@@ -15,12 +15,12 @@ export const JOURNEY_TAB_IDS: JourneyTab[] = [
   'overview',
   'phase',
   'budget',
-  'learn',
   'assistance',
-  'firstgen',
+  'learn',
   'library',
   'inbox',
   'upgrades',
+  'firstgen',
 ]
 
 /** Microcopy for tab tooltips (`title` / accessible descriptions). */

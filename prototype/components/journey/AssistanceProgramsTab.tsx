@@ -1,9 +1,10 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Lock, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { formatCurrency } from '@/lib/calculations'
 import PlainEnglishText from '@/components/PlainEnglishText'
 import GlossaryTooltip from '@/components/GlossaryTooltip'
@@ -12,7 +13,15 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { applyPlainEnglishCopy } from '@/lib/plain-english'
 import { trackActivity } from '@/lib/track-activity'
 import { TIER_DEFINITIONS, type UserTier } from '@/lib/tiers'
+import { useMilestoneGate } from '@/components/journey/MilestoneGate'
 import DpaMatchReportSection from '@/components/journey/DpaMatchReportSection'
+import {
+  NQ_DPA_IDENTIFIED_CHANGED_EVENT,
+  NQ_DPA_IDENTIFIED_LS_KEY,
+} from '@/lib/nq-dpa-identified'
+import UpgradeLockCallout from '@/components/monetization/UpgradeLockCallout'
+import { useICP } from '@/lib/icp-context'
+import { hexToRgba } from '@/lib/icp-skin-utils'
 
 const STATES = [
   'AL',
@@ -118,6 +127,8 @@ const PROGRAMS: Record<string, ProgramRow[]> = {
 }
 
 export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier }) {
+  const { content, icpType } = useICP()
+  const { tryOpenGate } = useMilestoneGate()
   const plainEnglish = usePlainEnglish()
   const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const [state, setState] = useState<string>('TX')
@@ -136,6 +147,17 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
   }, [rows, cap])
   const moreCount = Math.max(0, rows.length - visibleRows.length)
   const totalPotential = useMemo(() => rows.reduce((s, r) => s + r.max, 0), [rows])
+
+  useEffect(() => {
+    try {
+      if (totalPotential > 0) {
+        localStorage.setItem(NQ_DPA_IDENTIFIED_LS_KEY, String(totalPotential))
+        window.dispatchEvent(new Event(NQ_DPA_IDENTIFIED_CHANGED_EVENT))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [totalPotential])
 
   const closeVerifyModal = useCallback(() => {
     setVerifyProgram(null)
@@ -203,6 +225,7 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
         email_length: email.length,
       })
       setNotifyStatus('sent')
+      tryOpenGate('money', String(totalPotential))
     } catch {
       setNotifyStatus('error')
     }
@@ -218,15 +241,8 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
       <DpaMatchReportSection userTier={userTier} />
 
       <div className="border-t border-slate-200 pt-8">
-        <PlainEnglishText
-          as="h2"
-          className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
-          text="Assistance programs"
-        />
-        <p className="mt-2 max-w-prose text-slate-600">
-          Programs matched to your profile. We verify current availability before you apply — eligibility confirmed
-          directly with each program administrator.
-        </p>
+        <h2 className="text-xl font-bold text-slate-900">{content.assistanceHeadline}</h2>
+        <p className="mt-1 text-sm text-slate-500">{content.assistanceSubtext}</p>
         <p className="mt-2 text-xs text-slate-500">
           Income limits often reference <GlossaryTooltip term="AMI">AMI</GlossaryTooltip> (area median income). Many offers
           are <GlossaryTooltip term="DPA">DPA</GlossaryTooltip> (down payment assistance).
@@ -258,8 +274,27 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
         {': '}
         <strong>{rows.length}</strong>
         {applyPlainEnglishCopy(' · Total potential assistance (upper range): ', plainEnglish)}
-        <strong className="text-emerald-700">{formatCurrency(totalPotential)}</strong>
+        <strong style={{ color: content.accentColor }}>{formatCurrency(totalPotential)}</strong>
       </p>
+
+      {icpType === 'first-gen' ? (
+        <div
+          className="mb-4 rounded-xl border p-4"
+          style={{
+            borderColor: hexToRgba(content.accentColor, 0.38),
+            backgroundColor: content.accentColorLight,
+          }}
+        >
+          <h3 className="mb-1 text-sm font-semibold" style={{ color: content.accentColor }}>
+            What is down payment assistance?
+          </h3>
+          <p className="text-xs leading-relaxed" style={{ color: hexToRgba(content.accentColor, 0.88) }}>
+            Down payment assistance (DPA) is money from government programs, nonprofits, or employers that helps you cover
+            your down payment or closing costs. You don&apos;t always have to pay it back. Most first-generation buyers
+            qualify for at least one program.
+          </p>
+        </div>
+      ) : null}
 
       <ul className="space-y-3">
         {visibleRows.map((p) => (
@@ -283,36 +318,36 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
                 setNotifyStatus('idle')
                 setVerifyProgram(p)
               }}
-              className="inline-flex shrink-0 items-center justify-center rounded-xl border-2 border-slate-200 px-4 py-2 text-sm font-bold text-slate-800 hover:border-teal-300 hover:bg-teal-50"
+              className="inline-flex shrink-0 items-center justify-center rounded-xl border-2 border-slate-200 px-4 py-2 text-sm font-bold text-slate-800 hover:border-slate-300 hover:bg-slate-50"
             >
               {applyPlainEnglishCopy('Check Eligibility', plainEnglish)}
             </button>
           </li>
         ))}
         {moreCount > 0 ? (
-          <li className="rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50 to-emerald-50/80 p-4 shadow-md ring-1 ring-teal-100/80 sm:p-5">
-            <p className="flex items-start gap-2 text-sm font-semibold text-teal-950">
-              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-teal-700" aria-hidden />
-              <span>
-                You qualify for {moreCount} more programs — upgrade to Momentum to see all of them.
-              </span>
-            </p>
-            <Link
-              href={`/upgrade?source=assistance-dpa&tier=momentum`}
-              className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
-            >
-              See all {rows.length} programs
-              <span aria-hidden> →</span>
-            </Link>
+          <li className="list-none">
+            <UpgradeLockCallout
+              lockedLabel={`${moreCount} more assistance programs`}
+              reason={`Momentum unlocks the full list (${rows.length} programs) matched to your profile, not just the preview you see on Foundations.`}
+              ctaLabel={`See all ${rows.length} programs`}
+              ctaHref="/upgrade?source=assistance-dpa&tier=momentum"
+            />
           </li>
         ) : null}
       </ul>
 
-      <div className="rounded-2xl border border-teal-200 bg-teal-50/80 p-5">
+      <div
+        className="rounded-2xl border p-5"
+        style={{
+          borderColor: hexToRgba(content.accentColor, 0.35),
+          backgroundColor: content.accentColorLight,
+        }}
+      >
         <PlainEnglishText as="p" className="text-sm font-semibold text-slate-800" text="Want the full scan?" />
         <Link
           href="/down-payment-optimizer"
-          className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-teal-800 underline"
+          className="mt-2 inline-flex items-center gap-1 text-sm font-bold underline"
+          style={{ color: content.accentColor }}
         >
           {applyPlainEnglishCopy('Open full down payment optimizer →', plainEnglish)}
         </Link>
@@ -337,6 +372,12 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
               aria-modal="true"
               aria-labelledby="dpa-verify-title"
               className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
+              style={
+                {
+                  ['--assist-accent' as string]: content.accentColor,
+                  ['--assist-ring' as string]: hexToRgba(content.accentColor, 0.35),
+                } as CSSProperties
+              }
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
@@ -363,7 +404,7 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
               </p>
 
               {notifyStatus === 'sent' ? (
-                <p className="mt-6 text-sm font-semibold text-emerald-800">
+                <p className="mt-6 text-sm font-semibold" style={{ color: content.accentColor }}>
                   You&apos;re on the list — we&apos;ll email you when this program is verified.
                 </p>
               ) : (
@@ -388,7 +429,7 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
                           setNotifyStatus('idle')
                         }}
                         placeholder="you@example.com"
-                        className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                        className="mt-1.5 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:border-[color:var(--assist-accent)] focus:ring-[color:var(--assist-ring)]"
                       />
                     </div>
                   ) : null}
@@ -399,7 +440,8 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
                     type="button"
                     disabled={notifyStatus === 'sending'}
                     onClick={() => void submitNotify()}
-                    className="inline-flex w-full items-center justify-center rounded-xl bg-teal-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-teal-800 disabled:opacity-60"
+                    className="inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:brightness-95 disabled:opacity-60"
+                    style={{ backgroundColor: content.accentColor }}
                   >
                     {notifyStatus === 'sending' ? 'Sending…' : 'Notify Me When Verified →'}
                   </button>
@@ -408,7 +450,7 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
 
               <button
                 type="button"
-                className="mt-3 inline-flex w-full items-center justify-center rounded-xl border-2 border-slate-200 px-4 py-3 text-sm font-bold text-slate-800 hover:border-teal-300 hover:bg-teal-50"
+                className="mt-3 inline-flex w-full items-center justify-center rounded-xl border-2 border-slate-200 px-4 py-3 text-sm font-bold text-slate-800 hover:border-slate-300 hover:bg-slate-50"
                 onClick={() => {
                   trackActivity('tool_used', {
                     tool: 'dpa_program_verify_self',

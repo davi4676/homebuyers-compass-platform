@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -60,6 +60,8 @@ import PlainEnglishText from '@/components/PlainEnglishText'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 import ResultsReferralCard from '@/components/results/ResultsReferralCard'
 import { getOrCreateReferralCode } from '@/lib/referral-program'
+import { track } from '@/lib/analytics'
+import { startMomentumTrialFromUi } from '@/lib/start-momentum-trial-client'
 
 const QUICK_SCAN_STEPS = 3
 
@@ -590,6 +592,7 @@ export default function QuizPage() {
     const tt = transactionType || 'first-time'
     const icp = (data.icpType as IcpType) || icpType
     if (icp === 'first-gen') enablePlainEnglishForFirstGenBuyer()
+    track.quizCompleted(icp)
 
     let total = 12450
     try {
@@ -681,6 +684,10 @@ export default function QuizPage() {
   const authSignupRedirect = (path: string) =>
     SIGNUP_DISABLED ? path : `/auth?mode=signup&redirect=${encodeURIComponent(path)}`
 
+  const handleStartTrialFromQuiz = useCallback(() => {
+    void startMomentumTrialFromUi('quiz_result', router.push)
+  }, [router])
+
   const progress = filteredQuestions.length > 0 ? ((currentQuestion + 1) / filteredQuestions.length) * 100 : 0
   const quizStageLine = quizStageLabel(filteredQuestions, currentQuestion, transactionType)
   const hasAnswer = currentQ && (
@@ -759,6 +766,24 @@ export default function QuizPage() {
         <ConversationalIcpQuiz entry={narrativeEntry} />
       ) : (
       <>
+      <div className="max-w-2xl mx-auto px-4 pt-4 sm:px-6 lg:px-8">
+        <div
+          className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-teal-200/90 bg-teal-50/95 px-3 py-1.5 text-xs font-semibold text-teal-950 shadow-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="rounded-md bg-white/90 px-2 py-0.5 font-bold text-teal-900 ring-1 ring-teal-100">
+            {quizMode === 'full' ? 'Full assessment' : 'Quick scan'}
+          </span>
+          <span className="text-teal-800/95">
+            {quizMode === 'quick' && `Step ${quickStep + 1} of ${QUICK_SCAN_STEPS}`}
+            {quizMode === 'quick-teaser' && 'Results preview'}
+            {quizMode === 'full' &&
+              filteredQuestions.length > 0 &&
+              `Question ${currentQuestion + 1} of ${filteredQuestions.length}`}
+          </span>
+        </div>
+      </div>
       {quizMode === 'quick' && (
         <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1112,12 +1137,26 @@ export default function QuizPage() {
                   ✓ Saved! Your plan is ready.
                 </p>
               ) : null}
-              <Link
-                href={authSignupRedirect('/customized-journey')}
-                className="inline-flex w-full items-center justify-center rounded-lg bg-teal-600 px-8 py-4 text-base font-medium text-white shadow-md transition hover:bg-teal-700 sm:w-auto"
-              >
-                Get My Full Plan →
-              </Link>
+              <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-left">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-blue-600">
+                  Free for 7 days
+                </p>
+                <h3 className="mb-1 text-lg font-bold text-slate-900">Try Momentum — no credit card required</h3>
+                <p className="mb-4 text-sm text-slate-600">
+                  Get your personalized roadmap, lender matches, and full DPA report. Cancel anytime. We&apos;ll remind
+                  you before the trial ends.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleStartTrialFromQuiz}
+                  className="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white"
+                >
+                  Start my free 7-day trial →
+                </button>
+                <p className="mt-2 text-center text-xs text-slate-400">
+                  No credit card required · Cancel anytime
+                </p>
+              </div>
               <p className="text-sm text-[#57534e]">
                 Join 6,303 buyers who&apos;ve already found their savings
               </p>

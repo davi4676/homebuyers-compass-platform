@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, Suspense } from 'react'
+import { ReactNode, Suspense, useEffect } from 'react'
 import clsx from 'clsx'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -18,6 +18,11 @@ import Link from 'next/link'
 import { shouldShowLandingQuizMobileSticky } from '@/lib/mobile-marketing-cta'
 import { JourneyNavChromeProvider } from './JourneyNavChromeContext'
 import { TierMindsetProvider } from './tier-mindset/TierMindsetProvider'
+import { ICPProvider } from '@/lib/icp-context'
+import { isCustomizedJourneyPath } from '@/lib/journey-nav-tabs'
+import { MilestoneGateProvider } from '@/components/journey/MilestoneGate'
+import TrialLossAversionModal from '@/components/journey/TrialLossAversionModal'
+import { initAnalytics, trackTrialExpiredIfDowngradedClient } from '@/lib/analytics'
 
 const EmptyFallback = () => (
   <div className="app-page-shell flex flex-col items-center justify-center p-8 text-center">
@@ -33,6 +38,26 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { isAuthenticated } = useAuth()
   const reserveMobileStickyCta = shouldShowLandingQuizMobileSticky(pathname, isAuthenticated)
+  const journeyIcpShell = isCustomizedJourneyPath(pathname)
+
+  useEffect(() => {
+    initAnalytics()
+    trackTrialExpiredIfDowngradedClient()
+  }, [])
+
+  const journeyChrome = (
+    <>
+      <Suspense
+        fallback={
+          <header className="sticky top-0 z-50 h-14 w-full border-b border-millennial-border bg-white/95 backdrop-blur" />
+        }
+      >
+        <TopNav />
+      </Suspense>
+      {children ?? <EmptyFallback />}
+      <JourneyProfilePanel />
+    </>
+  )
 
   return (
     <div
@@ -54,15 +79,13 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           <JourneyProvider>
             <TierMindsetProvider>
             <JourneyNavChromeProvider>
-              <Suspense
-                fallback={
-                  <header className="sticky top-0 z-50 h-14 w-full border-b border-millennial-border bg-white/95 backdrop-blur" />
-                }
-              >
-                <TopNav />
-              </Suspense>
-              {children ?? <EmptyFallback />}
-              <JourneyProfilePanel />
+              {journeyIcpShell ? (
+                <ICPProvider>
+                  <MilestoneGateProvider>{journeyChrome}</MilestoneGateProvider>
+                </ICPProvider>
+              ) : (
+                journeyChrome
+              )}
             </JourneyNavChromeProvider>
             </TierMindsetProvider>
           </JourneyProvider>
@@ -73,6 +96,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       <CookieConsent />
       <OfflineIndicator />
       {process.env.NODE_ENV === 'development' ? <DeveloperTierSwitcher /> : null}
+      <TrialLossAversionModal />
     </div>
   )
 }

@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Lock,
-  CheckCircle,
   AlertCircle,
   ArrowLeft,
   Shield,
@@ -22,9 +21,26 @@ import {
   setUserTier,
   TRIAL_END_DATE_LS,
   isMomentumPaidLocal,
+  MOMENTUM_TRIAL_STORAGE,
+  NQ_TRIAL_START_DATE_LS,
+  MOMENTUM_TRIAL_DAYS,
 } from '@/lib/user-tracking'
+import { track } from '@/lib/analytics'
+import { trackActivity } from '@/lib/track-activity'
+import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
+import PaidWelcomePanel from '@/components/payment/PaidWelcomePanel'
 
 const SUPPORT_MAIL = 'mailto:support@nestquest.com'
+
+function approxTierMrrUsd(tier: UserTier, cycle: string | null): number {
+  const def = TIER_DEFINITIONS[tier]
+  const monthlyCents = def.price.monthly
+  if (monthlyCents == null) return 0
+  if (cycle === 'yearly' && def.price.annual != null) {
+    return Math.round(def.price.annual / 100 / 12)
+  }
+  return monthlyCents / 100
+}
 
 function isStripeUnavailableError(res: Response, message: string): boolean {
   return (
@@ -33,8 +49,6 @@ function isStripeUnavailableError(res: Response, message: string): boolean {
     /STRIPE_SECRET_KEY/i.test(message)
   )
 }
-import { trackActivity } from '@/lib/track-activity'
-import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 
 export default function PaymentPage() {
   const searchParams = useSearchParams()
@@ -99,6 +113,12 @@ export default function PaymentPage() {
         if (tier === 'momentum' && trialEndIso) {
           setUserTier(tier, { recordPurchaseDate: false })
           localStorage.setItem(TRIAL_END_DATE_LS, trialEndIso)
+          localStorage.setItem(MOMENTUM_TRIAL_STORAGE.TRIAL_ENDS_AT, trialEndIso)
+          const endMs = new Date(trialEndIso).getTime()
+          localStorage.setItem(
+            NQ_TRIAL_START_DATE_LS,
+            new Date(endMs - MOMENTUM_TRIAL_DAYS * 86_400_000).toISOString()
+          )
         } else {
           if (tier === 'momentum') markMomentumPaidLocal()
           setUserTier(tier)
@@ -107,6 +127,7 @@ export default function PaymentPage() {
         localStorage.setItem('tierPurchaseDate', new Date().toISOString())
         localStorage.setItem('tierBillingCycle', searchParams.get('cycle') || 'monthly')
         setSuccess(true)
+        track.subscriptionConverted(tier, approxTierMrrUsd(tier, searchParams.get('cycle')))
       })
       .catch(() => {
         if (!cancelled) setError('Payment verification failed. Please try refreshing this page.')
@@ -161,28 +182,16 @@ export default function PaymentPage() {
 
   if (success) {
     return (
-      <div className="app-page-shell flex flex-col items-center justify-center px-4">
-        <div className="mb-6 w-full max-w-md">
+      <div className="app-page-shell flex flex-col items-center justify-center px-4 py-10">
+        <div className="mb-6 w-full max-w-lg">
           <BackToMyJourneyLink />
         </div>
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md mx-auto rounded-xl border border-[#e7e5e4] bg-white p-8 shadow-sm"
+          transition={{ type: 'spring', stiffness: 220, damping: 22 }}
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className="mb-6"
-          >
-            <CheckCircle className="text-[#16a34a] mx-auto" size={64} />
-          </motion.div>
-          <h2 className="font-display text-3xl font-bold mb-4">Payment successful</h2>
-          <p className="text-lg text-[#57534e] mb-6">
-            Welcome to {tierDef.name}! Your plan access is now active.
-          </p>
-          <p className="text-sm text-[#78716c]">Redirecting to your journey…</p>
+          <PaidWelcomePanel tier={selectedTier} />
         </motion.div>
       </div>
     )

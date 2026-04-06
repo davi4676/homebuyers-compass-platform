@@ -1,10 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 import BlurredPreview from '@/components/revenue/BlurredPreview'
 import { trackRevenueEvent } from '@/lib/revenueTracking'
+import { track } from '@/lib/analytics'
 import {
   DPA_MATCH_REPORT_PROGRAMS,
   DPA_REPORT_PURCHASED_LS_KEY,
@@ -97,6 +99,7 @@ export default function DpaMatchReportSection({ userTier }: { userTier: UserTier
       if (sessionStorage.getItem(DPA_SUCCESS_TRACKED_SS_KEY) !== '1') {
         sessionStorage.setItem(DPA_SUCCESS_TRACKED_SS_KEY, '1')
         trackRevenueEvent('dpa_report', 'purchased', 19)
+        track.dpaReportPurchased(19)
       }
     } catch {
       /* ignore */
@@ -327,6 +330,22 @@ export default function DpaMatchReportSection({ userTier }: { userTier: UserTier
               </li>
             ))}
           </ul>
+
+          {purchased && !isPaidTier ? (
+            <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white p-5 shadow-sm ring-1 ring-teal-100/80">
+              <p className="text-sm font-bold text-teal-950">Keep the momentum after the report</p>
+              <p className="mt-2 text-sm leading-relaxed text-teal-900/85">
+                Your one-time report is yours forever. Momentum adds ongoing roadmap depth, budget tools, and full
+                assistance matching as your numbers change.
+              </p>
+              <Link
+                href="/payment?tier=momentum&cycle=monthly"
+                className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-teal-700 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-800 sm:w-auto"
+              >
+                Start Momentum (7-day trial) →
+              </Link>
+            </div>
+          ) : null}
         </div>
       )}
     </section>

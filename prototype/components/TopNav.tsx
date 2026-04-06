@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { Menu, Search, X } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
 import { parseJourneyTabParam, JOURNEY_PAGE_PATH, isCustomizedJourneyPath } from '@/lib/journey-nav-tabs'
-import JourneyTabBar from '@/components/journeys/JourneyTabBar'
+import JourneyNav from '@/components/journey/JourneyNav'
+import { MomentumScoreHeader } from '@/components/journey/MomentumScoreHeader'
 import TierBadge from '@/components/TierBadge'
 import MindsetTag from '@/components/journey/MindsetTag'
 import MoneyTracker from '@/components/journey/MoneyTracker'
@@ -53,6 +53,7 @@ export default function TopNav() {
   }, [isJourneyPage])
 
   return (
+    <>
     <header className="sticky top-0 z-[100] w-full border-b border-millennial-border bg-white/95 shadow-sm backdrop-blur">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between gap-2 md:h-16">
@@ -251,17 +252,11 @@ export default function TopNav() {
 
         {isJourneyPage ? (
           <>
-            <div className="border-t border-millennial-border/70 bg-gradient-to-b from-millennial-primary-light/20 to-white">
-              <div className="px-1 py-0.5 sm:px-2">
-                <JourneyTabBar activeTab={activeJourneyTab} />
-              </div>
-            </div>
+            {activeJourneyTab !== 'overview' ? <MomentumScoreHeader /> : null}
             <div className="h-1 w-full overflow-hidden bg-millennial-border/50" aria-hidden>
-              <motion.div
-                className="h-full bg-gradient-to-r from-millennial-cta-primary via-teal-400 to-millennial-cta-secondary"
-                initial={false}
-                animate={{ width: `${Math.max(0, Math.min(100, chrome.phaseProgressPct))}%` }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              <div
+                className="h-full bg-gradient-to-r from-millennial-cta-primary via-teal-400 to-millennial-cta-secondary transition-[width] duration-[550ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                style={{ width: `${Math.max(0, Math.min(100, chrome.phaseProgressPct))}%` }}
               />
             </div>
             {chrome.moneyTotals ? (
@@ -272,15 +267,15 @@ export default function TopNav() {
           </>
         ) : null}
 
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="relative z-[120] overflow-hidden border-t border-millennial-border bg-white md:hidden"
-            >
+        <div
+          className={`relative z-[120] overflow-hidden bg-white md:hidden transition-[max-height,opacity] duration-200 ease-out ${
+            mobileOpen
+              ? 'max-h-[min(80vh,720px)] border-t border-millennial-border opacity-100'
+              : 'pointer-events-none max-h-0 border-t-0 opacity-0'
+          }`}
+          aria-hidden={!mobileOpen}
+        >
+          {mobileOpen ? (
               <div className="space-y-1 py-4">
                 <Link
                   href="/search"
@@ -477,10 +472,11 @@ export default function TopNav() {
                 </div>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          ) : null}
+        </div>
       </nav>
     </header>
+    {isJourneyPage ? <JourneyNav activeTab={activeJourneyTab} /> : null}
+    </>
   )
 }

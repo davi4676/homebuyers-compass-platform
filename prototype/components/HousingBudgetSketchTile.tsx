@@ -1,9 +1,11 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Info, Lock, RotateCcw } from 'lucide-react'
+import UpgradeLockCallout from '@/components/monetization/UpgradeLockCallout'
 import type { QuizData } from '@/lib/calculations'
 import {
   calculateAffordability,
@@ -14,6 +16,9 @@ import {
 import { NATIONAL_TYPICAL_HOA_MONTHLY } from '@/lib/hoa-fallback'
 import { loadQuizDataFromLocalStorage } from '@/lib/user-snapshot'
 import type { UserSnapshot } from '@/lib/user-snapshot'
+import { updateMomentumFactor } from '@/hooks/use-momentum-factors'
+import { useICP } from '@/lib/icp-context'
+import { hexToRgba } from '@/lib/icp-skin-utils'
 
 const STORAGE_KEY = 'nq_budget_sketch_v1'
 
@@ -112,7 +117,7 @@ const ASSUMPTION_COPY: Record<keyof LineState, { shortLabel: string; detail: str
   },
 }
 
-function AssumptionHint({ fieldKey }: { fieldKey: keyof LineState }) {
+function AssumptionHint({ fieldKey, accentColor }: { fieldKey: keyof LineState; accentColor: string }) {
   const { shortLabel, detail } = ASSUMPTION_COPY[fieldKey]
   const tipId = useId()
   const [open, setOpen] = useState(false)
@@ -131,7 +136,8 @@ function AssumptionHint({ fieldKey }: { fieldKey: keyof LineState }) {
     <span ref={wrapRef} className="relative inline-flex align-middle">
       <button
         type="button"
-        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-1"
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-[color:var(--hint-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--hint-accent)] focus-visible:ring-offset-1"
+        style={{ ['--hint-accent' as string]: accentColor }}
         aria-expanded={open}
         aria-controls={tipId}
         aria-label={`Assumption for ${shortLabel}`}
@@ -156,6 +162,7 @@ export default function HousingBudgetSketchTile({
   snapshot,
   onSketchDirtyChange,
   onSketchMonthlyCompare,
+  onBudgetSketchFirstCustomized,
   maxEditableLineItems = BUDGET_LINE_ORDER.length,
   budgetUpgradeHref = '/upgrade?source=budget-sketch-lines&tier=momentum',
 }: {
@@ -164,18 +171,144 @@ export default function HousingBudgetSketchTile({
   onSketchDirtyChange?: (dirty: boolean) => void
   /** Current sketch monthly total vs snapshot baseline (for savings impact UI). */
   onSketchMonthlyCompare?: (sketchMonthlyTotal: number, baselineMonthlyTotal: number) => void
+  /** Fires once when editable lines first diverge from defaults (milestone gate). */
+  onBudgetSketchFirstCustomized?: (monthlyTotal: number) => void
   /** Foundations: first N lines are editable; remaining lines stay at snapshot defaults. */
   maxEditableLineItems?: number
   budgetUpgradeHref?: string
 }) {
+  const { content, icpType, quizData, hasPersistedQuizState } = useICP()
   const [clientQuiz, setClientQuiz] = useState<QuizData | null>(null)
+  const [currentHomeValue, setCurrentHomeValue] = useState('')
+  const [remainingMortgage, setRemainingMortgage] = useState('')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     setClientQuiz(loadQuizDataFromLocalStorage())
   }, [])
 
-  const quiz = snapshot?.quiz ?? clientQuiz ?? FALLBACK_QUIZ
+  const quiz = useMemo((): QuizData => {
+    const base = snapshot?.quiz ?? clientQuiz ?? FALLBACK_QUIZ
+    return {
+      ...base,
+      income:
+        hasPersistedQuizState && quizData.annualIncome > 0
+          ? quizData.annualIncome
+          : base.income,
+      targetHomePrice:
+        hasPersistedQuizState && quizData.targetHomePrice > 0
+          ? quizData.targetHomePrice
+          : base.targetHomePrice,
+    }
+  }, [snapshot?.quiz, clientQuiz, quizData, hasPersistedQuizState])
+
+  const budgetSkin = useMemo(
+    () => ({
+      accent: content.accentColor,
+      light: content.accentColorLight,
+      border: hexToRgba(content.accentColor, 0.38),
+      ring: hexToRgba(content.accentColor, 0.2),
+      inputFocusRing: hexToRgba(content.accentColor, 0.35),
+    }),
+    [content.accentColor, content.accentColorLight]
+  )
+
+  const equityEstimate = Math.max(
+    0,
+    (Number(currentHomeValue) || 0) - (Number(remainingMortgage) || 0)
+  )
+
+  const moveUpEquityCard =
+    icpType === 'move-up' ? (
+      <div
+        className="mb-4 rounded-xl border p-4"
+        style={{
+          borderColor: budgetSkin.border,
+          backgroundColor: budgetSkin.light,
+        }}
+      >
+        <h3 className="mb-2 text-sm font-semibold" style={{ color: budgetSkin.accent }}>
+          Your equity position
+        </h3>
+        <p className="mb-3 text-xs leading-relaxed" style={{ color: hexToRgba(budgetSkin.accent, 0.85) }}>
+          Enter your current home&apos;s value and remaining mortgage to calculate your buying power.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label
+              className="text-xs font-semibold text-slate-900"
+              style={{ color: budgetSkin.accent }}
+              htmlFor="nq-equity-home-value"
+            >
+              Current home value
+            </label>
+            <div className="relative mt-1">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+                $
+              </span>
+              <input
+                id="nq-equity-home-value"
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                value={currentHomeValue}
+                onChange={(e) => setCurrentHomeValue(e.target.value)}
+                className="w-full rounded-lg border bg-white py-2 pl-7 pr-2 text-sm font-semibold text-slate-900 outline-none focus:ring-2"
+                style={{ borderColor: budgetSkin.border }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = budgetSkin.accent
+                  e.target.style.boxShadow = `0 0 0 2px ${budgetSkin.inputFocusRing}`
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = budgetSkin.border
+                  e.target.style.boxShadow = ''
+                }}
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div>
+            <label
+              className="text-xs font-semibold text-slate-900"
+              style={{ color: budgetSkin.accent }}
+              htmlFor="nq-equity-mortgage"
+            >
+              Remaining mortgage
+            </label>
+            <div className="relative mt-1">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+                $
+              </span>
+              <input
+                id="nq-equity-mortgage"
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                value={remainingMortgage}
+                onChange={(e) => setRemainingMortgage(e.target.value)}
+                className="w-full rounded-lg border bg-white py-2 pl-7 pr-2 text-sm font-semibold text-slate-900 outline-none focus:ring-2"
+                style={{ borderColor: budgetSkin.border }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = budgetSkin.accent
+                  e.target.style.boxShadow = `0 0 0 2px ${budgetSkin.inputFocusRing}`
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = budgetSkin.border
+                  e.target.style.boxShadow = ''
+                }}
+                placeholder="0"
+              />
+            </div>
+          </div>
+        </div>
+        <p className="mt-3 text-center text-sm font-semibold" style={{ color: budgetSkin.accent }}>
+          Est. equity:{' '}
+          <span className="text-lg font-black tabular-nums text-slate-900">{formatCurrency(equityEstimate)}</span>
+        </p>
+      </div>
+    ) : null
   const affordability = snapshot?.affordability ?? calculateAffordability(quiz)
 
   const defaults = useMemo(
@@ -398,6 +531,19 @@ export default function HousingBudgetSketchTile({
     return BUDGET_LINE_ORDER.filter((k) => editableKeys.has(k)).some((k) => lines[k] !== defaultLines[k])
   }, [lines, defaultLines, editableKeys])
 
+  const budgetMilestoneAnnouncedRef = useRef(false)
+  useEffect(() => {
+    if (maxEditableLineItems <= 0) return
+    if (!isDirty) {
+      budgetMilestoneAnnouncedRef.current = false
+      return
+    }
+    if (budgetMilestoneAnnouncedRef.current) return
+    budgetMilestoneAnnouncedRef.current = true
+    updateMomentumFactor('budgetSketchCompleted', true)
+    onBudgetSketchFirstCustomized?.(total)
+  }, [isDirty, maxEditableLineItems, onBudgetSketchFirstCustomized, total])
+
   useEffect(() => {
     onSketchDirtyChange?.(isDirty)
   }, [isDirty, onSketchDirtyChange])
@@ -406,6 +552,15 @@ export default function HousingBudgetSketchTile({
   useEffect(() => {
     onSketchMonthlyCompare?.(total, baselineTotal)
   }, [total, baselineTotal, onSketchMonthlyCompare])
+
+  const cardShellClass = 'relative mt-5 rounded-2xl border p-4 shadow-md sm:p-5'
+  const cardShellStyle: CSSProperties = {
+    borderColor: budgetSkin.border,
+    background: `linear-gradient(to bottom right, ${budgetSkin.light}, white, ${hexToRgba(budgetSkin.accent, 0.07)})`,
+    boxShadow: `0 4px 6px -1px rgb(15 23 42 / 0.07), 0 0 0 1px ${budgetSkin.ring}`,
+    ['--budget-accent' as string]: budgetSkin.accent,
+    ['--budget-focus-ring' as string]: budgetSkin.inputFocusRing,
+  }
 
   if (maxEditableLineItems <= 0) {
     const priceLabel =
@@ -416,16 +571,14 @@ export default function HousingBudgetSketchTile({
         : Math.round(affordability.realisticMax)
 
     return (
-      <div className="relative mt-5 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/40 p-4 shadow-md ring-1 ring-emerald-100/60 sm:p-5">
+      <div className={cardShellClass} style={cardShellStyle}>
         <div className="mb-3">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-emerald-900">
-            Affordability calculator (included with Foundations)
+          <h3 className="text-sm font-bold uppercase tracking-wide" style={{ color: budgetSkin.accent }}>
+            {content.budgetHeadline}
           </h3>
-          <p className="mt-1 text-sm leading-snug text-slate-600">
-            Your comfortable range and monthly payment come from your savings snapshot. Open results to
-            adjust income, debts, down payment, and target price — then see your numbers update here.
-          </p>
+          <p className="mt-1 text-sm leading-snug text-slate-600">{content.budgetSubtext}</p>
         </div>
+        {moveUpEquityCard}
         <div className="grid gap-3 rounded-xl border border-slate-100 bg-white/90 p-4 sm:grid-cols-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{priceLabel}</p>
@@ -444,21 +597,18 @@ export default function HousingBudgetSketchTile({
         </div>
         <Link
           href="/results"
-          className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
+          className="mt-4 inline-flex items-center gap-1 text-sm font-bold underline underline-offset-2 decoration-[color:var(--budget-accent)] opacity-95 hover:opacity-100"
+          style={{ color: budgetSkin.accent }}
         >
           Open full results and adjust inputs
         </Link>
-        <div className="mt-6 border-t border-teal-100/90 pt-4">
-          <p className="text-sm font-semibold text-slate-800">Line-by-line budget sketch</p>
-          <p className="mt-1 text-sm text-slate-600">
-            Stress-test PMI, HOA, taxes, and maintenance line by line — included with Momentum.
-          </p>
-          <Link
-            href={budgetUpgradeHref}
-            className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
-          >
-            Unlock Budget Sketch with Momentum
-          </Link>
+        <div className="mt-6 border-t pt-4" style={{ borderTopColor: budgetSkin.ring }}>
+          <UpgradeLockCallout
+            lockedLabel="Line-by-line budget sketch"
+            reason="Stress-test PMI, HOA, taxes, and maintenance line by line — included with Momentum."
+            ctaLabel="Unlock Budget Sketch with Momentum"
+            ctaHref={budgetUpgradeHref}
+          />
         </div>
       </div>
     )
@@ -474,12 +624,19 @@ export default function HousingBudgetSketchTile({
             {label}
           </label>
           {locked ? (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-teal-900 ring-1 ring-teal-100">
+            <span
+              className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+              style={{
+                backgroundColor: budgetSkin.light,
+                color: budgetSkin.accent,
+                boxShadow: `inset 0 0 0 1px ${budgetSkin.ring}`,
+              }}
+            >
               <Lock className="h-3 w-3" aria-hidden />
               Momentum
             </span>
           ) : null}
-          {!locked ? <AssumptionHint fieldKey={id} /> : null}
+          {!locked ? <AssumptionHint fieldKey={id} accentColor={budgetSkin.accent} /> : null}
         </div>
         <div className="relative">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
@@ -502,13 +659,18 @@ export default function HousingBudgetSketchTile({
                 [id]: Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0,
               }))
             }}
-            className={`w-full rounded-lg border py-2 pl-7 pr-2 text-right text-base font-semibold text-slate-900 shadow-inner outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-300/50 ${
+            className={`w-full rounded-lg border py-2 pl-7 pr-2 text-right text-base font-semibold text-slate-900 shadow-inner outline-none transition focus:border-[color:var(--budget-accent)] focus:ring-2 focus:ring-[color:var(--budget-focus-ring)] ${
               locked
                 ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-500'
                 : edited
-                  ? 'border-amber-300/90 bg-amber-50/50 ring-2 ring-amber-200/70'
-                  : 'border-slate-200 bg-white ring-teal-200'
+                  ? 'border-slate-400 bg-slate-50/90 ring-2 ring-slate-200/90'
+                  : 'border-slate-200 bg-white'
             }`}
+            style={
+              !locked && !edited
+                ? { boxShadow: `inset 0 0 0 1px ${hexToRgba(budgetSkin.accent, 0.14)}` }
+                : undefined
+            }
           />
         </div>
       </div>
@@ -516,11 +678,14 @@ export default function HousingBudgetSketchTile({
   }
 
   return (
-    <div className="relative mt-5 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/40 p-4 shadow-md ring-1 ring-emerald-100/60 sm:p-5">
+    <div className={cardShellClass} style={cardShellStyle}>
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-emerald-900">Monthly budget sketch</h3>
-          <p className="mt-1 text-sm leading-snug text-slate-600">
+          <h3 className="text-sm font-bold uppercase tracking-wide" style={{ color: budgetSkin.accent }}>
+            {content.budgetHeadline}
+          </h3>
+          <p className="mt-1 text-sm leading-snug text-slate-600">{content.budgetSubtext}</p>
+          <p className="mt-2 text-sm leading-snug text-slate-600">
             {(quiz.targetHomePrice ?? 0) > 0 ? 'Target home (snapshot)' : 'Comfortable max (snapshot)'}{' '}
             <strong className="font-semibold text-slate-800">
               {formatCurrency(Math.round(defaults.homePriceBasis))}
@@ -547,6 +712,8 @@ export default function HousingBudgetSketchTile({
         </button>
       </div>
 
+      {moveUpEquityCard}
+
       <div className="overflow-hidden rounded-xl border border-slate-100 bg-white/90 shadow-sm">
         <div className="max-h-[min(52vh,26rem)] overflow-y-auto overscroll-contain md:max-h-[min(60vh,30rem)]">
           <div className="grid grid-cols-1 gap-4 p-3 sm:p-4 md:grid-cols-2 md:gap-x-8 md:gap-y-4">
@@ -558,22 +725,24 @@ export default function HousingBudgetSketchTile({
             {row('maintenanceReserveMonthly', 'Maintenance reserve')}
           </div>
           {maxEditableLineItems < BUDGET_LINE_ORDER.length ? (
-            <div className="border-t border-teal-100/90 bg-teal-50/50 p-4">
-              <p className="flex items-center gap-2 text-sm font-bold text-teal-950">
-                <Lock className="h-4 w-4 shrink-0 text-teal-700" aria-hidden />
-                Stress-test PMI, HOA, and maintenance with Momentum
-              </p>
-              <Link
-                href={budgetUpgradeHref}
-                className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
-              >
-                Upgrade to unlock all line items
-              </Link>
+            <div className="border-t p-3 sm:p-4" style={{ borderTopColor: budgetSkin.ring, backgroundColor: budgetSkin.light }}>
+              <UpgradeLockCallout
+                lockedLabel="All budget lines editable"
+                reason="Stress-test PMI, HOA, maintenance, and more with every line unlocked — included with Momentum."
+                ctaLabel="Upgrade to unlock all line items"
+                ctaHref={budgetUpgradeHref}
+              />
             </div>
           ) : null}
-          <div className="sticky bottom-0 z-10 border-t-2 border-emerald-300/50 bg-gradient-to-r from-emerald-800 via-[rgb(var(--navy))] to-teal-800 px-4 py-4 text-white shadow-[0_-6px_24px_rgba(15,23,42,0.18)] sm:flex sm:items-end sm:justify-between sm:gap-4 sm:px-5 sm:py-5">
+          <div
+            className="sticky bottom-0 z-10 border-t-2 px-4 py-4 text-white shadow-[0_-6px_24px_rgba(15,23,42,0.18)] sm:flex sm:items-end sm:justify-between sm:gap-4 sm:px-5 sm:py-5"
+            style={{
+              borderTopColor: hexToRgba(budgetSkin.accent, 0.55),
+              background: `linear-gradient(to right, ${hexToRgba(budgetSkin.accent, 0.88)} 0%, rgb(var(--navy)) 48%, ${hexToRgba(budgetSkin.accent, 0.78)} 100%)`,
+            }}
+          >
             <div>
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-100/95 sm:text-sm">
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-white/90 sm:text-sm">
                 Total monthly housing
               </span>
             </div>

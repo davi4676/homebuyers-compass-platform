@@ -30,6 +30,12 @@ import {
 import { REFERRED_BY_LS_KEY, getOrCreateReferralCode } from '@/lib/referral-program'
 import { referralSlugFromUser } from '@/lib/referral-slug'
 import { getTrialEndingSoonBanner } from '@/lib/user-tracking'
+import JourneyTodayHero from '@/components/journey/JourneyTodayHero'
+import SessionWinsBanner from '@/components/journey/SessionWinsBanner'
+import { track } from '@/lib/analytics'
+
+const CERT_PURCHASE_TRACKED_SS = 'nq_certificate_purchased_tracked_session'
+const JOURNEY_ENTERED_TRACKED_SS = 'nq_journey_entered_posthog'
 
 export default function CustomizedJourneyPage() {
   const searchParams = useSearchParams()
@@ -73,6 +79,31 @@ export default function CustomizedJourneyPage() {
     () => parseJourneyTabParam(new URLSearchParams(journeySearchKey).get('tab')),
     [journeySearchKey]
   )
+  const overviewMobileCompact = activeJourneyTab === 'overview'
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      if (sessionStorage.getItem(JOURNEY_ENTERED_TRACKED_SS) === '1') return
+      sessionStorage.setItem(JOURNEY_ENTERED_TRACKED_SS, '1')
+    } catch {
+      /* ignore */
+    }
+    const meta = getStoredQuizTransactionMeta()
+    track.journeyEntered(meta.icpType ?? meta.transactionType ?? 'first-time')
+  }, [])
+
+  useEffect(() => {
+    if (searchParams.get('nq_certificate') !== 'success') return
+    if (typeof window === 'undefined') return
+    if (sessionStorage.getItem(CERT_PURCHASE_TRACKED_SS) === '1') return
+    sessionStorage.setItem(CERT_PURCHASE_TRACKED_SS, '1')
+    track.certificatePurchased()
+    const params = new URLSearchParams(journeySearchKey)
+    params.delete('nq_certificate')
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [searchParams, journeySearchKey, pathname, router])
 
   useEffect(() => {
     if (activeJourneyTab !== 'firstgen') return
@@ -85,12 +116,18 @@ export default function CustomizedJourneyPage() {
     router.replace(journeyTabHrefPreservingSearch(base, journeySearchKey, 'overview'))
   }, [activeJourneyTab, journeySearchKey, pathname, router])
 
-  const referralSlug = useMemo(() => {
-    const fromUser = referralSlugFromUser(user ?? null)
-    if (fromUser && fromUser !== 'yourname') return fromUser
-    if (typeof window !== 'undefined') return getOrCreateReferralCode(user?.email ?? null)
-    return fromUser
-  }, [user])
+  const referralFromAccount = useMemo(
+    () => referralSlugFromUser(user ?? null),
+    [user]
+  )
+  const [referralSlug, setReferralSlug] = useState(referralFromAccount)
+  useEffect(() => {
+    setReferralSlug(referralFromAccount)
+  }, [referralFromAccount])
+  useEffect(() => {
+    if (referralFromAccount && referralFromAccount !== 'yourname') return
+    setReferralSlug(getOrCreateReferralCode(user?.email ?? null))
+  }, [referralFromAccount, user?.email])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -194,12 +231,25 @@ export default function CustomizedJourneyPage() {
   }
 
   return (
-    <div className="app-page-shell text-base leading-relaxed md:text-lg">
+    <div className="app-page-shell ml-0 pb-20 text-base leading-relaxed sm:ml-52 sm:pb-0 md:text-lg">
+      {/* Bottom (mobile) + left sidebar (desktop) nav: <JourneyNav /> in TopNav */}
       <UserJourneyTracker />
 
-      <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-2xl border border-millennial-border bg-white shadow-xl">
-          <div className="relative flex min-h-[8.5rem] items-center overflow-hidden sm:min-h-[9.5rem]">
+      <div
+        className={`mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${overviewMobileCompact ? 'pt-2 max-md:pt-2 md:pt-4' : 'pt-4'}`}
+      >
+        <div
+          className={`relative overflow-hidden rounded-2xl border border-millennial-border bg-white shadow-xl ${
+            overviewMobileCompact ? 'max-md:shadow-md' : ''
+          }`}
+        >
+          <div
+            className={`relative flex items-center overflow-hidden ${
+              overviewMobileCompact
+                ? 'min-h-0 max-md:min-h-[4.25rem] sm:min-h-[9.5rem]'
+                : 'min-h-[8.5rem] sm:min-h-[9.5rem]'
+            }`}
+          >
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{
@@ -207,16 +257,24 @@ export default function CustomizedJourneyPage() {
                   'linear-gradient(to top, rgba(250,250,245,0.96) 0%, rgba(250,250,245,0.4) 50%, transparent 100%), url(https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80)',
               }}
             />
-            <div className="relative z-10 flex w-full flex-col justify-center gap-1.5 px-6 py-5 sm:gap-2 sm:px-10">
+            <div
+              className={`relative z-10 flex w-full flex-col justify-center sm:gap-2 sm:px-10 ${
+                overviewMobileCompact ? 'gap-0 px-4 py-3 sm:py-5' : 'gap-1.5 px-6 py-5'
+              }`}
+            >
               <PlainEnglishText
                 as="p"
-                className="font-display text-2xl font-extrabold text-millennial-text sm:text-3xl"
+                className={`font-display font-extrabold text-millennial-text sm:text-3xl ${
+                  overviewMobileCompact ? 'text-xl sm:text-3xl' : 'text-2xl'
+                }`}
                 text={user?.firstName ? `${user.firstName}'s home buying Roadmap` : 'Your home buying Roadmap'}
               />
               <PlainEnglishText
                 as="p"
-                className="text-base font-medium text-millennial-text-muted sm:text-lg"
-                text="Seven calm tabs — overview, your phase, sketch, learn, library, inbox, and upgrades."
+                className={`text-base font-medium text-millennial-text-muted sm:text-lg ${
+                  overviewMobileCompact ? 'max-md:hidden' : ''
+                }`}
+                text="Start with Today below — then use the other tabs anytime for learn, library, programs, inbox, and upgrades."
               />
             </div>
           </div>
@@ -308,8 +366,16 @@ export default function CustomizedJourneyPage() {
         ) : null}
       </div>
 
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
+      <main
+        className={`mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${
+          overviewMobileCompact ? 'py-4 max-md:py-3 md:py-14' : 'py-10 md:py-14'
+        }`}
+      >
         <div className="min-w-0 flex-1">
+          <div className={overviewMobileCompact ? 'max-md:hidden' : undefined}>
+            <SessionWinsBanner />
+            <JourneyTodayHero searchKey={journeySearchKey} />
+          </div>
           <div className="mb-6 space-y-3">
             {showPlainEnglishCallout ? (
               <motion.div

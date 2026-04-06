@@ -33,6 +33,9 @@ export const MOMENTUM_TRIAL_STORAGE = {
 /** Unified trial end for banners (no-card trial, Stripe Checkout trial, etc.). */
 export const TRIAL_END_DATE_LS = 'trialEndDate'
 
+/** Trial start (ISO) — used for loss-aversion timing (e.g. calendar day 6). */
+export const NQ_TRIAL_START_DATE_LS = 'nq_trial_start_date'
+
 export const MOMENTUM_TRIAL_DAYS = 7
 
 function readTrialEndsAtIso(): string | null {
@@ -40,7 +43,7 @@ function readTrialEndsAtIso(): string | null {
   return localStorage.getItem(MOMENTUM_TRIAL_STORAGE.TRIAL_ENDS_AT)
 }
 
-function isMomentumPaidLocal(): boolean {
+export function isMomentumPaidLocal(): boolean {
   if (typeof window === 'undefined') return false
   return localStorage.getItem(MOMENTUM_TRIAL_STORAGE.PAID) === '1'
 }
@@ -53,6 +56,7 @@ export function clearMomentumTrialLocalFlags(): void {
   localStorage.removeItem(MOMENTUM_TRIAL_STORAGE.TRIAL_ENDS_AT)
   localStorage.removeItem(MOMENTUM_TRIAL_STORAGE.PAID)
   localStorage.removeItem(TRIAL_END_DATE_LS)
+  localStorage.removeItem(NQ_TRIAL_START_DATE_LS)
 }
 
 /**
@@ -63,6 +67,7 @@ export function markMomentumPaidLocal(): void {
   localStorage.setItem(MOMENTUM_TRIAL_STORAGE.PAID, '1')
   localStorage.removeItem(MOMENTUM_TRIAL_STORAGE.TRIAL_ENDS_AT)
   localStorage.removeItem(TRIAL_END_DATE_LS)
+  localStorage.removeItem(NQ_TRIAL_START_DATE_LS)
 }
 
 /**
@@ -70,12 +75,41 @@ export function markMomentumPaidLocal(): void {
  */
 export function startMomentumTrialLocal(): void {
   if (typeof window === 'undefined') return
+  const starts = new Date().toISOString()
   const ends = new Date(Date.now() + MOMENTUM_TRIAL_DAYS * 86_400_000).toISOString()
+  localStorage.setItem(NQ_TRIAL_START_DATE_LS, starts)
   localStorage.setItem(MOMENTUM_TRIAL_STORAGE.TRIAL_ENDS_AT, ends)
   localStorage.setItem(TRIAL_END_DATE_LS, ends)
   localStorage.removeItem(MOMENTUM_TRIAL_STORAGE.PAID)
   setUserTierInternal('momentum', { recordPurchaseDate: false })
   window.dispatchEvent(new CustomEvent('tierChanged', { detail: { tier: 'momentum' as const } }))
+}
+
+/**
+ * 1-based day within the 7-day window (day 1 = first 24h after `nq_trial_start_date`).
+ * Backfills `nq_trial_start_date` from trial end if missing (older sessions).
+ */
+export function getMomentumTrialCalendarDay(): number {
+  if (typeof window === 'undefined') return 0
+  if (isMomentumPaidLocal()) return 0
+  const ends = readTrialEndsAtIso() ?? localStorage.getItem(TRIAL_END_DATE_LS)
+  if (!ends) return 0
+  const endMs = new Date(ends).getTime()
+  if (Date.now() > endMs) return 0
+
+  let startIso = localStorage.getItem(NQ_TRIAL_START_DATE_LS)
+  if (!startIso || Number.isNaN(new Date(startIso).getTime())) {
+    startIso = new Date(endMs - MOMENTUM_TRIAL_DAYS * 86_400_000).toISOString()
+    try {
+      localStorage.setItem(NQ_TRIAL_START_DATE_LS, startIso)
+    } catch {
+      /* ignore */
+    }
+  }
+  const startMs = new Date(startIso).getTime()
+  const elapsedMs = Date.now() - startMs
+  const day = Math.floor(elapsedMs / 86_400_000) + 1
+  return Math.min(MOMENTUM_TRIAL_DAYS, Math.max(1, day))
 }
 
 export function getMomentumTrialInfo(): {
@@ -120,6 +154,7 @@ export function applyMomentumTrialExpiryIfNeeded(): void {
   localStorage.setItem(STORAGE_KEYS.TIER, 'foundations')
   localStorage.removeItem(MOMENTUM_TRIAL_STORAGE.TRIAL_ENDS_AT)
   localStorage.removeItem(TRIAL_END_DATE_LS)
+  localStorage.removeItem(NQ_TRIAL_START_DATE_LS)
   setTierCookie('foundations')
   window.dispatchEvent(new CustomEvent('tierChanged', { detail: { tier: 'foundations' as const } }))
 }

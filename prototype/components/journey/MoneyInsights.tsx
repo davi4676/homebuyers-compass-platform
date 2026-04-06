@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, Lock, X } from 'lucide-react'
+import { ChevronRight, X } from 'lucide-react'
+import UpgradeLockCallout from '@/components/monetization/UpgradeLockCallout'
 import { formatCurrency } from '@/lib/calculations'
 import type { PersistedMoneyTrackers } from '@/lib/money-tracker-storage'
 
@@ -109,22 +110,13 @@ export default function MoneyInsights({
                   <InsightCol title="Alternative options" accent="text-violet-900" items={alternativeDetails} />
                 </div>
                 {!detailsUnlocked ? (
-                  <div className="pointer-events-auto mt-4 rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50 to-emerald-50/80 p-4 shadow-md ring-1 ring-teal-100/80">
-                    <p className="flex items-center gap-2 text-sm font-bold text-teal-950">
-                      <Lock className="h-4 w-4 shrink-0 text-teal-700" aria-hidden />
-                      Full HOSA-style breakdown is included with Momentum
-                    </p>
-                    <p className="mt-1.5 text-sm text-slate-700">
-                      You can still see headline totals above — upgrade to unpack savings, funds, and alternatives line
-                      by line.
-                    </p>
-                    <Link
-                      href={upgradeHref}
-                      className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900 underline decoration-teal-600/60 underline-offset-2 hover:text-teal-950"
-                    >
-                      Upgrade to Momentum
-                      <ChevronRight className="h-4 w-4" aria-hidden />
-                    </Link>
+                  <div className="pointer-events-auto mt-4">
+                    <UpgradeLockCallout
+                      lockedLabel="Full savings, funds & alternatives breakdown"
+                      reason="Headline totals stay visible above — upgrade to unpack savings, funds, and alternative options line by line (HOSA-style detail)."
+                      ctaLabel="Upgrade to Momentum"
+                      ctaHref={upgradeHref}
+                    />
                   </div>
                 ) : null}
               </div>
