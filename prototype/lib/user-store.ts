@@ -52,6 +52,10 @@ export interface StoredUser {
     startedAt: string
     until: string
   }
+  /** ISO date — first day of homebuying journey (profile). */
+  journeyStartDate?: string
+  currentSavings?: number
+  savingsGoal?: number
 }
 
 const DATA_DIR = path.join(process.cwd(), '.data')
@@ -127,6 +131,7 @@ export function createUser(data: {
     marketingEmailsOptIn: true,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     dataSharingConsent: true,
+    journeyStartDate: now,
   }
   users.push(user)
   writeUsers(users)
@@ -190,5 +195,8 @@ export function toPublicUser(u: StoredUser): User {
     dataSharingConsent: u.dataSharingConsent,
     termsAcceptedAt: u.termsAcceptedAt,
     privacyPolicyAcceptedAt: u.privacyPolicyAcceptedAt,
+    journeyStartDate: u.journeyStartDate ?? u.createdAt,
+    currentSavings: u.currentSavings,
+    savingsGoal: u.savingsGoal,
   }
 }

@@ -79,6 +79,12 @@ export interface User {
   utmMedium?: string;
   utmCampaign?: string;
   referredByUserId?: string;
+
+  /** ISO date — start of the homebuying journey (defaults to account createdAt server-side). */
+  journeyStartDate?: string;
+  /** Savings progress for journey header (optional; client may fall back to quiz). */
+  currentSavings?: number;
+  savingsGoal?: number;
 }
 
 export interface CoBorrower {

@@ -31,7 +31,14 @@ import { REFERRED_BY_LS_KEY, getOrCreateReferralCode } from '@/lib/referral-prog
 import { referralSlugFromUser } from '@/lib/referral-slug'
 import { getTrialEndingSoonBanner } from '@/lib/user-tracking'
 import JourneyTodayHero from '@/components/journey/JourneyTodayHero'
+import JourneyPhaseProgressRing from '@/components/journey/JourneyPhaseProgressRing'
+import JourneyProgressIdentityHeader from '@/components/journey/JourneyProgressIdentityHeader'
 import SessionWinsBanner from '@/components/journey/SessionWinsBanner'
+import { buildUserSnapshot, loadQuizDataFromLocalStorage } from '@/lib/user-snapshot'
+import type { UserSnapshot } from '@/lib/user-snapshot'
+import { useJourneyPhaseRingProgress } from '@/hooks/use-journey-phase-ring'
+import { calculateMomentumScore, getMomentumColor } from '@/lib/momentum-score'
+import { useMomentumFactors } from '@/hooks/use-momentum-factors'
 import { track } from '@/lib/analytics'
 
 const CERT_PURCHASE_TRACKED_SS = 'nq_certificate_purchased_tracked_session'
@@ -50,6 +57,7 @@ export default function CustomizedJourneyPage() {
   const [onboardingNotify, setOnboardingNotify] = useState<OnboardingNotificationDef | null>(null)
   const [referralModalKick, setReferralModalKick] = useState(0)
   const [showRefLandingBanner, setShowRefLandingBanner] = useState(false)
+  const [identitySnapshot, setIdentitySnapshot] = useState<UserSnapshot | null>(null)
 
   const plainEnglishTooltip =
     'Plain English Mode replaces financial jargon with simple explanations. Perfect if this is your first time buying a home.'
@@ -79,7 +87,26 @@ export default function CustomizedJourneyPage() {
     () => parseJourneyTabParam(new URLSearchParams(journeySearchKey).get('tab')),
     [journeySearchKey]
   )
-  const overviewMobileCompact = activeJourneyTab === 'overview'
+  const overviewMobileCompact = activeJourneyTab === 'today'
+  const momentumFactors = useMomentumFactors()
+  const heroRingAccent = getMomentumColor(calculateMomentumScore(momentumFactors))
+  const heroPhaseProgress = useJourneyPhaseRingProgress()
+
+  useEffect(() => {
+    const q = loadQuizDataFromLocalStorage()
+    setIdentitySnapshot(q ? buildUserSnapshot(q, { firstName: user?.firstName }) : null)
+  }, [user?.firstName])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'quizData') return
+      const q = loadQuizDataFromLocalStorage()
+      setIdentitySnapshot(q ? buildUserSnapshot(q, { firstName: user?.firstName }) : null)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [user?.firstName])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -106,14 +133,7 @@ export default function CustomizedJourneyPage() {
   }, [searchParams, journeySearchKey, pathname, router])
 
   useEffect(() => {
-    if (activeJourneyTab !== 'firstgen') return
-    if (typeof window === 'undefined') return
-    if (getStoredQuizTransactionMeta().icpType === 'first-gen') return
-    const base =
-      pathname === JOURNEY_PAGE_PATH || (pathname?.startsWith(`${JOURNEY_PAGE_PATH}/`) ?? false)
-        ? JOURNEY_PAGE_PATH
-        : pathname || JOURNEY_PAGE_PATH
-    router.replace(journeyTabHrefPreservingSearch(base, journeySearchKey, 'overview'))
+    void activeJourneyTab
   }, [activeJourneyTab, journeySearchKey, pathname, router])
 
   const referralFromAccount = useMemo(
@@ -258,24 +278,41 @@ export default function CustomizedJourneyPage() {
               }}
             />
             <div
-              className={`relative z-10 flex w-full flex-col justify-center sm:gap-2 sm:px-10 ${
-                overviewMobileCompact ? 'gap-0 px-4 py-3 sm:py-5' : 'gap-1.5 px-6 py-5'
+              className={`relative z-10 flex w-full flex-col justify-center sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-10 ${
+                overviewMobileCompact ? 'gap-3 px-4 py-3 sm:py-5' : 'gap-4 px-6 py-5'
               }`}
             >
-              <PlainEnglishText
-                as="p"
-                className={`font-display font-extrabold text-millennial-text sm:text-3xl ${
-                  overviewMobileCompact ? 'text-xl sm:text-3xl' : 'text-2xl'
+              <div className="min-w-0 flex-1 text-center sm:text-left">
+                <div
+                  className="rounded-xl px-1 py-1"
+                  style={{
+                    background: 'var(--surface)',
+                    boxShadow: 'var(--shadow-sm)',
+                    borderRadius: 'var(--radius)',
+                  }}
+                >
+                  <JourneyProgressIdentityHeader user={user ?? null} snapshot={identitySnapshot} />
+                </div>
+                <PlainEnglishText
+                  as="p"
+                  className={`mt-3 text-base font-medium text-millennial-text-muted sm:text-lg ${
+                    overviewMobileCompact ? 'max-md:hidden' : ''
+                  }`}
+                  text="Start with Today below — then use the other tabs anytime for learn, library, programs, inbox, and upgrades."
+                />
+              </div>
+              <div
+                className={`flex shrink-0 justify-center ${
+                  overviewMobileCompact ? 'scale-90 sm:scale-100' : ''
                 }`}
-                text={user?.firstName ? `${user.firstName}'s home buying Roadmap` : 'Your home buying Roadmap'}
-              />
-              <PlainEnglishText
-                as="p"
-                className={`text-base font-medium text-millennial-text-muted sm:text-lg ${
-                  overviewMobileCompact ? 'max-md:hidden' : ''
-                }`}
-                text="Start with Today below — then use the other tabs anytime for learn, library, programs, inbox, and upgrades."
-              />
+              >
+                <JourneyPhaseProgressRing
+                  pct={heroPhaseProgress.pct}
+                  size={overviewMobileCompact ? 'md' : 'lg'}
+                  accentColor={heroRingAccent}
+                  className={overviewMobileCompact ? 'sm:mr-1' : ''}
+                />
+              </div>
             </div>
           </div>
         </div>

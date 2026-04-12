@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { DM_Sans } from 'next/font/google'
+import { DM_Sans, DM_Serif_Display } from 'next/font/google'
 import './globals.css'
 import ClientLayout from '@/components/ClientLayout'
 
@@ -7,6 +7,12 @@ const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-dm-sans',
+})
+
+const dmSerifDisplay = DM_Serif_Display({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-dm-serif',
 })
 
 const siteTitle = 'NestQuest — Save $10,000–$15,000 on Your Home Purchase'
@@ -40,13 +46,13 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body
-        className={`${dmSans.variable} font-body min-h-full antialiased bg-millennial-bg text-millennial-text font-normal`}
+        className={`${dmSans.variable} ${dmSerifDisplay.variable} font-body min-h-full antialiased bg-millennial-bg text-millennial-text font-normal`}
       >
         <a href="#main-content" className="skip-link">
           Skip to main content

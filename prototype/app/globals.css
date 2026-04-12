@@ -67,6 +67,17 @@ textarea {
   --revenue-partner-border: #99f6e4; /* Teal 200 — partner card border */
   --revenue-muted: #6b7280; /* Gray 500 — secondary text */
   --revenue-success: #10b981; /* Emerald 500 — confirmation states */
+
+  /* Journey progress identity (customized journey) */
+  --primary: #2d6a4f;
+  --accent: #f4a261;
+  --surface: #f9f7f4;
+  --muted: #b7c9c0;
+  --success: #52b788;
+  --text: #1a2e25;
+  --radius: 16px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 html {
@@ -139,5 +150,38 @@ body {
     opacity: 0.92;
     filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.65));
   }
+}
+
+/* Journey milestone confetti (CSS-only) */
+@keyframes nq-confetti-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--qx, 0px)), calc(-50% + var(--qy, -60px))) scale(0.35);
+    opacity: 0;
+  }
+}
+
+.nq-confetti-dot {
+  animation: nq-confetti-pop 1.15s ease-out forwards;
+}
+
+/* Visit streak flame — pulse every 5s */
+@keyframes nq-flame-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.12);
+    filter: brightness(1.12);
+  }
+}
+
+.nq-streak-flame {
+  animation: nq-flame-pulse 5s ease-in-out infinite;
 }
 

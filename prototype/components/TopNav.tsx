@@ -11,6 +11,7 @@ import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
 import { parseJourneyTabParam, JOURNEY_PAGE_PATH, isCustomizedJourneyPath } from '@/lib/journey-nav-tabs'
 import JourneyNav from '@/components/journey/JourneyNav'
 import { MomentumScoreHeader } from '@/components/journey/MomentumScoreHeader'
+import VisitStreakBadge from '@/components/journey/VisitStreakBadge'
 import TierBadge from '@/components/TierBadge'
 import MindsetTag from '@/components/journey/MindsetTag'
 import MoneyTracker from '@/components/journey/MoneyTracker'
@@ -227,7 +228,10 @@ export default function TopNav() {
             ) : null}
             {isAuthenticated ? (
               <ErrorBoundary fallback={null}>
-                <UserMenu className="hidden md:block" />
+                <div className="flex items-center gap-2">
+                  {isJourneyPage ? <VisitStreakBadge /> : null}
+                  <UserMenu className="hidden md:block" />
+                </div>
               </ErrorBoundary>
             ) : (
               <>
