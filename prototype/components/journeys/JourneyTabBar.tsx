@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useSafeSearchParams } from '@/lib/use-safe-search-params'
 import {
   Home,
   Map,
@@ -87,7 +88,7 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
   const router = useRouter()
   const pathname = usePathname()
   const tabLinkBase = journeyTabLinkBasePath(pathname)
-  const searchParams = useSearchParams()
+  const searchParams = useSafeSearchParams()
   const searchKey = searchParams.toString()
   const { chrome } = useJourneyNavChrome()
   const tabRefs = useRef<(HTMLAnchorElement | null)[]>([])

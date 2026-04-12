@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import {
   useState,
@@ -8,10 +8,10 @@ import {
   useCallback,
   type ReactNode,
 } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useSafeSearchParams } from '@/lib/use-safe-search-params'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   Lock,
   ArrowRight,
@@ -85,7 +85,6 @@ import HousingBudgetSketchTile from '@/components/HousingBudgetSketchTile'
 import AssistanceProgramsTab from '@/components/journey/AssistanceProgramsTab'
 import { useMilestoneGate } from '@/components/journey/MilestoneGate'
 import FirstGenJourneyHub from '@/components/journey/FirstGenJourneyHub'
-import TierPreviewSwitcher from '@/components/TierPreviewSwitcher'
 import TierBadge from '@/components/TierBadge'
 import { useTierMindset } from '@/components/tier-mindset/TierMindsetProvider'
 import MindsetTag from '@/components/journey/MindsetTag'
@@ -436,11 +435,11 @@ export default function NQGuidedRoadmap({
   requestReferralModalOpen = 0,
 }: NQGuidedRoadmapProps) {
   const { content } = useICP()
-  const { userTier, effectiveTier, previewTier, setPreviewTier, resetPreviewToAccount, mindsetFor } =
+  const { userTier, effectiveTier, mindsetFor } =
     useTierMindset()
   const reduceMotion = useReducedMotion() ?? false
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const searchParams = useSafeSearchParams()
   /** `toString()` dependency: ensures updates on client query changes (some Next versions reuse the ReadonlyURLSearchParams ref). */
   const searchKey = searchParams.toString()
   const activeTabFromUrl = useMemo(
@@ -464,7 +463,7 @@ export default function NQGuidedRoadmap({
   )
 
   useEffect(() => {
-    if (activeTab !== 'library' || typeof window === 'undefined') return
+    if (activeTab !== 'learn' || typeof window === 'undefined') return
     sessionStorage.setItem('nq_library_seen', '1')
     setJourneyNavChrome({ libraryHasNew: false })
   }, [activeTab, setJourneyNavChrome])
@@ -500,7 +499,7 @@ export default function NQGuidedRoadmap({
   const goToBudgetFromStartHere = useCallback(() => {
     trackActivity('tool_used', { tool: 'journey_start_here_budget' })
     dismissStartHereCard()
-    goTab('budget')
+    goTab('plan')
   }, [dismissStartHereCard, goTab])
 
   const handleCertificatePurchase = useCallback(async () => {
@@ -517,15 +516,6 @@ export default function NQGuidedRoadmap({
       router.push('/upgrade?source=certificate-preview&tier=momentum')
     }
   }, [router])
-
-  const prevJourneyTabRef = useRef<JourneyTab>(activeTab)
-  useEffect(() => {
-    const prev = prevJourneyTabRef.current
-    prevJourneyTabRef.current = activeTab
-    if (prev === 'upgrades' && activeTab !== 'upgrades') {
-      resetPreviewToAccount()
-    }
-  }, [activeTab, resetPreviewToAccount])
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
@@ -628,6 +618,11 @@ export default function NQGuidedRoadmap({
       localStorage.setItem('nq_completed_steps', JSON.stringify(Array.from(completedSteps)))
     }
   }, [completedSteps])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.dispatchEvent(new Event('nq-journey-progress'))
+  }, [completedSteps, currentStepIndex])
 
   const referralPromptPrevCompletedRef = useRef<Set<number> | null>(null)
   const [referralRoadmapOpen, setReferralRoadmapOpen] = useState<
@@ -997,6 +992,10 @@ export default function NQGuidedRoadmap({
   const indicesInCurrentPhase = getNqGuidedIndicesForPhaseOrder(step.phaseOrder)
   const milestoneIndexInPhase = Math.max(1, indicesInCurrentPhase.indexOf(currentStepIndex) + 1)
   const milestonesInPhase = indicesInCurrentPhase.length
+  const progressPct = Math.min(
+    100,
+    ((step.phaseOrder - 1 + milestoneIndexInPhase / milestonesInPhase) / progressDenom) * 100
+  )
   const phasesDoneCount = countNqGuidedPhasesFullyComplete(completedSteps)
   const certificatePhasesCompleted = useMemo(
     () =>
@@ -1028,10 +1027,6 @@ export default function NQGuidedRoadmap({
       ? REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder + 1]
       : null
 
-  const progressPct = Math.min(
-    100,
-    ((step.phaseOrder - 1 + milestoneIndexInPhase / milestonesInPhase) / progressDenom) * 100
-  )
   const currentStepMarkedDone = completedSteps.has(currentStepIndex)
 
   const nextStepTitles = NQ_GUIDED_STEPS.slice(currentStepIndex + 1, currentStepIndex + 3).map((s) => s.title)
@@ -1110,13 +1105,13 @@ export default function NQGuidedRoadmap({
         />
       ) : null}
 
-      {activeTab === 'overview' ? (
+      {activeTab === 'today' ? (
         <div
           role="tabpanel"
-          id="journey-panel-overview"
-          aria-labelledby="journey-tab-overview"
-            className="space-y-4 scroll-mt-28 sm:space-y-5 md:space-y-6"
-          >
+          id="journey-panel-today"
+          aria-labelledby="journey-tab-today"
+          className="space-y-4 scroll-mt-28 sm:space-y-5 md:space-y-6"
+        >
           {startHereState === 'show' ? (
             <motion.div
               initial={false}
@@ -1134,12 +1129,11 @@ export default function NQGuidedRoadmap({
                     Start here
                   </p>
                   <h2 className="mt-2 font-display text-xl font-bold text-[rgb(var(--navy))] sm:text-2xl">
-                    New to this hub? Start with your Budget Sketch
+                    Welcome — here&apos;s your next move
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-                    You just saw your savings snapshot on results — next, stress-test your{' '}
-                    <strong className="font-semibold text-slate-800">monthly payment</strong> line by line (or your
-                    affordability snapshot on Foundations). Then come back to Overview and your phase tab.
+                    Each time you open this page, Today shows your single most important action.
+                    Tap &ldquo;My Plan&rdquo; for the full roadmap and budget, or &ldquo;Money&rdquo; for programs you qualify for.
                   </p>
                 </div>
                 <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[11rem]">
@@ -1148,7 +1142,7 @@ export default function NQGuidedRoadmap({
                     onClick={goToBudgetFromStartHere}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-teal-700"
                   >
-                    Go to Budget Sketch
+                    Go to My Plan
                     <ArrowRight className="h-4 w-4" aria-hidden />
                   </button>
                   <button
@@ -1163,10 +1157,7 @@ export default function NQGuidedRoadmap({
             </motion.div>
           ) : null}
 
-          <DailySignalCard className="!mx-0 !mt-0 max-w-none p-3 sm:p-4" />
-          <SavingsLedger className="!mx-0 mt-0 max-w-none" compact />
-          <MomentumScoreHeader />
-
+          {/* 1. Welcome + personalization */}
           <section
             className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
             aria-labelledby="journey-icp-welcome"
@@ -1182,7 +1173,7 @@ export default function NQGuidedRoadmap({
             {quizTxnMeta.icpType === 'first-gen' ? (
               <button
                 type="button"
-                onClick={() => goTab('firstgen')}
+                onClick={() => goTab('learn')}
                 className="mt-4 text-sm font-semibold underline decoration-2 underline-offset-2"
                 style={{ color: content.accentColor }}
               >
@@ -1192,335 +1183,190 @@ export default function NQGuidedRoadmap({
             ) : null}
           </section>
 
+          {/* 2. Daily signal + momentum — compact status strip */}
+          <DailySignalCard className="!mx-0 !mt-0 max-w-none p-3 sm:p-4" />
+          <MomentumScoreHeader />
+
+          {/* 3. Readiness + progress — the number that matters */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <motion.section
+              initial={false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reduceMotion ? 0.01 : 0.35 }}
+              className="rounded-2xl border-2 border-teal-300/70 bg-gradient-to-br from-white via-millennial-primary-light/30 to-emerald-50/35 p-5 shadow-lg ring-1 ring-teal-100/80"
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-900/90">Readiness score</p>
+              <p className="mt-1.5 text-sm font-semibold text-slate-700">{overviewWarmth}</p>
+              {snapshot ? (
+                <div className="mt-3 border-t border-teal-100/90 pt-3">
+                  <ReadinessScoreReveal readiness={snapshot.readiness} />
+                </div>
+              ) : (
+                <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white/90 p-3 text-center">
+                  <button type="button" onClick={onGoToResults} className="text-sm font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900">
+                    Run the savings snapshot
+                  </button>
+                </div>
+              )}
+            </motion.section>
+            <div className="flex flex-col gap-3">
+              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current phase</p>
+                <p className="mt-1 text-lg font-bold text-slate-900">{phaseHeadingTitle}</p>
+                <p className="text-sm text-slate-500">Phase {displayPhaseOrder} of {phaseTotalForDisplay} · Milestone {milestoneIndexInPhase} of {milestonesInPhase}</p>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/90">
+                  <div className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none" style={{ width: `${progressPct}%`, background: content.accentColor }} />
+                </div>
+              </div>
+              <SavingsLedger className="!mx-0 mt-0 max-w-none" compact />
+            </div>
+          </div>
+
+          {/* 4. Current step — the single most important action */}
+          <motion.div
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
+            className="rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/25 to-emerald-50/25 p-5 shadow-lg sm:p-6"
+          >
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-millennial-primary-light/70 to-teal-100/55 shadow-lg ring-2 ring-teal-200/50">
+                <Target className="h-6 w-6 text-teal-700" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: content.accentColor }}>
+                  Your next move
+                </p>
+                <h2 className="mt-1 font-display text-xl font-bold text-slate-900 sm:text-2xl">{displayStep.title}</h2>
+              </div>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
+              {renderNqSaysContext(displayStep.nqContext)}
+            </p>
+            <div className="mt-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">What to do</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-800">
+                {renderWithAnnualCreditReportLink(displayStep.nqWhatToDo)}
+              </p>
+            </div>
+            {phaseChecklistItems && phaseChecklistItems.length > 0 ? (
+              <ul className="mt-4 space-y-2" role="list">
+                {phaseChecklistItems.map((item, idx) => (
+                  <li key={`today-cl-${idx}`} className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={phaseChecklistDone[idx] ?? false}
+                      onChange={() => togglePhaseChecklist(idx)}
+                      className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
+                    />
+                    <span className={`text-sm ${phaseChecklistDone[idx] ? 'text-slate-400 line-through' : 'font-medium text-slate-800'}`}>
+                      {renderWithAnnualCreditReportLink(item)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={handleIDidIt} disabled={currentStepMarkedDone} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-5 py-3 text-sm font-bold text-white shadow-md transition hover:shadow-lg disabled:opacity-50">
+                <Check className="h-4 w-4" aria-hidden /> {currentStepMarkedDone ? 'Done' : 'I did it'}
+              </button>
+              <button type="button" onClick={handleSkip} disabled={isLastStep} className="text-sm font-semibold text-slate-500 underline underline-offset-2 hover:text-slate-800 disabled:opacity-40">Skip</button>
+              <button type="button" onClick={handleBack} disabled={currentStepIndex === 0} className="text-sm font-semibold text-slate-500 underline underline-offset-2 hover:text-slate-800 disabled:opacity-40">Back</button>
+            </div>
+          </motion.div>
+
+          {/* 5. Quick actions — navigate to other tabs */}
           <section aria-label="Quick actions">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Quick actions</p>
             <div className="grid gap-3 sm:grid-cols-3">
-              <button
-                type="button"
-                onClick={() => goTab('budget')}
-                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300"
-                style={{ backgroundColor: content.accentColorLight }}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Calculator className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
-                    <span className="font-display text-base font-bold text-slate-900">My Numbers</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">Budget sketch and payment stress-test</p>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={() => goTab('assistance')}
-                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300"
-                style={{ backgroundColor: content.accentColorLight }}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Gift className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
-                    <span className="font-display text-base font-bold text-slate-900">Free Money</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">DPA and assistance matched to you</p>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={() => goTab('phase')}
-                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300"
-                style={{ backgroundColor: content.accentColorLight }}
-              >
+              <button type="button" onClick={() => goTab('plan')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Map className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
-                    <span className="font-display text-base font-bold text-slate-900">My Roadmap</span>
+                    <span className="font-display text-base font-bold text-slate-900">My Plan</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-600">Phases and next steps</p>
+                  <p className="mt-1 text-xs text-slate-600">Roadmap and budget sketch</p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+              </button>
+              <button type="button" onClick={() => goTab('money')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
+                    <span className="font-display text-base font-bold text-slate-900">Money</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">Programs and savings you qualify for</p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+              </button>
+              <button type="button" onClick={() => goTab('learn')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
+                    <span className="font-display text-base font-bold text-slate-900">Learn</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">Concepts, scripts, and guides</p>
                 </div>
                 <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
               </button>
             </div>
           </section>
 
-          <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-start">
-            <div className="flex flex-wrap items-center gap-2">
-              <TierBadge tier={effectiveTier} className="max-w-sm" />
-              <MindsetTag mindset={mindsetFor(effectiveTier)} className="hidden sm:inline-flex" />
-            </div>
-          </div>
-          <MoneyInsights
-            totals={moneyTotals}
-            savingsDetails={savingsDetails}
-            fundingDetails={fundingDetails}
-            alternativeDetails={alternativeDetails}
-            detailsUnlocked={moneyInsightsDetailsUnlocked}
-            upgradeHref="/upgrade?source=journey-overview-insights&tier=momentum"
-          />
-          {unclaimedSavingsAmount != null ? (
-            <UpgradeLockCallout
-              className="mb-1"
-              lockedLabel={`${formatCurrency(unclaimedSavingsAmount)} in unclaimed savings`}
-              reason={"Based on your profile, you qualify for programs and optimizations you haven't accessed yet."}
-              ctaLabel="Claim now — see plans →"
-              ctaHref="/upgrade?source=journey-unclaimed"
-            />
-          ) : null}
-          {!tierAtLeast(effectiveTier, 'momentum') && activeTab === 'overview' ? (
-            <UpgradeLockCallout
-              lockedLabel="Levels & leaderboard"
-              reason={xpLeaderboardLockReason}
-              ctaLabel="Upgrade to Momentum"
-              ctaHref="/upgrade?source=journey-xp&tier=momentum"
-            />
-          ) : null}
-          {isRefinanceUser ? (
-            <section
-              className="rounded-xl border border-slate-200/90 border-l-4 border-l-teal-500 bg-white p-5 shadow-sm sm:p-6"
-              aria-labelledby="refi-journey-hub-overview"
-            >
-              <h2 id="refi-journey-hub-overview" className="font-display text-lg font-bold text-slate-900">
-                Your Refinance Journey
-              </h2>
-              <p className="mt-2 text-sm text-slate-600 sm:text-base">
-                Follow your personalized 5-step refinance roadmap — from reviewing your current loan to
-                locking your new rate and closing.
-              </p>
-              <Link
-                href="/homebuyer/refinance-journey"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-              >
-                Continue My Refinance Journey
-                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-              </Link>
-            </section>
-          ) : null}
-          <motion.section
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
-            className="rounded-3xl border-2 border-teal-300/70 bg-gradient-to-br from-white via-millennial-primary-light/30 to-emerald-50/35 p-5 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/80 sm:p-6"
-          >
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-900/90">Readiness score</p>
-            <p className="mt-1.5 text-base font-semibold text-slate-700">{overviewWarmth}</p>
-            {snapshot ? (
-              <div className="mt-4 space-y-4 border-t border-teal-100/90 pt-4">
-                <ReadinessScoreReveal readiness={snapshot.readiness} />
-                {showFullHosaBreakdown ? (
-                  <div className="rounded-2xl border border-emerald-200/80 bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100/70">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-900/90">
-                      HOSA Savings Score
-                    </p>
-                    <p className="mt-2 font-display text-3xl font-black tabular-nums text-emerald-900 sm:text-4xl">
-                      {Math.round(snapshot.readiness.total)}
-                      <span className="text-xl font-bold text-slate-500 sm:text-2xl">/100</span>
-                    </p>
-                    <p className="mt-2 text-sm text-slate-600">
-                      Factor weights, savings opportunities, and the full optimization view live on your results page.
-                    </p>
-                    <Link
-                      href="/results"
-                      className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-emerald-900 underline decoration-emerald-600/60 underline-offset-2 hover:text-emerald-950"
-                    >
-                      View full HOSA breakdown
-                      <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-                    </Link>
-                  </div>
-                ) : (
-                  <UpgradeLockCallout
-                    lockedLabel="Your HOSA Savings Score (full breakdown)"
-                    reason={`Your score is about ${Math.round(snapshot.readiness.total)}/100. Upgrade to see the full breakdown and the three actions that would increase it the most — including your top savings opportunities.`}
-                    ctaLabel="Unlock my full score →"
-                    ctaHref="/upgrade?source=journey-hosa-preview&tier=momentum"
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white/90 p-4 text-center sm:p-5">
-                <p className="text-slate-600">
-                  <button
-                    type="button"
-                    onClick={onGoToResults}
-                    className="font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
-                  >
-                    Run the savings snapshot
-                  </button>{' '}
-                  to unlock your animated readiness score and personalized numbers.
-                </p>
-              </div>
-            )}
-          </motion.section>
-
-          <div className="rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white to-teal-50/40 p-5 shadow-sm sm:p-6">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
-                <Gift className="h-5 w-5" aria-hidden />
+          {/* 6. Alerts & tasks — collapsible */}
+          <details className="group rounded-2xl border border-slate-200/90 bg-white shadow-sm" open={inboxTasks.some((t) => !t.done)}>
+            <summary className="flex cursor-pointer items-center justify-between gap-3 p-5 sm:p-6">
+              <span className="text-sm font-bold uppercase tracking-wide text-slate-600">
+                Alerts &amp; tasks ({inboxTasks.filter((t) => !t.done).length} pending)
               </span>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-display text-lg font-bold text-slate-900">Know someone buying a home?</h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Share your link and you both get $50 off your next plan.
-                </p>
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <code className="truncate rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800">
-                    {referralProgramUrl(hubReferralSlug)}
-                  </code>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(referralProgramUrl(hubReferralSlug))
-                      setReferralCopied(true)
-                      window.setTimeout(() => setReferralCopied(false), 2000)
-                    }}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-                  >
-                    <Copy className="h-4 w-4" aria-hidden />
-                    {referralCopied ? 'Copied' : 'Copy Link'}
-                  </button>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <a
-                    href={`mailto:?subject=${encodeURIComponent('Check out NestQuest')}&body=${encodeURIComponent(`I'm using NestQuest for my home buying plan — thought you might want it too: ${referralProgramUrl(hubReferralSlug)}`)}`}
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline"
-                  >
-                    <Mail className="h-4 w-4" aria-hidden />
-                    Share via Email
-                  </a>
-                  <a
-                    href={`sms:?body=${encodeURIComponent(`Check out NestQuest: ${referralProgramUrl(hubReferralSlug)}`)}`}
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline"
-                  >
-                    Share via Text
-                  </a>
-                </div>
-              </div>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180" aria-hidden />
+            </summary>
+            <div className="space-y-5 border-t border-slate-100 p-5 sm:p-6">
+              <section aria-label="Alerts">
+                <ul className="space-y-3 text-sm text-amber-950" role="list">
+                  <li className="flex gap-2 rounded-lg bg-amber-50 px-3 py-2 shadow-sm">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                    <span>Rate quotes are moving weekly — refresh quotes before you go under contract.</span>
+                  </li>
+                  <li className="flex gap-2 rounded-lg bg-amber-50 px-3 py-2 shadow-sm">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                    <span>Wire fraud reminder: always confirm wiring instructions by phone on a number you trust.</span>
+                  </li>
+                </ul>
+              </section>
+              <section aria-label="Tasks">
+                <ul className="list-none space-y-3" role="list">
+                  {inboxTasks.map((task, idx) => (
+                    <li key={task.id} className="flex items-start gap-3">
+                      <input
+                        id={`today-task-${task.id}`}
+                        type="checkbox"
+                        checked={task.done}
+                        onChange={() => {
+                          setInboxTasks((prev) => prev.map((t, i) => (i === idx ? { ...t, done: !t.done } : t)))
+                          if (!task.done && /upload|document|pay stub|lender portal/i.test(task.label)) setDocTaskTouched(true)
+                        }}
+                        className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
+                      />
+                      <label htmlFor={`today-task-${task.id}`} className={`cursor-pointer text-sm ${task.done ? 'text-slate-400 line-through' : 'font-medium text-slate-800'}`}>
+                        {task.label}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             </div>
-          </div>
+          </details>
 
-          {snapshot ? (
-            <section className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-lg sm:p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Savings snapshot summary</p>
-              <p className="mt-1.5 text-sm text-slate-600">
-                Aligned with your savings snapshot scenario: we use your{' '}
-                <strong className="font-semibold text-slate-800">target home price</strong>{' '}
-                (when set) for price and monthly payment — not the income-based comfortable max.
-              </p>
-              <ul className="mt-3 space-y-2.5 text-sm text-slate-700 sm:text-base">
-                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
-                  <span className="font-medium text-slate-500">Potential home price</span>
-                  <span className="font-semibold text-slate-900 tabular-nums sm:text-right">
-                    {snapshot.tokens.targetHome ? (
-                      snapshot.tokens.targetHome
-                    ) : (
-                      <span className="font-normal text-slate-500">
-                        Not set — add a target price in your snapshot
-                      </span>
-                    )}
-                  </span>
-                </li>
-                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
-                  <span className="font-medium text-slate-500">Down payment</span>
-                  <span className="font-semibold text-slate-900 tabular-nums sm:text-right">
-                    {snapshot.tokens.downPayment}
-                  </span>
-                </li>
-                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
-                  <div className="min-w-0">
-                    <span className="font-medium text-slate-500">Indicative monthly payment</span>
-                    <p className="mt-0.5 text-xs font-normal text-slate-500">
-                      PITI-style estimate at your target home (same assumptions as the snapshot cards).
-                    </p>
-                  </div>
-                  <span className="shrink-0 font-semibold text-slate-900 tabular-nums sm:text-right">
-                    {snapshot.tokens.targetMonthly ? (
-                      <>{snapshot.tokens.targetMonthly}/mo</>
-                    ) : (
-                      <span className="font-normal text-slate-500">—</span>
-                    )}
-                  </span>
-                </li>
-                <li className="flex flex-col gap-1 pt-1 text-xs text-slate-500 sm:flex-row sm:justify-between sm:gap-4">
-                  <span>Reference · comfortable max · lender ceiling</span>
-                  <span className="tabular-nums text-slate-600">
-                    {snapshot.tokens.realisticMax}
-                    <span className="mx-1.5 text-slate-300">·</span>
-                    {snapshot.tokens.maxApproved}
-                  </span>
-                </li>
-              </ul>
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  onClick={onGoToResults}
-                  className="inline-flex w-full justify-center rounded-xl border-2 border-millennial-cta-primary bg-white px-5 py-3 text-sm font-bold text-teal-900 shadow-md transition hover:bg-millennial-primary-light/25 sm:w-auto sm:text-base sm:px-6"
-                >
-                  Update snapshot
-                </button>
-                <p className="text-sm text-slate-600 sm:max-w-md">
-                  Re-run after big changes to income, debt, or target home price so NQ stays aligned.
-                </p>
-              </div>
-            </section>
-          ) : null}
-
-          <motion.div
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
-            className="rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/25 to-emerald-50/25 p-6 shadow-lg sm:p-8"
-          >
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-millennial-primary-light/70 to-teal-100/55 shadow-lg ring-2 ring-teal-200/50">
-                <Image
-                  src="/images/nq-assistant.png"
-                  alt="NQ, your home buying guide"
-                  width={120}
-                  height={120}
-                  className="h-full w-full object-contain"
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-800/90">From NQ</p>
-                <p className="mt-3 font-serif text-lg italic leading-relaxed text-slate-700 sm:text-xl">
-                  &ldquo;{renderNqSaysContext(displayStep.nqContext)}&rdquo;
-                </p>
-                {snapshot ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-slate-200/90 bg-white px-3 py-1 text-sm font-medium text-slate-700 shadow-sm">
-                      {snapshot.tokens.city}
-                    </span>
-                    <span className="rounded-full border border-slate-200/90 bg-white px-3 py-1 text-sm font-medium text-slate-700 shadow-sm">
-                      {snapshot.tokens.timeline}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </motion.div>
-
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-100/80 sm:p-6">
-            <p className="text-sm font-bold uppercase tracking-wide text-slate-600">{content.phaseFraming}</p>
-            <p className="mt-1 text-sm text-slate-700">
-              Phase {displayPhaseOrder} of {phaseTotalForDisplay}. A simple step now keeps your momentum steady.
-            </p>
-            <div className="mt-4">
-              <NextStepCard
-                action={nextEngine.actions[0]?.label ?? 'Open your phase and complete one checklist item'}
-                onAction={() => followNextHint(nextEngine.actions[0]?.hint ?? 'phase')}
-              />
-            </div>
-          </div>
-
+          {/* 7. Social proof + activity — low priority, at bottom */}
           <SocialProofPulse />
           <OverviewRecentActivity />
         </div>
       ) : null}
 
-      {activeTab === 'budget' ? (
+      {activeTab === 'plan' ? (
         <div
           role="tabpanel"
-          id="journey-panel-budget"
-          aria-labelledby="journey-tab-budget"
+          id="journey-panel-plan"
+          aria-labelledby="journey-tab-plan"
           className="scroll-mt-28 space-y-6"
         >
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-end">
@@ -1598,7 +1444,7 @@ export default function NQGuidedRoadmap({
             <p className="text-sm font-semibold text-slate-800">You may qualify for additional help.</p>
             <button
               type="button"
-              onClick={() => goTab('library')}
+              onClick={() => goTab('money')}
               className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
             >
               Funding opportunities based on your profile
@@ -1621,35 +1467,22 @@ export default function NQGuidedRoadmap({
             </p>
             <button
               type="button"
-              onClick={() => goTab('library')}
+              onClick={() => goTab('learn')}
               className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
             >
-              Open the Library tab
+              Browse the Learn library
               <ArrowRight className="h-4 w-4" aria-hidden />
             </button>
           </div>
         </div>
       ) : null}
 
-      {activeTab === 'assistance' ? <AssistanceProgramsTab userTier={effectiveTier} /> : null}
-
-      {activeTab === 'firstgen' ? (
+      {activeTab === 'money' && (
         <div
           role="tabpanel"
-          id="journey-panel-firstgen"
-          aria-labelledby="journey-tab-firstgen"
-          className="scroll-mt-28"
-        >
-          <FirstGenJourneyHub goTab={goTab} />
-        </div>
-      ) : null}
-
-      {activeTab === 'phase' ? (
-        <div
-          role="tabpanel"
-          id="journey-panel-phase"
-          aria-labelledby="journey-tab-phase"
-          className="scroll-mt-28 space-y-4 sm:space-y-5 md:space-y-6"
+          id="journey-panel-money"
+          aria-labelledby="journey-tab-money"
+          className="scroll-mt-28 space-y-6"
         >
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-end">
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1663,13 +1496,96 @@ export default function NQGuidedRoadmap({
             fundingDetails={fundingDetails}
             alternativeDetails={alternativeDetails}
             detailsUnlocked={moneyInsightsDetailsUnlocked}
-            upgradeHref="/upgrade?source=journey-phase-insights&tier=momentum"
+            upgradeHref="/upgrade?source=journey-money-insights&tier=momentum"
           />
-          <section
-            className="relative scroll-mt-28 pt-0 md:pt-1"
-            aria-labelledby="nq-phase-heading"
-          >
-            <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-center sm:gap-3">
+
+          {unclaimedSavingsAmount != null ? (
+            <UpgradeLockCallout
+              className="mb-1"
+              lockedLabel={`${formatCurrency(unclaimedSavingsAmount)} in unclaimed savings`}
+              reason="Based on your profile, you qualify for programs and optimizations you haven't accessed yet."
+              ctaLabel="Claim now — see plans →"
+              ctaHref="/upgrade?source=journey-unclaimed"
+            />
+          ) : null}
+
+          <AssistanceProgramsTab userTier={effectiveTier} />
+
+          <SavingsLedger className="!mx-0 mt-0 max-w-none" />
+
+          {snapshot ? (
+            <section className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-lg sm:p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Savings snapshot summary</p>
+              <p className="mt-1.5 text-sm text-slate-600">
+                Based on your target home price (when set) — not the income-based comfortable max.
+              </p>
+              <ul className="mt-3 space-y-2.5 text-sm text-slate-700 sm:text-base">
+                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
+                  <span className="font-medium text-slate-500">Potential home price</span>
+                  <span className="font-semibold text-slate-900 tabular-nums sm:text-right">
+                    {snapshot.tokens.targetHome || <span className="font-normal text-slate-500">Not set</span>}
+                  </span>
+                </li>
+                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
+                  <span className="font-medium text-slate-500">Down payment</span>
+                  <span className="font-semibold text-slate-900 tabular-nums sm:text-right">{snapshot.tokens.downPayment}</span>
+                </li>
+                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
+                  <span className="font-medium text-slate-500">Indicative monthly</span>
+                  <span className="shrink-0 font-semibold text-slate-900 tabular-nums sm:text-right">
+                    {snapshot.tokens.targetMonthly ? <>{snapshot.tokens.targetMonthly}/mo</> : <span className="font-normal text-slate-500">—</span>}
+                  </span>
+                </li>
+              </ul>
+              <button type="button" onClick={onGoToResults} className="mt-4 inline-flex items-center justify-center rounded-xl border-2 border-millennial-cta-primary bg-white px-5 py-3 text-sm font-bold text-teal-900 shadow-md transition hover:bg-millennial-primary-light/25">
+                Update snapshot
+              </button>
+            </section>
+          ) : null}
+
+          {showFullHosaBreakdown ? (
+            <div className="rounded-2xl border border-emerald-200/80 bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100/70">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-900/90">HOSA Savings Score</p>
+              <p className="mt-2 font-display text-3xl font-black tabular-nums text-emerald-900 sm:text-4xl">
+                {snapshot ? Math.round(snapshot.readiness.total) : '—'}<span className="text-xl font-bold text-slate-500 sm:text-2xl">/100</span>
+              </p>
+              <Link href="/results" className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-emerald-900 underline decoration-emerald-600/60 underline-offset-2 hover:text-emerald-950">
+                View full HOSA breakdown <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+              </Link>
+            </div>
+          ) : snapshot ? (
+            <UpgradeLockCallout
+              lockedLabel="Your HOSA Savings Score (full breakdown)"
+              reason={`Your score is about ${Math.round(snapshot.readiness.total)}/100. Upgrade to see the full breakdown and top savings opportunities.`}
+              ctaLabel="Unlock my full score →"
+              ctaHref="/upgrade?source=journey-hosa-preview&tier=momentum"
+            />
+          ) : null}
+
+          <div className="rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white to-teal-50/40 p-5 shadow-sm sm:p-6">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
+                <Gift className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-lg font-bold text-slate-900">Know someone buying a home?</h3>
+                <p className="mt-1 text-sm text-slate-600">Share your link and you both get $50 off your next plan.</p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <code className="truncate rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800">{referralProgramUrl(hubReferralSlug)}</code>
+                  <button type="button" onClick={() => { void navigator.clipboard.writeText(referralProgramUrl(hubReferralSlug)); setReferralCopied(true); window.setTimeout(() => setReferralCopied(false), 2000) }} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">
+                    <Copy className="h-4 w-4" aria-hidden /> {referralCopied ? 'Copied' : 'Copy Link'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'learn' ? (
+        <div role="tabpanel" id="journey-panel-learn" aria-labelledby="journey-tab-learn" className="scroll-mt-28 space-y-8">
+          <section className="space-y-4 rounded-3xl border border-slate-200/90 bg-white/90 p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5">
+            <div className="mb-4 flex items-center gap-3">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-slate-300 sm:max-w-[min(100%,12rem)]" aria-hidden />
               <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
                 {content.phaseFraming}

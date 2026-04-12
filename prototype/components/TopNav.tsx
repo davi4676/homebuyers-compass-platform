@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
+import { useSafeSearchParams } from '@/lib/use-safe-search-params'
 import { Menu, Search, X } from 'lucide-react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { UserMenu } from '@/components/auth/UserMenu'
@@ -22,7 +23,7 @@ import { TIER_DEFINITIONS } from '@/lib/tiers'
 
 export default function TopNav() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const searchParams = useSafeSearchParams()
   /** Landing → Playbooks should show “Back to Home” on `/resources`. */
   const resourcesNavHref = pathname === '/' ? '/resources?from=home' : '/resources'
   const { isAuthenticated } = useAuth()
@@ -32,9 +33,7 @@ export default function TopNav() {
 
   const isJourneyPage = isCustomizedJourneyPath(pathname)
   const journeySearchKey = searchParams.toString()
-  const activeJourneyTab = parseJourneyTabParam(
-    new URLSearchParams(journeySearchKey).get('tab')
-  )
+  const activeJourneyTab = parseJourneyTabParam(searchParams.get('tab'))
 
   useEffect(() => {
     if (!isJourneyPage) {

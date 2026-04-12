@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useSafeSearchParams } from '@/lib/use-safe-search-params'
 import { ChevronDown } from 'lucide-react'
 import BlurredPreview from '@/components/revenue/BlurredPreview'
 import { trackRevenueEvent } from '@/lib/revenueTracking'
@@ -66,7 +67,7 @@ function buildPrintableReportHtml(programs: DpaReportProgram[]): string {
 export default function DpaMatchReportSection({ userTier }: { userTier: UserTier }) {
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const searchParams = useSafeSearchParams()
   const isPaidTier = tierAtLeast(userTier, 'momentum')
 
   const [purchased, setPurchased] = useState(false)

@@ -4,7 +4,8 @@ import { useState, useEffect, Suspense, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Bell, BookOpen, X } from 'lucide-react'
-import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import { useSafeSearchParams } from '@/lib/use-safe-search-params'
 import { useAuth } from '@/lib/hooks/useAuth'
 import UserJourneyTracker from '@/components/analytics/UserJourneyTracker'
 import { useExperiment } from '@/lib/hooks/useExperiment'
@@ -45,7 +46,7 @@ const CERT_PURCHASE_TRACKED_SS = 'nq_certificate_purchased_tracked_session'
 const JOURNEY_ENTERED_TRACKED_SS = 'nq_journey_entered_posthog'
 
 export default function CustomizedJourneyPage() {
-  const searchParams = useSearchParams()
+  const searchParams = useSafeSearchParams()
   const router = useRouter()
   const pathname = usePathname()
   const plainEnglish = usePlainEnglish()
