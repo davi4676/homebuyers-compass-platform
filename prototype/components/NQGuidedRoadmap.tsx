@@ -88,7 +88,11 @@ import FirstGenJourneyHub from '@/components/journey/FirstGenJourneyHub'
 import TierBadge from '@/components/TierBadge'
 import { useTierMindset } from '@/components/tier-mindset/TierMindsetProvider'
 import MindsetTag from '@/components/journey/MindsetTag'
-import DynamicRoadmap from '@/components/journey/DynamicRoadmap'
+import JourneyTimeline from '@/components/journey/JourneyTimeline'
+import DailyInsightCard from '@/components/journey/DailyInsightCard'
+import JourneyWinsBoard from '@/components/journey/JourneyWinsBoard'
+import JourneyNextMilestoneTeaser from '@/components/journey/JourneyNextMilestoneTeaser'
+import { appendNqCompletedAction } from '@/lib/nq-completed-actions'
 import { useICP } from '@/lib/icp-context'
 import LearningCard from '@/components/journey/LearningCard'
 import LockedFeatureCard from '@/components/journey/LockedFeatureCard'
@@ -785,6 +789,14 @@ export default function NQGuidedRoadmap({
 
   const handleIDidIt = () => {
     setCompletedSteps((prev) => new Set(prev).add(currentStepIndex))
+    const doneStep = getNQStepByIndex(currentStepIndex)
+    if (doneStep && typeof window !== 'undefined') {
+      appendNqCompletedAction({
+        id: `nq-step-${doneStep.id}`,
+        label: personalizeNqStep(doneStep, snapshot).title,
+        completedAt: Date.now(),
+      })
+    }
     if (!isLastStep) {
       setTimeout(() => {
         setCurrentStepIndex((i) => i + 1)
@@ -1027,6 +1039,13 @@ export default function NQGuidedRoadmap({
       ? REPEAT_BUYER_PHASE_TITLES[displayPhaseOrder + 1]
       : null
 
+  const nextStepForTeaser = NQ_GUIDED_STEPS[currentStepIndex + 1]
+  const nextUnlockFeatureTitle =
+    nextStepForTeaser?.title ??
+    nextLibraryPhase?.features[0]?.title ??
+    nextLibraryPhase?.title ??
+    'Your next milestone'
+
   const currentStepMarkedDone = completedSteps.has(currentStepIndex)
 
   const nextStepTitles = NQ_GUIDED_STEPS.slice(currentStepIndex + 1, currentStepIndex + 3).map((s) => s.title)
@@ -1222,6 +1241,39 @@ export default function NQGuidedRoadmap({
             </div>
           </div>
 
+          <section
+            aria-label="Journey timeline"
+            className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
+          >
+            <h2 className="font-display text-lg font-bold text-slate-900 sm:text-xl">Your NestQuest phases</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Visual map of every phase — same roadmap as the Learn tab, optimized for a quick scan.
+            </p>
+            <div className="mt-4">
+              <JourneyTimeline
+                compact
+                phaseOrders={NQ_GUIDED_PHASE_ORDERS}
+                effectiveTier={effectiveTier}
+                currentPhaseOrder={displayPhaseOrder}
+                currentSavings={snapshot?.quiz.downPayment ?? 0}
+                canAccessPhase={(phaseOrder) =>
+                  getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess) !== null
+                }
+                onSelectPhase={(order) => {
+                  goToPhase(order)
+                  goTab('learn')
+                }}
+                onLockedPhaseClick={onRoadmapLockedPhase}
+                isPhaseComplete={(phaseOrder) => isNqGuidedPhaseFullyComplete(phaseOrder, completedSteps)}
+                getPhaseBlockedHint={(phaseOrder) =>
+                  phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)
+                    ? 'Complete all milestones in Post-Closing first.'
+                    : undefined
+                }
+              />
+            </div>
+          </section>
+
           {/* 4. Current step — the single most important action */}
           <motion.div
             initial={false}
@@ -1375,6 +1427,37 @@ export default function NQGuidedRoadmap({
               <MindsetTag mindset={mindsetFor(effectiveTier)} className="hidden sm:inline-flex max-w-[280px]" />
             </div>
           </div>
+          <section
+            aria-label="Phase roadmap timeline"
+            className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
+          >
+            <h2 className="font-display text-lg font-bold text-slate-900 sm:text-xl">Your customized NestQuest journey</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Every phase at a glance — jump into the Learn tab to work the active step.
+            </p>
+            <div className="mt-4">
+              <JourneyTimeline
+                phaseOrders={NQ_GUIDED_PHASE_ORDERS}
+                effectiveTier={effectiveTier}
+                currentPhaseOrder={displayPhaseOrder}
+                currentSavings={snapshot?.quiz.downPayment ?? 0}
+                canAccessPhase={(phaseOrder) =>
+                  getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess) !== null
+                }
+                onSelectPhase={(order) => {
+                  goToPhase(order)
+                  goTab('learn')
+                }}
+                onLockedPhaseClick={onRoadmapLockedPhase}
+                isPhaseComplete={(phaseOrder) => isNqGuidedPhaseFullyComplete(phaseOrder, completedSteps)}
+                getPhaseBlockedHint={(phaseOrder) =>
+                  phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)
+                    ? 'Complete all milestones in Post-Closing first.'
+                    : undefined
+                }
+              />
+            </div>
+          </section>
           <MoneyInsights
             totals={moneyTotals}
             savingsDetails={savingsDetails}
@@ -1671,11 +1754,14 @@ export default function NQGuidedRoadmap({
             onAction={() => followNextHint(nextEngine.actions[0]?.hint ?? 'phase')}
           />
 
+          <DailyInsightCard />
+
           <section className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
-            <DynamicRoadmap
+            <JourneyTimeline
               phaseOrders={NQ_GUIDED_PHASE_ORDERS}
               effectiveTier={effectiveTier}
               currentPhaseOrder={displayPhaseOrder}
+              currentSavings={snapshot?.quiz.downPayment ?? 0}
               canAccessPhase={(phaseOrder) =>
                 getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess) !== null
               }
@@ -1689,6 +1775,8 @@ export default function NQGuidedRoadmap({
               }
             />
           </section>
+
+          <JourneyWinsBoard />
 
           {step.phaseOrder === 8 ? (
             <HomeownerHubSection snapshot={snapshot} referralSlug={hubReferralSlug} />
@@ -1717,7 +1805,7 @@ export default function NQGuidedRoadmap({
               )}
               <button
                 type="button"
-                onClick={() => goTab('library')}
+                onClick={() => goTab('learn')}
                 className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-teal-800 hover:text-teal-900"
               >
                 Scripts &amp; checklists in Library
@@ -2009,7 +2097,7 @@ export default function NQGuidedRoadmap({
               </button>
               <button
                 type="button"
-                onClick={() => goTab('library')}
+                onClick={() => goTab('learn')}
                 className="inline-flex flex-1 items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 min-[480px]:flex-none"
               >
                 Library
@@ -2846,6 +2934,17 @@ export default function NQGuidedRoadmap({
             currentTier={userTier}
             previewTier={previewTier}
             onPreviewChange={setPreviewTier}
+          />
+        </div>
+      ) : null}
+
+      {onboardingComplete && step ? (
+        <div className="pt-2">
+          <JourneyNextMilestoneTeaser
+            searchKey={searchKey}
+            currentAction={displayStep.title}
+            nextFeatureTitle={nextUnlockFeatureTitle}
+            progressPct={progressPct}
           />
         </div>
       ) : null}

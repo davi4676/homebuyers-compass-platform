@@ -35,6 +35,7 @@ import JourneyTodayHero from '@/components/journey/JourneyTodayHero'
 import JourneyPhaseProgressRing from '@/components/journey/JourneyPhaseProgressRing'
 import JourneyProgressIdentityHeader from '@/components/journey/JourneyProgressIdentityHeader'
 import SessionWinsBanner from '@/components/journey/SessionWinsBanner'
+import JourneyReengagementBanner from '@/components/journey/JourneyReengagementBanner'
 import { buildUserSnapshot, loadQuizDataFromLocalStorage } from '@/lib/user-snapshot'
 import type { UserSnapshot } from '@/lib/user-snapshot'
 import { useJourneyPhaseRingProgress } from '@/hooks/use-journey-phase-ring'
@@ -410,6 +411,7 @@ export default function CustomizedJourneyPage() {
         }`}
       >
         <div className="min-w-0 flex-1">
+          <JourneyReengagementBanner />
           <div className={overviewMobileCompact ? 'max-md:hidden' : undefined}>
             <SessionWinsBanner />
             <JourneyTodayHero searchKey={journeySearchKey} activeJourneyTab={activeJourneyTab} />
