@@ -91,7 +91,12 @@ export default function TopNav() {
 
           {isJourneyPage ? (
             <div className="hidden min-w-0 flex-1 items-center justify-center gap-2 px-2 md:flex md:flex-wrap">
-              <p className="text-sm font-semibold tracking-tight text-millennial-text-muted">Customized Journey</p>
+              <p
+                className="rounded-full border border-[rgba(45,106,79,0.14)] bg-[linear-gradient(135deg,rgba(45,106,79,0.08)_0%,rgba(82,183,136,0.06)_60%,rgba(244,162,97,0.05)_100%)] px-3 py-1 text-sm font-semibold tracking-tight text-[var(--primary)] shadow-sm"
+                style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", ui-serif, Georgia, serif' }}
+              >
+                Customized Journey
+              </p>
               <TierBadge tier={journeyHeaderTier} compact className="hidden max-w-[200px] scale-[0.92] lg:flex" />
               <MindsetTag
                 compact
