@@ -411,7 +411,7 @@ export default function CustomizedJourneyPage() {
         <div className="min-w-0 flex-1">
           <div className={overviewMobileCompact ? 'max-md:hidden' : undefined}>
             <SessionWinsBanner />
-            <JourneyTodayHero searchKey={journeySearchKey} />
+            <JourneyTodayHero searchKey={journeySearchKey} activeJourneyTab={activeJourneyTab} />
           </div>
           <div className="mb-6 space-y-3">
             {showPlainEnglishCallout ? (

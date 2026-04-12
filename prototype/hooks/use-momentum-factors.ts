@@ -80,6 +80,9 @@ export function updateMomentumFactor(key: keyof MomentumFactors, value: number |
     const current = stored ? JSON.parse(stored) : DEFAULT_FACTORS;
     const updated = { ...current, [key]: value };
     localStorage.setItem("nq_momentum_factors", JSON.stringify(updated));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("nq-momentum-factors-changed"));
+    }
   } catch (e) {
     // Fail silently
   }
