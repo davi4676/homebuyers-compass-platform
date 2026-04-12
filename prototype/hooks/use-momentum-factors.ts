@@ -4,6 +4,7 @@ import {
   shouldFireGate,
   NQ_MILESTONE_GATE_OPEN_EVENT,
 } from "@/lib/milestone-gates";
+import { syncNqVisitStreak } from "@/lib/nq-visit-streak";
 
 export interface MomentumFactors {
   quizCompleted: boolean;
@@ -52,24 +53,8 @@ export function useMomentumFactors(): MomentumFactors {
         }
       }
 
-      // Update streak logic
-      const lastVisit = localStorage.getItem("nq_last_visit");
-      const today = new Date().toDateString();
-      const streak = parseInt(localStorage.getItem("nq_streak") || "0", 10);
-
-      let streakToReport = streak;
-      if (lastVisit !== today) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const newStreak = lastVisit === yesterday.toDateString() ? streak + 1 : 1;
-        localStorage.setItem("nq_last_visit", today);
-        localStorage.setItem("nq_streak", String(newStreak));
-        streakToReport = newStreak;
-        setFactors(prev => ({ ...prev, streakDays: newStreak }));
-      } else {
-        streakToReport = streak;
-        setFactors(prev => ({ ...prev, streakDays: streak }));
-      }
+      const streakToReport = syncNqVisitStreak();
+      setFactors((prev) => ({ ...prev, streakDays: streakToReport }));
 
       if (streakToReport >= 7 && shouldFireGate("streak")) {
         markGateFired("streak");
