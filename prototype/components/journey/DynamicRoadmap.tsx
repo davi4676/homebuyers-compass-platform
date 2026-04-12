@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import { Lock } from 'lucide-react'
+import { Lock } from '@phosphor-icons/react'
 import type { UserTier } from '@/lib/tiers'
 import { TIER_DEFINITIONS } from '@/lib/tiers'
 import { getJourneyPhaseByOrder } from '@/lib/journey-phases-data'
@@ -95,7 +95,7 @@ export default function DynamicRoadmap({
                     <span className="font-semibold text-slate-900">{title}</span>
                     {!accessible ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-slate-200/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
-                        <Lock className="h-3 w-3" aria-hidden />
+                        <Lock weight="duotone" size={12} aria-hidden />
                         Locked
                       </span>
                     ) : null}

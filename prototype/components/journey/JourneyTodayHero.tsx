@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Clock, MapPinned, Calculator } from 'lucide-react'
+import { Clock, MapPin, Calculator } from '@phosphor-icons/react'
 import {
   journeyTabHrefPreservingSearch,
   JOURNEY_PAGE_PATH,
@@ -117,7 +117,7 @@ export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props)
       win: 'Opened Your Phase from Today' as const,
       cta: 'Go to Your Phase',
       supportingCta: 'Go to phase →',
-      Icon: MapPinned,
+      Icon: MapPin,
     }),
     [phaseHref]
   )
@@ -173,7 +173,7 @@ export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props)
             </span>
             <div className="flex items-start gap-3 pr-24">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white">
-                <hero.Icon className="h-5 w-5" aria-hidden />
+                <hero.Icon weight="duotone" size={20} className="text-white" aria-hidden />
               </span>
               <div className="min-w-0 flex-1">
                 <p
@@ -189,7 +189,7 @@ export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props)
                   {hero.description}
                 </p>
                 <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white">
-                  <Clock className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                  <Clock weight="duotone" size={14} className="shrink-0 opacity-90" aria-hidden />
                   ~4 min
                 </p>
                 <div className="mt-4">

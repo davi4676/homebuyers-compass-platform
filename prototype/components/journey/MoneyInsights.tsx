@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, X } from 'lucide-react'
+import { CaretRight, X } from '@phosphor-icons/react'
 import UpgradeLockCallout from '@/components/monetization/UpgradeLockCallout'
 import { formatCurrency } from '@/lib/calculations'
 import type { PersistedMoneyTrackers } from '@/lib/money-tracker-storage'
@@ -65,7 +65,7 @@ export default function MoneyInsights({
           </div>
           <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
             View details
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+            <CaretRight weight="duotone" size={14} className="text-[var(--muted)]" aria-hidden />
           </span>
         </div>
       </button>
@@ -97,7 +97,7 @@ export default function MoneyInsights({
                   className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50"
                   aria-label="Close money insights"
                 >
-                  <X className="h-4 w-4" />
+                  <X weight="duotone" size={20} className="text-[var(--muted)]" aria-hidden />
                 </button>
               </div>
 

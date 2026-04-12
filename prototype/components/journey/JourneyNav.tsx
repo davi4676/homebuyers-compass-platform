@@ -4,13 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, startTransition } fr
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSafeSearchParams } from "@/lib/use-safe-search-params";
-import {
-  Home,
-  Map,
-  DollarSign,
-  BookOpen,
-  type LucideIcon,
-} from "lucide-react";
+import { House, MapTrifold, CurrencyDollar, BookOpen } from "@phosphor-icons/react";
 import {
   type JourneyTab,
   journeyTabHrefPreservingSearch,
@@ -31,12 +25,12 @@ const TAB_MOBILE_ACTIVE_BAR =
 const TABS: {
   id: JourneyTab;
   label: string;
-  icon: LucideIcon;
+  icon: typeof House;
   hasNotification?: boolean;
 }[] = [
-  { id: "today", label: "Today", icon: Home, hasNotification: true },
-  { id: "plan", label: "My Plan", icon: Map },
-  { id: "money", label: "Money", icon: DollarSign },
+  { id: "today", label: "Today", icon: House, hasNotification: true },
+  { id: "plan", label: "My Plan", icon: MapTrifold },
+  { id: "money", label: "Money", icon: CurrencyDollar },
   { id: "learn", label: "Learn", icon: BookOpen },
 ];
 
@@ -157,7 +151,10 @@ export default function JourneyNav({ activeTab }: { activeTab: JourneyTab }) {
               <span className="relative z-10 flex flex-col items-center md:w-full md:flex-row md:gap-3">
                 <span className="relative shrink-0">
                   <Icon
-                    className={`h-5 w-5 md:h-[18px] md:w-[18px] ${active ? "text-[var(--primary)]" : "opacity-90"}`}
+                    weight="duotone"
+                    size={20}
+                    className="md:h-[18px] md:w-[18px]"
+                    color={active ? "var(--primary)" : "var(--muted)"}
                     aria-hidden
                   />
                   {showDot ? (

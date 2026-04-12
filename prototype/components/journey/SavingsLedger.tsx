@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import clsx from "clsx";
-import { TrendingDown, DollarSign, Gift } from "lucide-react";
+import { TrendDown, CurrencyDollar, Gift } from "@phosphor-icons/react";
 import { useICP } from "@/lib/icp-context";
 import {
   NQ_DPA_IDENTIFIED_CHANGED_EVENT,
@@ -139,7 +139,7 @@ export function SavingsLedger({
       <div className={clsx("grid grid-cols-3 gap-px bg-slate-700/30", compact ? "mt-2" : "mt-4")}>
         <div className={clsx("bg-slate-800/60", compact ? "px-2 py-2 sm:px-4 sm:py-3" : "px-4 py-3")}>
           <div className="mb-1 flex items-center gap-1.5">
-            <Gift className="h-3 w-3 text-emerald-400" />
+            <Gift weight="duotone" size={12} className="text-emerald-400" />
             <span className="text-[10px] uppercase tracking-wide text-slate-400">DPA Found</span>
           </div>
           <p className={clsx("font-bold text-emerald-400", compact ? "text-sm sm:text-base" : "text-base")}>
@@ -149,11 +149,10 @@ export function SavingsLedger({
 
         <div className={clsx("bg-slate-800/60", compact ? "px-2 py-2 sm:px-4 sm:py-3" : "px-4 py-3")}>
           <div className="mb-1 flex items-center gap-1.5">
-            <TrendingDown
-              className={clsx(
-                "h-3 w-3",
-                buyingNotWorseThanRent ? "text-emerald-400" : "text-amber-400"
-              )}
+            <TrendDown
+              weight="duotone"
+              size={12}
+              className={clsx(buyingNotWorseThanRent ? "text-emerald-400" : "text-amber-400")}
             />
             <span className="text-[10px] uppercase tracking-wide text-slate-400">vs. Rent</span>
           </div>
@@ -171,7 +170,7 @@ export function SavingsLedger({
 
         <div className={clsx("bg-slate-800/60", compact ? "px-2 py-2 sm:px-4 sm:py-3" : "px-4 py-3")}>
           <div className="mb-1 flex items-center gap-1.5">
-            <DollarSign className="h-3 w-3 text-violet-400" />
+            <CurrencyDollar weight="duotone" size={12} className="text-violet-400" />
             <span className="text-[10px] uppercase tracking-wide text-slate-400">Year 1</span>
           </div>
           <p className={clsx("font-bold text-violet-400", compact ? "text-sm sm:text-base" : "text-base")}>

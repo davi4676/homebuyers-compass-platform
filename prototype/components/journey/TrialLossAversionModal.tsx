@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { X } from '@phosphor-icons/react'
 import { useRouter } from 'next/navigation'
 import {
   getMomentumTrialCalendarDay,
@@ -166,7 +166,7 @@ export default function TrialLossAversionModal() {
         <ul className="mb-5 space-y-2">
           {lossItems.map((item) => (
             <li key={item} className="flex items-center gap-2 text-sm text-slate-700">
-              <X className="h-4 w-4 shrink-0 text-red-400" aria-hidden />
+              <X weight="duotone" size={20} className="shrink-0 text-red-400" aria-hidden />
               {item}
             </li>
           ))}

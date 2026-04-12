@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X } from 'lucide-react'
+import { X } from '@phosphor-icons/react'
 import { formatCurrency } from '@/lib/calculations'
 import PlainEnglishText from '@/components/PlainEnglishText'
 import GlossaryTooltip from '@/components/GlossaryTooltip'
@@ -394,7 +394,7 @@ export default function AssistanceProgramsTab({ userTier }: { userTier: UserTier
                   className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                   aria-label="Close"
                 >
-                  <X className="h-5 w-5" aria-hidden />
+                  <X weight="duotone" size={20} className="text-[var(--muted)]" aria-hidden />
                 </button>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-slate-600">

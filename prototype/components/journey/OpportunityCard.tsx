@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from '@phosphor-icons/react'
 import type { MoneyCategory } from '@/lib/money-engine'
 import { formatCurrency } from '@/lib/calculations'
 
@@ -72,7 +72,7 @@ export default function OpportunityCard({
         className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-slate-800 underline decoration-slate-300 underline-offset-2 hover:text-teal-900 hover:decoration-teal-400"
       >
         {ctaLabel}
-        <ArrowRight className="h-4 w-4" aria-hidden />
+        <ArrowRight weight="duotone" size={20} aria-hidden />
       </button>
       {footer ? <div className="mt-2">{footer}</div> : null}
     </section>

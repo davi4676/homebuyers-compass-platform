@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
-import { Zap, X, ChevronRight } from "lucide-react";
+import { Lightning, X, CaretRight } from "@phosphor-icons/react";
 import {
   getDailySignal,
   completeSignal,
@@ -73,7 +73,7 @@ export function DailySignalCard({ className }: { className?: string } = {}) {
         className="absolute right-3 top-3 rounded-full p-0.5 text-slate-400 hover:text-slate-600"
         aria-label="Dismiss"
       >
-        <X className="h-3.5 w-3.5" />
+        <X weight="duotone" size={14} className="text-[var(--muted)]" aria-hidden />
       </button>
 
       <div className="flex items-start gap-3 pr-6">
@@ -81,7 +81,7 @@ export function DailySignalCard({ className }: { className?: string } = {}) {
           className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl"
           style={{ backgroundColor: `${styles.icon}20` }}
         >
-          <Zap className="h-4 w-4" style={{ color: styles.icon }} />
+          <Lightning weight="duotone" size={16} style={{ color: styles.icon }} aria-hidden />
         </div>
         <div className="min-w-0">
           <p className="mb-1 text-sm font-semibold leading-snug text-slate-800">{signal.headline}</p>
@@ -93,7 +93,7 @@ export function DailySignalCard({ className }: { className?: string } = {}) {
             style={{ color: styles.icon }}
           >
             {signal.actionLabel}
-            <ChevronRight className="h-3.5 w-3.5" />
+            <CaretRight weight="duotone" size={14} aria-hidden />
           </button>
         </div>
       </div>

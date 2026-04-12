@@ -1,43 +1,42 @@
 'use client'
 
 import { useCallback, useMemo, useState, useEffect } from 'react'
-import { X } from 'lucide-react'
 import {
-  BadgePercent,
-  Building2,
-  Calculator,
-  CircleDollarSign,
-  FileText,
-  Home,
-  Landmark,
+  X,
+  TrendingUp,
   Percent,
   PiggyBank,
-  Scale,
-  ScrollText,
+  Bank,
+  Scales,
   ShieldCheck,
   Timer,
-  TrendingUp,
+  Calculator,
+  House,
+  FileText,
   Wallet,
-  type LucideIcon,
-} from 'lucide-react'
+  SealPercent,
+  CurrencyCircleDollar,
+  Buildings,
+  Scroll,
+} from '@phosphor-icons/react'
 import { DAILY_INSIGHTS, getDailyInsightIndex, type DailyInsightIconId } from '@/lib/nq-daily-insights'
 
-const ICON_MAP: Record<DailyInsightIconId, LucideIcon> = {
+const ICON_MAP: Record<DailyInsightIconId, typeof TrendingUp> = {
   TrendingUp,
   Percent,
   PiggyBank,
-  Landmark,
-  Scale,
+  Landmark: Bank,
+  Scale: Scales,
   ShieldCheck,
   Timer,
   Calculator,
-  Home,
+  Home: House,
   FileText,
   Wallet,
-  BadgePercent,
-  CircleDollarSign,
-  Building2,
-  ScrollText,
+  BadgePercent: SealPercent,
+  CircleDollarSign: CurrencyCircleDollar,
+  Building2: Buildings,
+  ScrollText: Scroll,
 }
 
 const DISMISS_KEY = 'nq_insight_dismissed'
@@ -93,11 +92,11 @@ export default function DailyInsightCard() {
         className="absolute right-2 top-2 rounded-lg p-1.5 text-slate-500 transition hover:bg-black/5 hover:text-slate-800"
         aria-label="Dismiss insight"
       >
-        <X className="h-4 w-4" strokeWidth={2} />
+        <X weight="duotone" size={20} className="text-[var(--muted)]" aria-hidden />
       </button>
       <div className="flex gap-3">
         <span className="mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} aria-hidden>
-          <Icon className="h-6 w-6" strokeWidth={2} />
+          <Icon weight="duotone" size={24} />
         </span>
         <div className="min-w-0">
           <p

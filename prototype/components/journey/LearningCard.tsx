@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from '@phosphor-icons/react'
 import type { UserTier } from '@/lib/tiers'
 import { TIER_DEFINITIONS } from '@/lib/tiers'
 import { tierAtLeast } from '@/lib/tiers'
@@ -62,7 +62,7 @@ export default function LearningCard({
       <p className="mt-1 text-sm text-slate-600">{sub}</p>
       <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-teal-700">
         Open
-        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+        <ArrowRight weight="duotone" size={20} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
       </span>
     </Link>
   )

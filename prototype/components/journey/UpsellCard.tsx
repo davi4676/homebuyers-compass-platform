@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { X } from 'lucide-react'
+import { X } from '@phosphor-icons/react'
 import type { UserTier } from '@/lib/tiers'
 import { TIER_DEFINITIONS } from '@/lib/tiers'
 import MindsetTag from '@/components/journey/MindsetTag'
@@ -62,7 +62,7 @@ export default function UpsellCard({
           className="absolute right-2 top-2 rounded-lg p-1.5 text-slate-500 transition hover:bg-white/80 hover:text-slate-800"
           aria-label="Dismiss"
         >
-          <X className="h-4 w-4" aria-hidden />
+          <X weight="duotone" size={20} className="text-[var(--muted)]" aria-hidden />
         </button>
       ) : null}
       <p className="pr-8 text-sm font-bold text-teal-950">{title}</p>

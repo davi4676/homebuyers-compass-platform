@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Lock } from 'lucide-react'
+import { Lock } from '@phosphor-icons/react'
 import type { MoneyCategory } from '@/lib/money-engine'
 import type { UserTier as Tier } from '@/lib/tiers'
 import { TIER_DEFINITIONS } from '@/lib/tiers'
@@ -51,7 +51,7 @@ export default function LockedMoneyCard({
     >
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-200/90 text-slate-600">
-          <Lock className="h-5 w-5" strokeWidth={2} aria-hidden />
+          <Lock weight="duotone" size={20} aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
           <span className="inline-block rounded-full bg-slate-200/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">

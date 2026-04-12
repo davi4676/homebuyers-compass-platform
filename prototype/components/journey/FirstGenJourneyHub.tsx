@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { BookOpen, ExternalLink, Gift, MessagesSquare } from 'lucide-react'
+import { BookOpen, ArrowSquareOut, Gift, ChatsCircle } from '@phosphor-icons/react'
 import FirstGenHub from '@/components/results/FirstGenHub'
 import type { JourneyTab } from '@/lib/journey-nav-tabs'
 import { journeyTabHref } from '@/lib/journey-nav-tabs'
@@ -33,7 +33,7 @@ export default function FirstGenJourneyHub({ goTab }: Props) {
             href="/resources"
             className="group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm transition hover:border-teal-200 hover:shadow-md"
           >
-            <BookOpen className="h-8 w-8 text-teal-700" aria-hidden />
+            <BookOpen weight="duotone" size={32} className="text-teal-700" aria-hidden />
             <p className="mt-3 font-semibold text-slate-900">Glossary &amp; playbooks</p>
             <p className="mt-1 text-sm text-slate-600">
               Plain-language explainers for terms like DTI, PMI, and escrow — plus longer guides when you are ready.
@@ -47,22 +47,22 @@ export default function FirstGenJourneyHub({ goTab }: Props) {
             rel="noopener noreferrer"
             className="group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm transition hover:border-teal-200 hover:shadow-md"
           >
-            <Gift className="h-8 w-8 text-teal-700" aria-hidden />
+            <Gift weight="duotone" size={32} className="text-teal-700" aria-hidden />
             <p className="mt-3 font-semibold text-slate-900">Gift funds &amp; help from family</p>
             <p className="mt-1 text-sm text-slate-600">
               How gift letters work and what lenders usually need to document — from a trusted consumer source.
             </p>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-900">
-              Read the guide <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+              Read the guide <ArrowSquareOut weight="duotone" size={14} className="inline" aria-hidden />
             </span>
           </a>
 
           <button
             type="button"
-            onClick={() => goTab('library')}
+            onClick={() => goTab('learn')}
             className="rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm transition hover:border-teal-200 hover:shadow-md"
           >
-            <MessagesSquare className="h-8 w-8 text-teal-700" aria-hidden />
+            <ChatsCircle weight="duotone" size={32} className="text-teal-700" aria-hidden />
             <p className="mt-3 font-semibold text-slate-900">Family conversation scripts</p>
             <p className="mt-1 text-sm text-slate-600">
               Open the Library tab for scripts and checklists you can use with parents, partners, and co-buyers.

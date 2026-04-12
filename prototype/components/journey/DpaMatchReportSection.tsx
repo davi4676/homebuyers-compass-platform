@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSafeSearchParams } from '@/lib/use-safe-search-params'
-import { ChevronDown } from 'lucide-react'
+import { CaretDown } from '@phosphor-icons/react'
 import BlurredPreview from '@/components/revenue/BlurredPreview'
 import { trackRevenueEvent } from '@/lib/revenueTracking'
 import { track } from '@/lib/analytics'
@@ -320,7 +320,7 @@ export default function DpaMatchReportSection({ userTier }: { userTier: UserTier
                 <details className="group mt-3 rounded-lg border border-gray-200">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium text-teal-700 hover:bg-teal-50/50 [&::-webkit-details-marker]:hidden">
                     How to Apply
-                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
+                    <CaretDown weight="duotone" size={20} className="shrink-0 transition-transform group-open:rotate-180" aria-hidden />
                   </summary>
                   <ol className="list-decimal space-y-2 border-t border-gray-100 px-6 py-3 text-sm text-gray-600">
                     {p.howToApplySteps.map((step, i) => (

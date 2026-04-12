@@ -3,13 +3,13 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowRight, ChevronRight } from 'lucide-react'
+import { ArrowRight, CaretRight } from '@phosphor-icons/react'
 import type { UserTier } from '@/lib/tiers'
 import { TIER_DEFINITIONS, tierAtLeast, getMomentumToNavigatorUpgradeCopy } from '@/lib/tiers'
 import type { UserSnapshot } from '@/lib/user-snapshot'
 import TierBadge from '@/components/TierBadge'
 import MindsetTag from './MindsetTag'
-import DynamicRoadmap from './DynamicRoadmap'
+import JourneyTimeline from './JourneyTimeline'
 import MoneyCard from './MoneyCard'
 import LockedMoneyCard from './LockedMoneyCard'
 import type { JourneyTab } from '@/lib/journey-nav-tabs'
@@ -140,10 +140,10 @@ export default function JourneyOnboardingWizard({
               ctaLabel={key === 'funding' ? 'Browse Money Finder' : key === 'alternative' ? 'See strategies' : 'Open Budget Sketch'}
               onCta={() =>
                 key === 'funding'
-                  ? goTab('library')
+                  ? goTab('money')
                   : key === 'alternative'
                     ? goTab('learn')
-                    : goTab('budget')
+                    : goTab('plan')
               }
             />
           )
@@ -277,7 +277,7 @@ export default function JourneyOnboardingWizard({
                 className="mt-2 inline-flex items-center gap-1 font-bold text-amber-900 underline underline-offset-2"
               >
                 Explore Momentum
-                <ArrowRight className="h-4 w-4" aria-hidden />
+                <ArrowRight weight="duotone" size={20} aria-hidden />
               </Link>
             </div>
           ) : null}
@@ -309,10 +309,11 @@ export default function JourneyOnboardingWizard({
               Momentum is for buyers who want structure and momentum beyond Phase 2.
             </p>
           ) : null}
-          <DynamicRoadmap
+          <JourneyTimeline
             phaseOrders={NQ_GUIDED_PHASE_ORDERS}
             effectiveTier={effectiveTier}
             currentPhaseOrder={displayPhaseOrder}
+            currentSavings={snapshot?.quiz.downPayment ?? 0}
             canAccessPhase={(phaseOrder) =>
               getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccessIndex) !== null
             }
@@ -363,11 +364,11 @@ export default function JourneyOnboardingWizard({
           </div>
           <button
             type="button"
-            onClick={() => goTab('budget')}
+            onClick={() => goTab('plan')}
             className="inline-flex items-center gap-2 rounded-xl bg-[rgb(var(--navy))] px-5 py-2.5 text-sm font-bold text-white shadow-md"
           >
-            Open Budget Sketch
-            <ChevronRight className="h-4 w-4" aria-hidden />
+            Open My Plan
+            <CaretRight weight="duotone" size={20} aria-hidden />
           </button>
         </motion.div>
       ) : null}
@@ -416,7 +417,7 @@ export default function JourneyOnboardingWizard({
               type="button"
               onClick={() => {
                 onComplete()
-                goTab('overview')
+                goTab('today')
               }}
               className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-6 py-3 text-sm font-bold text-white shadow-md"
             >
@@ -455,7 +456,7 @@ export default function JourneyOnboardingWizard({
             className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-md"
           >
             Continue
-            <ChevronRight className="h-4 w-4" aria-hidden />
+            <CaretRight weight="duotone" size={20} aria-hidden />
           </button>
         </div>
       ) : null}

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from '@phosphor-icons/react'
 import { getPhaseAndFeature } from '@/lib/journey-phases-data'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
 

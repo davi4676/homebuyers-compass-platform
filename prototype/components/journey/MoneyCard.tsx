@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from '@phosphor-icons/react'
 import type { MoneyCategory } from '@/lib/money-engine'
 import { formatCurrency } from '@/lib/calculations'
 
@@ -47,7 +47,7 @@ export default function MoneyCard({
       <p className="mt-2 text-sm font-semibold tabular-nums text-emerald-800">{valueLabel}</p>
       <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-700">
         {ctaLabel}
-        <ArrowRight className="h-4 w-4" aria-hidden />
+        <ArrowRight weight="duotone" size={20} aria-hidden />
       </span>
     </>
   )

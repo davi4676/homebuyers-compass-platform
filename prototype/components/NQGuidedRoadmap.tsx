@@ -15,29 +15,28 @@ import Link from 'next/link'
 import {
   Lock,
   ArrowRight,
-  ChevronLeft,
+  CaretLeft,
   Check,
-  Sparkles,
-  MessageCircle,
+  Sparkle,
+  ChatCircle,
   Target,
   Lightbulb,
-  HelpCircle,
+  Question,
   Receipt,
-  CalendarClock,
+  Calendar,
   Gauge,
-  ChevronDown,
-  Search,
+  CaretDown,
+  MagnifyingGlass,
   Bell,
-  Mail,
-  AlertCircle,
+  Envelope,
+  WarningCircle,
   Copy,
   Gift,
   BookOpen,
-  ExternalLink,
-  Map,
-  Calculator,
-  ChevronRight,
-} from 'lucide-react'
+  ArrowSquareOut,
+  MapPin,
+  CaretRight,
+} from '@phosphor-icons/react'
 import { ChatPopover } from '@/components/chatbot/ChatPopover'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
 import {
@@ -92,7 +91,7 @@ import JourneyTimeline from '@/components/journey/JourneyTimeline'
 import DailyInsightCard from '@/components/journey/DailyInsightCard'
 import JourneyWinsBoard from '@/components/journey/JourneyWinsBoard'
 import JourneyNextMilestoneTeaser from '@/components/journey/JourneyNextMilestoneTeaser'
-import { appendNqCompletedAction } from '@/lib/nq-completed-actions'
+import { appendNqCompletedAction, labelForWinsBoard } from '@/lib/nq-completed-actions'
 import { useICP } from '@/lib/icp-context'
 import LearningCard from '@/components/journey/LearningCard'
 import LockedFeatureCard from '@/components/journey/LockedFeatureCard'
@@ -355,7 +354,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-const WHY_IT_MATTERS_MYTH_ICONS = [Receipt, CalendarClock, Gauge] as const
+const WHY_IT_MATTERS_MYTH_ICONS = [Receipt, Calendar, Gauge] as const
 const WHY_IT_MATTERS_MYTH_ICON_STYLES = [
   'bg-millennial-primary-light/50 text-teal-800 ring-teal-200/80',
   'bg-amber-100 text-amber-800 ring-amber-200/70',
@@ -820,6 +819,13 @@ export default function NQGuidedRoadmap({
       setPhaseChecklistDone((prev) => {
         const base = prev.length === items.length ? prev : Array(items.length).fill(false)
         const next = base.map((v, i) => (i === index ? !v : v))
+        if (!base[index] && next[index]) {
+          appendNqCompletedAction({
+            id: `nq-checklist-${step.id}-${index}`,
+            label: labelForWinsBoard(items[index]),
+            completedAt: Date.now(),
+          })
+        }
         try {
           const raw = localStorage.getItem(PHASE_CHECKLIST_LS)
           const all = raw ? (JSON.parse(raw) as Record<string, boolean[]>) : {}
@@ -1144,7 +1150,7 @@ export default function NQGuidedRoadmap({
               <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-teal-900">
-                    <Sparkles className="h-4 w-4 text-teal-600" aria-hidden />
+                    <Sparkle className="h-4 w-4 text-teal-600" aria-hidden />
                     Start here
                   </p>
                   <h2 className="mt-2 font-display text-xl font-bold text-[rgb(var(--navy))] sm:text-2xl">
@@ -1197,7 +1203,7 @@ export default function NQGuidedRoadmap({
                 style={{ color: content.accentColor }}
               >
                 First-Gen Hub
-                <ChevronRight className="ml-0.5 inline h-4 w-4 align-text-bottom" aria-hidden />
+                <CaretRight className="ml-0.5 inline h-4 w-4 align-text-bottom" aria-hidden />
               </button>
             ) : null}
           </section>
@@ -1319,8 +1325,8 @@ export default function NQGuidedRoadmap({
               </ul>
             ) : null}
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={handleIDidIt} disabled={currentStepMarkedDone} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-5 py-3 text-sm font-bold text-white shadow-md transition hover:shadow-lg disabled:opacity-50">
-                <Check className="h-4 w-4" aria-hidden /> {currentStepMarkedDone ? 'Done' : 'I did it'}
+              <button type="button" onClick={handleIDidIt} disabled={currentStepMarkedDone} className="btn-primary nq-cta-pulse inline-flex items-center gap-2 px-5 py-3 text-sm disabled:opacity-50">
+                <Check weight="duotone" size={20} aria-hidden /> {currentStepMarkedDone ? 'Done' : 'I did it'}
               </button>
               <button type="button" onClick={handleSkip} disabled={isLastStep} className="text-sm font-semibold text-slate-500 underline underline-offset-2 hover:text-slate-800 disabled:opacity-40">Skip</button>
               <button type="button" onClick={handleBack} disabled={currentStepIndex === 0} className="text-sm font-semibold text-slate-500 underline underline-offset-2 hover:text-slate-800 disabled:opacity-40">Back</button>
@@ -1333,12 +1339,12 @@ export default function NQGuidedRoadmap({
               <button type="button" onClick={() => goTab('plan')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <Map className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
+                    <MapPin weight="duotone" size={20} className="shrink-0" style={{ color: content.accentColor }} aria-hidden />
                     <span className="font-display text-base font-bold text-slate-900">My Plan</span>
                   </div>
                   <p className="mt-1 text-xs text-slate-600">Roadmap and budget sketch</p>
                 </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+                <CaretRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
               </button>
               <button type="button" onClick={() => goTab('money')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
                 <div className="min-w-0">
@@ -1348,7 +1354,7 @@ export default function NQGuidedRoadmap({
                   </div>
                   <p className="mt-1 text-xs text-slate-600">Programs and savings you qualify for</p>
                 </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+                <CaretRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
               </button>
               <button type="button" onClick={() => goTab('learn')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
                 <div className="min-w-0">
@@ -1358,7 +1364,7 @@ export default function NQGuidedRoadmap({
                   </div>
                   <p className="mt-1 text-xs text-slate-600">Concepts, scripts, and guides</p>
                 </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+                <CaretRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
               </button>
             </div>
           </section>
@@ -1369,17 +1375,17 @@ export default function NQGuidedRoadmap({
               <span className="text-sm font-bold uppercase tracking-wide text-slate-600">
                 Alerts &amp; tasks ({inboxTasks.filter((t) => !t.done).length} pending)
               </span>
-              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180" aria-hidden />
+              <CaretDown className="h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180" aria-hidden />
             </summary>
             <div className="space-y-5 border-t border-slate-100 p-5 sm:p-6">
               <section aria-label="Alerts">
                 <ul className="space-y-3 text-sm text-amber-950" role="list">
                   <li className="flex gap-2 rounded-lg bg-amber-50 px-3 py-2 shadow-sm">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                    <WarningCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
                     <span>Rate quotes are moving weekly — refresh quotes before you go under contract.</span>
                   </li>
                   <li className="flex gap-2 rounded-lg bg-amber-50 px-3 py-2 shadow-sm">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                    <WarningCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
                     <span>Wire fraud reminder: always confirm wiring instructions by phone on a number you trust.</span>
                   </li>
                 </ul>
@@ -1393,7 +1399,17 @@ export default function NQGuidedRoadmap({
                         type="checkbox"
                         checked={task.done}
                         onChange={() => {
-                          setInboxTasks((prev) => prev.map((t, i) => (i === idx ? { ...t, done: !t.done } : t)))
+                          setInboxTasks((prev) => {
+                            const cur = prev[idx]
+                            if (cur && !cur.done) {
+                              appendNqCompletedAction({
+                                id: `nq-inbox-${cur.id}`,
+                                label: cur.label,
+                                completedAt: Date.now(),
+                              })
+                            }
+                            return prev.map((t, i) => (i === idx ? { ...t, done: !t.done } : t))
+                          })
                           if (!task.done && /upload|document|pay stub|lender portal/i.test(task.label)) setDocTaskTouched(true)
                         }}
                         className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
@@ -1730,13 +1746,13 @@ export default function NQGuidedRoadmap({
               disabled={currentStepIndex === 0}
               className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ChevronLeft className="h-4 w-4" /> Back
+              <CaretLeft className="h-4 w-4" /> Back
             </button>
             <div
               className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-white/90 px-3 py-1.5 text-xs text-slate-600"
               title="How many roadmap phases you have finished"
             >
-              <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden />
+              <Sparkle className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden />
               <span className="font-semibold text-slate-800">
                 <span className="tabular-nums">{phasesDoneCount}</span>
                 <span className="mx-1 font-normal text-slate-400">/</span>
@@ -1887,7 +1903,7 @@ export default function NQGuidedRoadmap({
                               : 'border-teal-200 bg-white text-millennial-cta-primary hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 hover:shadow-md'
                           }`}
                         >
-                          <MessageCircle className="h-6 w-6" strokeWidth={2} />
+                          <ChatCircle weight="duotone" size={24} />
                         </button>
                         <ChatPopover
                           isOpen={chatOpen}
@@ -1946,14 +1962,14 @@ export default function NQGuidedRoadmap({
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,7.5rem)_1fr] sm:items-stretch">
                         <div className="flex flex-row items-center justify-center gap-3 rounded-2xl bg-[rgb(var(--navy))] px-4 py-3 shadow-lg shadow-slate-900/15 ring-1 ring-white/10 sm:flex-col sm:gap-2.5 sm:px-3 sm:py-4 sm:text-center">
-                          <Target className="h-5 w-5 shrink-0 text-teal-300/90 sm:h-5 sm:w-5" strokeWidth={2} aria-hidden />
+                          <Target weight="duotone" size={20} className="shrink-0 text-teal-300/90" aria-hidden />
                           <h3 className="text-xs font-bold uppercase leading-snug tracking-[0.12em] text-white/95 sm:max-w-[7rem] sm:text-sm sm:leading-tight">
                             What to do now
                           </h3>
                         </div>
                         <div className="relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md ring-1 ring-slate-100/80 sm:p-5">
                           <div className="absolute right-2 top-2 opacity-[0.06] sm:right-3 sm:top-3">
-                            <Target className="h-14 w-14 text-[rgb(var(--navy))]" strokeWidth={1} aria-hidden />
+                            <Target weight="duotone" size={56} className="text-[rgb(var(--navy))]" aria-hidden />
                           </div>
                           <p className="relative text-lg font-semibold leading-relaxed text-slate-900 sm:text-xl">
                             {renderWithAnnualCreditReportLink(displayStep.nqWhatToDo)}
@@ -2064,7 +2080,7 @@ export default function NQGuidedRoadmap({
                         whileTap={{ scale: 0.98 }}
                         className="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3.5 text-lg font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 hover:shadow-md"
                       >
-                        <HelpCircle className="h-5 w-5 text-millennial-cta-primary" strokeWidth={2} />
+                        <Question weight="duotone" size={20} className="text-millennial-cta-primary" />
                         I need help
                       </motion.button>
                       {!isLastStep ? (
@@ -2179,7 +2195,7 @@ export default function NQGuidedRoadmap({
                   className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-300"
                 >
                   <div className="flex items-center gap-2 text-teal-700">
-                    <ExternalLink className="h-5 w-5" aria-hidden />
+                    <ArrowSquareOut className="h-5 w-5" aria-hidden />
                     <p className="font-bold text-slate-900">HUD Counselors</p>
                   </div>
                   <p className="mt-2 text-sm text-slate-600">Free, government-approved housing counselors in your area</p>
@@ -2404,14 +2420,14 @@ export default function NQGuidedRoadmap({
           {hasLearnContent ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,7.5rem)_1fr] sm:items-stretch">
               <div className="flex flex-row items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-4 py-3 shadow-lg shadow-slate-900/15 ring-1 ring-white/20 sm:flex-col sm:gap-2.5 sm:px-3 sm:py-4 sm:text-center">
-                <Lightbulb className="h-5 w-5 shrink-0 text-white/90 sm:h-5 sm:w-5" strokeWidth={2.5} aria-hidden />
+                <Lightbulb weight="duotone" size={20} className="shrink-0 text-white/90" aria-hidden />
                 <h3 className="text-xs font-bold uppercase leading-snug tracking-[0.12em] text-white/95 sm:max-w-[7rem] sm:text-sm sm:leading-tight">
                   Why it matters
                 </h3>
               </div>
               <div className="relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md ring-1 ring-slate-100/80 sm:p-6">
                 <div className="absolute right-2 top-2 opacity-[0.06] sm:right-3 sm:top-3">
-                  <Lightbulb className="h-14 w-14 text-millennial-cta-primary" strokeWidth={1} aria-hidden />
+                  <Lightbulb weight="duotone" size={56} className="text-millennial-cta-primary" aria-hidden />
                 </div>
                 {displayStep.nqWhyItMattersCards && displayStep.nqWhyItMattersCards.length > 0 ? (
                   <div className="relative">
@@ -2441,12 +2457,12 @@ export default function NQGuidedRoadmap({
                                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${ring}`}
                                 aria-hidden
                               >
-                                <Icon className="h-5 w-5" strokeWidth={2} />
+                                <Icon weight="duotone" size={20} />
                               </div>
                               <div className="min-w-0 flex-1 pt-0.5">
                                 <span className="flex items-start justify-between gap-2">
                                   <span className="text-base font-bold leading-snug text-slate-900">{card.title}</span>
-                                  <ChevronDown
+                                  <CaretDown
                                     className={`mt-0.5 h-5 w-5 shrink-0 text-slate-400 transition-transform ${
                                       expanded ? 'rotate-180' : ''
                                     }`}
@@ -2480,7 +2496,7 @@ export default function NQGuidedRoadmap({
                       <span className="text-sm font-bold uppercase tracking-wide text-slate-600">
                         Why this step matters
                       </span>
-                      <ChevronDown
+                      <CaretDown
                         className={`h-5 w-5 shrink-0 text-slate-400 transition-transform ${
                           openMythTitle === '__whatItMeans__' ? 'rotate-180' : ''
                         }`}
@@ -2549,8 +2565,10 @@ export default function NQGuidedRoadmap({
           </div>
 
           <div className="relative">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            <MagnifyingGlass
+              weight="duotone"
+              size={20}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               aria-hidden
             />
             <label htmlFor="journey-library-search" className="sr-only">
@@ -2804,14 +2822,14 @@ export default function NQGuidedRoadmap({
             </h3>
             <ul className="mt-4 space-y-3 text-sm text-amber-950" role="list">
               <li className="flex gap-2 rounded-lg bg-white/80 px-3 py-2 shadow-sm">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                <WarningCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
                 <span>
                   Rate quotes are moving weekly — if you&apos;re pre-approved, consider refreshing quotes before
                   you go under contract.
                 </span>
               </li>
               <li className="flex gap-2 rounded-lg bg-white/80 px-3 py-2 shadow-sm">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+                <WarningCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
                 <span>Wire fraud reminder: always confirm wiring instructions by phone on a number you trust.</span>
               </li>
             </ul>
@@ -2829,9 +2847,17 @@ export default function NQGuidedRoadmap({
                     type="checkbox"
                     checked={task.done}
                     onChange={() => {
-                      setInboxTasks((prev) =>
-                        prev.map((t, i) => (i === idx ? { ...t, done: !t.done } : t))
-                      )
+                      setInboxTasks((prev) => {
+                        const cur = prev[idx]
+                        if (cur && !cur.done) {
+                          appendNqCompletedAction({
+                            id: `nq-inbox-${cur.id}`,
+                            label: cur.label,
+                            completedAt: Date.now(),
+                          })
+                        }
+                        return prev.map((t, i) => (i === idx ? { ...t, done: !t.done } : t))
+                      })
                       const nextDone = !task.done
                       if (
                         nextDone &&
@@ -2879,7 +2905,7 @@ export default function NQGuidedRoadmap({
 
           <section aria-labelledby="inbox-messages-heading" className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 sm:p-6">
             <h3 id="inbox-messages-heading" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-600">
-              <Mail className="h-4 w-4 shrink-0" aria-hidden />
+              <Envelope weight="duotone" className="h-4 w-4 shrink-0" aria-hidden />
               Messages
             </h3>
             <div className="mt-4 space-y-3">
@@ -2891,7 +2917,7 @@ export default function NQGuidedRoadmap({
                 </p>
               </div>
               <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-6 text-center">
-                <Mail className="h-7 w-7 text-slate-300" aria-hidden />
+                <Envelope weight="duotone" className="h-7 w-7 text-slate-300" aria-hidden />
                 <p className="text-sm font-medium text-slate-500">No new messages</p>
                 <p className="text-xs text-slate-400">Lender updates, agent notes, and NQ tips will appear here as your journey progresses.</p>
               </div>

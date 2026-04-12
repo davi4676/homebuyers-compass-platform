@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronDown } from 'lucide-react'
-import { CheckCircle } from '@phosphor-icons/react'
+import { CaretDown, CheckCircle } from '@phosphor-icons/react'
 import {
   loadNqCompletedActions,
   formatWinLineDate,
@@ -44,8 +43,10 @@ export default function JourneyWinsBoard() {
         className="flex w-full items-center justify-between gap-2 text-left"
       >
         <span className="font-display text-lg font-bold text-slate-900">Your progress so far</span>
-        <ChevronDown
-          className={`h-5 w-5 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
+        <CaretDown
+          weight="duotone"
+          size={20}
+          className={`shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
           aria-hidden
         />
       </button>
@@ -70,8 +71,9 @@ export default function JourneyWinsBoard() {
                 className="flex items-start gap-3 rounded-lg border border-slate-100 bg-white px-3 py-2.5 shadow-sm"
               >
                 <CheckCircle
-                  weight="fill"
-                  className="mt-0.5 h-5 w-5 shrink-0"
+                  weight="duotone"
+                  size={20}
+                  className="mt-0.5 shrink-0"
                   style={{ color: 'var(--success)' }}
                   aria-hidden
                 />

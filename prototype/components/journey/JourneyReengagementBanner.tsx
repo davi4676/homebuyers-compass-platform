@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { X } from 'lucide-react'
+import { X } from '@phosphor-icons/react'
 import { NQ_LAST_VISIT_KEY, reengagementDismissedKey } from '@/lib/nq-journey-visit'
 
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000
@@ -97,7 +97,7 @@ export default function JourneyReengagementBanner() {
           className="rounded-lg p-2 text-white/90 hover:bg-white/10"
           aria-label="Dismiss"
         >
-          <X className="h-5 w-5" />
+          <X weight="duotone" size={20} className="text-white/90" aria-hidden />
         </button>
       </div>
     </div>

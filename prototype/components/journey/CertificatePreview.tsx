@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Award, Lock } from "lucide-react";
+import { Trophy, Lock } from "@phosphor-icons/react";
 import { useICP } from "@/lib/icp-context";
 
 interface CertificatePreviewProps {
@@ -51,7 +51,7 @@ export function CertificatePreview({
         />
 
         <div className="p-6 text-center relative">
-          <Award className="w-8 h-8 mx-auto mb-2" style={{ color: content.accentColor }} aria-hidden />
+          <Trophy weight="duotone" size={32} className="mx-auto mb-2" style={{ color: content.accentColor }} aria-hidden />
           <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">Certificate of Completion</p>
           <p className="text-lg font-bold text-slate-800 mb-1">NestQuest Homebuyer Education</p>
 
@@ -77,7 +77,7 @@ export function CertificatePreview({
 
           {!isComplete && (
             <div className="mt-3 flex items-center justify-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-slate-400" aria-hidden />
+              <Lock weight="duotone" size={14} className="text-slate-400" aria-hidden />
               <span className="text-xs text-slate-500">Complete all 7 phases to unlock — $29</span>
             </div>
           )}

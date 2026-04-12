@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -78,6 +80,15 @@ textarea {
   --radius: 16px;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --primary-light: #40916c;
+  --accent-light: #ffd166;
+  --surface-2: #f0ede8;
+  --text-soft: #4a6358;
+  --warning: #f4a261;
+  --white: #ffffff;
+  --radius-sm: 8px;
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.14);
+  --transition: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html {
@@ -233,6 +244,153 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .nq-reengage-cta {
     animation: none;
+  }
+}
+
+/* ── Phase 5 — Customized Journey tab design system (scoped) ── */
+.nq-journey-ds {
+  --primary: #2d6a4f;
+  --primary-light: #40916c;
+  --accent: #f4a261;
+  --accent-light: #ffd166;
+  --surface: #f9f7f4;
+  --surface-2: #f0ede8;
+  --muted: #b7c9c0;
+  --text: #1a2e25;
+  --text-soft: #4a6358;
+  --success: #52b788;
+  --warning: #f4a261;
+  --white: #ffffff;
+  --radius: 16px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.14);
+  --transition: cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  isolation: isolate;
+  color: var(--text);
+}
+
+.nq-journey-ds.app-page-shell {
+  background: var(--surface) !important;
+}
+
+.nq-journey-ds::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.nq-journey-ds h1,
+.nq-journey-ds h2,
+.nq-journey-ds .display {
+  font-family: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.nq-journey-ds h3 {
+  font-family: var(--font-dm-sans), 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.nq-journey-ds .label,
+.nq-journey-ds .badge,
+.nq-journey-ds .tag {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.nq-journey-ds .nq-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(45, 106, 79, 0.08);
+  transition:
+    box-shadow 200ms var(--transition),
+    transform 200ms var(--transition);
+}
+
+.nq-journey-ds .nq-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.nq-journey-ds .btn-primary {
+  background: var(--primary);
+  color: var(--white);
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms var(--transition);
+}
+
+.nq-journey-ds .btn-primary:hover:not(:disabled) {
+  background: var(--primary-light);
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.nq-journey-ds .btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.nq-journey-ds a.btn-primary {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes nq-cta-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(45, 106, 79, 0);
+  }
+}
+
+.nq-journey-ds .nq-cta-pulse:not(:disabled) {
+  animation: nq-cta-pulse 6s var(--transition) infinite;
+}
+
+.nq-journey-ds .nq-card:not(.nq-reveal),
+.nq-journey-ds .nq-section:not(.nq-reveal) {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 500ms var(--transition),
+    transform 500ms var(--transition);
+}
+
+.nq-journey-ds .nq-card.nq-reveal,
+.nq-journey-ds .nq-section.nq-reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nq-journey-ds .nq-card:not(.nq-reveal),
+  .nq-journey-ds .nq-section:not(.nq-reveal) {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .nq-journey-ds .nq-cta-pulse {
+    animation: none !important;
   }
 }
 

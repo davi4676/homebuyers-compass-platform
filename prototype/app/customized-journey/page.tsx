@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Bell, BookOpen, X } from 'lucide-react'
+import { Bell, BookOpen, X } from '@phosphor-icons/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSafeSearchParams } from '@/lib/use-safe-search-params'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -36,6 +36,7 @@ import JourneyPhaseProgressRing from '@/components/journey/JourneyPhaseProgressR
 import JourneyProgressIdentityHeader from '@/components/journey/JourneyProgressIdentityHeader'
 import SessionWinsBanner from '@/components/journey/SessionWinsBanner'
 import JourneyReengagementBanner from '@/components/journey/JourneyReengagementBanner'
+import JourneyTabReveal from '@/components/journey/JourneyTabReveal'
 import { buildUserSnapshot, loadQuizDataFromLocalStorage } from '@/lib/user-snapshot'
 import type { UserSnapshot } from '@/lib/user-snapshot'
 import { useJourneyPhaseRingProgress } from '@/hooks/use-journey-phase-ring'
@@ -253,15 +254,16 @@ export default function CustomizedJourneyPage() {
   }
 
   return (
-    <div className="app-page-shell ml-0 pb-20 text-base leading-relaxed sm:ml-52 sm:pb-0 md:text-lg">
+    <div className="nq-journey-ds app-page-shell ml-0 pb-20 text-base leading-relaxed sm:ml-52 sm:pb-0 md:text-lg">
+      <JourneyTabReveal />
       {/* Bottom (mobile) + left sidebar (desktop) nav: <JourneyNav /> in TopNav */}
       <UserJourneyTracker />
 
       <div
-        className={`mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${overviewMobileCompact ? 'pt-2 max-md:pt-2 md:pt-4' : 'pt-4'}`}
+        className={`nq-section mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${overviewMobileCompact ? 'pt-2 max-md:pt-2 md:pt-4' : 'pt-4'}`}
       >
         <div
-          className={`relative overflow-hidden rounded-2xl border border-millennial-border bg-white shadow-xl ${
+          className={`nq-card relative overflow-hidden rounded-2xl border border-millennial-border bg-white shadow-xl ${
             overviewMobileCompact ? 'max-md:shadow-md' : ''
           }`}
         >
@@ -323,7 +325,7 @@ export default function CustomizedJourneyPage() {
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-300/90 bg-amber-50 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            className="nq-card mt-4 flex flex-col gap-3 rounded-xl border border-amber-300/90 bg-amber-50 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
             role="status"
           >
             <p className="text-sm font-medium text-amber-950 sm:text-base">
@@ -332,7 +334,7 @@ export default function CustomizedJourneyPage() {
             </p>
             <Link
               href="/payment?tier=momentum&cycle=monthly"
-              className="inline-flex shrink-0 items-center justify-center rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white hover:bg-teal-800"
+              className="btn-primary inline-flex shrink-0 items-center justify-center text-sm"
             >
               Keep My Plan →
             </Link>
@@ -343,7 +345,7 @@ export default function CustomizedJourneyPage() {
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-950 shadow-sm"
+            className="nq-card mt-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-950 shadow-sm"
             role="status"
           >
             You were referred by a friend — sign up today and get $50 off your first plan.
@@ -361,7 +363,7 @@ export default function CustomizedJourneyPage() {
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-md"
+            className="nq-card mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-md"
             role="region"
             aria-label="Journey notification"
           >
@@ -406,7 +408,7 @@ export default function CustomizedJourneyPage() {
       </div>
 
       <main
-        className={`mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${
+        className={`nq-section mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${
           overviewMobileCompact ? 'py-4 max-md:py-3 md:py-14' : 'py-10 md:py-14'
         }`}
       >
@@ -421,7 +423,7 @@ export default function CustomizedJourneyPage() {
               <motion.div
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-3 rounded-xl border border-amber-200/90 bg-gradient-to-r from-amber-50 to-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                className="nq-card flex flex-col gap-3 rounded-xl border border-amber-200/90 bg-gradient-to-r from-amber-50 to-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                 role="region"
                 aria-label="Plain English suggestion"
               >
@@ -442,13 +444,13 @@ export default function CustomizedJourneyPage() {
                     className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
                     aria-label="Dismiss Plain English suggestion"
                   >
-                    <X className="h-5 w-5" aria-hidden />
+                    <X weight="duotone" size={20} className="text-[var(--muted)]" aria-hidden />
                   </button>
                 </div>
               </motion.div>
             ) : null}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-teal-200/80 bg-gradient-to-br from-white via-teal-50/40 to-white px-4 py-3.5 shadow-md sm:px-5 sm:py-4">
+            <div className="nq-card flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-teal-200/80 bg-gradient-to-br from-white via-teal-50/40 to-white px-4 py-3.5 shadow-md sm:px-5 sm:py-4">
               <label
                 className="flex cursor-pointer flex-wrap items-center gap-3 text-base font-semibold text-millennial-text"
                 title={plainEnglishTooltip}
@@ -494,7 +496,7 @@ export default function CustomizedJourneyPage() {
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-millennial-primary-light bg-millennial-primary-light/30 px-4 py-3"
+              className="nq-card mb-6 flex items-center justify-between gap-3 rounded-xl border border-millennial-primary-light bg-millennial-primary-light/30 px-4 py-3"
             >
               <p className="text-sm font-medium text-millennial-text md:text-base">
                 Welcome back — pick up where you left off.
@@ -514,11 +516,11 @@ export default function CustomizedJourneyPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="mb-10 text-center md:mb-14"
+            className="nq-section mb-10 text-center md:mb-14"
           >
             <PlainEnglishText
               as="h1"
-              className="mb-3 font-display text-3xl font-extrabold tracking-tight text-millennial-text sm:text-4xl md:text-[2.75rem] md:leading-tight"
+              className="display mb-3 text-3xl font-normal tracking-tight text-millennial-text sm:text-4xl md:text-[2.75rem] md:leading-tight"
               text="Your customized NestQuest journey"
             />
             <PlainEnglishText
@@ -558,7 +560,7 @@ export default function CustomizedJourneyPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 }}
-            className="relative mt-14 overflow-hidden rounded-2xl border border-millennial-border bg-gradient-to-br from-white via-millennial-primary-light/15 to-white p-6 shadow-lg shadow-teal-900/5 ring-1 ring-white sm:mt-16 sm:p-8"
+            className="nq-card relative mt-14 overflow-hidden rounded-2xl border border-millennial-border bg-gradient-to-br from-white via-millennial-primary-light/15 to-white p-6 shadow-lg shadow-teal-900/5 ring-1 ring-white sm:mt-16 sm:p-8"
           >
             <div
               className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-millennial-primary-light/40 blur-2xl"
@@ -573,7 +575,7 @@ export default function CustomizedJourneyPage() {
                 className="group inline-flex items-center gap-2.5 rounded-xl border-2 border-millennial-border bg-white px-5 py-3 text-sm font-semibold text-millennial-text shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 hover:shadow-md md:text-base"
               >
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-millennial-primary-light/70 text-millennial-cta-primary transition-colors group-hover:bg-millennial-primary-light">
-                  <BookOpen className="h-4 w-4" strokeWidth={2} />
+                  <BookOpen weight="duotone" size={20} className="text-[var(--primary)]" aria-hidden />
                 </span>
                 Library tab
               </Link>
@@ -582,7 +584,7 @@ export default function CustomizedJourneyPage() {
                 className="group inline-flex items-center gap-2.5 rounded-xl border-2 border-millennial-border bg-white px-5 py-3 text-sm font-semibold text-millennial-text shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-millennial-cta-secondary hover:bg-brand-mist/80 hover:shadow-md md:text-base"
               >
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-mist text-brand-forest transition-colors group-hover:bg-brand-mist">
-                  <Bell className="h-4 w-4" strokeWidth={2} />
+                  <Bell weight="duotone" size={20} className="text-[var(--muted)]" aria-hidden />
                 </span>
                 Inbox tab
               </Link>

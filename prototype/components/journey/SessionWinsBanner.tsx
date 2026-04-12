@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, Sparkles } from 'lucide-react'
+import { X, Sparkle } from '@phosphor-icons/react'
 import { clearSessionWins, getSessionWins } from '@/lib/session-wins'
 
 const DISMISS_KEY = 'nq_session_wins_banner_dismissed'
@@ -32,7 +32,7 @@ export default function SessionWinsBanner() {
       className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200/90 bg-amber-50/95 px-4 py-3 shadow-sm"
       role="status"
     >
-      <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+      <Sparkle weight="duotone" size={20} className="mt-0.5 shrink-0 text-amber-600" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-amber-950">Nice — progress this visit</p>
         <ul className="mt-1 list-inside list-disc text-sm text-amber-900/90">
@@ -55,7 +55,7 @@ export default function SessionWinsBanner() {
           className="rounded-lg p-1 text-amber-800/70 hover:bg-amber-100 hover:text-amber-950"
           aria-label="Dismiss"
         >
-          <X className="h-5 w-5" />
+          <X weight="duotone" size={20} className="text-amber-800/70" aria-hidden />
         </button>
         <button
           type="button"

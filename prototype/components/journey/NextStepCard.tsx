@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from '@phosphor-icons/react'
 
 type NextStepCardProps = {
   title?: string
@@ -18,7 +18,7 @@ export default function NextStepCard({ title = 'A simple step that moves you for
         className="mt-2 inline-flex items-center gap-1 text-left text-sm font-semibold text-emerald-950 underline decoration-emerald-300 underline-offset-2 hover:text-emerald-800"
       >
         {action}
-        <ArrowRight className="h-4 w-4" aria-hidden />
+        <ArrowRight weight="duotone" size={20} aria-hidden />
       </button>
     </section>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bell, Copy, Home, Share2, Check, Gift } from 'lucide-react'
+import { Bell, Copy, House, ShareNetwork, Check, Gift } from '@phosphor-icons/react'
 import type { UserSnapshot } from '@/lib/user-snapshot'
 import { formatCurrency } from '@/lib/calculations'
 import {
@@ -95,7 +95,7 @@ export default function HomeownerHubSection({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15">
-              <Gift className="h-6 w-6" aria-hidden />
+              <Gift weight="duotone" size={24} aria-hidden />
             </span>
             <div className="min-w-0">
               <p id="homeowner-referral-heading" className="text-xs font-semibold uppercase tracking-wide text-teal-100">
@@ -116,7 +116,11 @@ export default function HomeownerHubSection({
               onClick={copyLink}
               className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-teal-900 hover:bg-teal-50"
             >
-              {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+              {copied ? (
+                <Check weight="duotone" size={20} className="text-emerald-600" />
+              ) : (
+                <Copy weight="duotone" size={20} />
+              )}
               {copied ? 'Copied' : 'Copy link'}
             </button>
           </div>
@@ -139,7 +143,7 @@ export default function HomeownerHubSection({
             onClick={copyLink}
             className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-white/40 px-3 py-2.5 text-sm font-semibold text-white hover:bg-white/10 sm:flex-none"
           >
-            <Share2 className="h-4 w-4" aria-hidden />
+            <ShareNetwork weight="duotone" size={20} className="text-white" aria-hidden />
             Copy again
           </button>
         </div>
@@ -149,7 +153,7 @@ export default function HomeownerHubSection({
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-teal-600" aria-hidden />
+              <Bell weight="duotone" size={20} className="text-teal-600" aria-hidden />
               <h4 className="font-semibold text-slate-900">Refinance Monitor</h4>
             </div>
             <button
@@ -177,7 +181,7 @@ export default function HomeownerHubSection({
 
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-teal-600" aria-hidden />
+            <House weight="duotone" size={20} className="text-teal-600" aria-hidden />
             <h4 className="font-semibold text-slate-900">Equity Tracker</h4>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">

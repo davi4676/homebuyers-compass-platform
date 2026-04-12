@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Lock } from 'lucide-react'
+import { Lock } from '@phosphor-icons/react'
 import { journeyTabHrefPreservingSearch, JOURNEY_PAGE_PATH } from '@/lib/journey-nav-tabs'
 
 type Props = {
@@ -33,7 +33,7 @@ export default function JourneyNextMilestoneTeaser({
         Complete <span className="font-bold">{currentAction}</span> to unlock:
       </p>
       <div className="mt-3 flex items-center gap-2">
-        <Lock className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+        <Lock weight="duotone" size={20} className="shrink-0 text-slate-500" aria-hidden />
         <span className="text-base font-bold text-slate-900">{nextFeatureTitle}</span>
       </div>
       <div
