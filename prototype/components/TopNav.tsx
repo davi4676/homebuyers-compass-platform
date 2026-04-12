@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSafeSearchParams } from '@/lib/use-safe-search-params'
-import { Menu, Search, X } from 'lucide-react'
+import { Hamburger, MagnifyingGlass, X } from '@phosphor-icons/react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -225,7 +225,7 @@ export default function TopNav() {
               }`}
               aria-label="Search"
             >
-              <Search className="h-5 w-5" />
+              <MagnifyingGlass weight="duotone" size={20} aria-hidden />
             </Link>
             {isJourneyPage ? (
               <span className="text-xs font-semibold text-millennial-cta-primary md:hidden dark:text-cyan-400">Journey</span>
@@ -253,7 +253,7 @@ export default function TopNav() {
               className="rounded-lg p-2 text-millennial-text-muted hover:bg-millennial-primary-light/30 hover:text-millennial-text md:hidden"
               aria-label="Toggle menu"
             >
-              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileOpen ? <X weight="duotone" size={24} aria-hidden /> : <Hamburger weight="duotone" size={24} aria-hidden />}
             </button>
           </div>
         </div>
@@ -292,7 +292,7 @@ export default function TopNav() {
                     pathname === '/search' ? 'font-semibold text-millennial-cta-primary' : 'text-millennial-text'
                   }`}
                 >
-                  <Search className="h-5 w-5 shrink-0 opacity-80" aria-hidden />
+                  <MagnifyingGlass weight="duotone" size={20} className="shrink-0 opacity-80" aria-hidden />
                   Search
                 </Link>
                 {isJourneyPage ? (

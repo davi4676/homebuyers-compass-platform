@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Lock } from 'lucide-react'
+import { Lock } from '@phosphor-icons/react'
 
 export type UpgradeLockCalloutProps = {
   /** Short name of the locked item, e.g. "All assistance programs" */
@@ -31,12 +31,12 @@ export default function UpgradeLockCallout({
 }: UpgradeLockCalloutProps) {
   return (
     <div
-      className={`rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50 to-emerald-50/80 p-4 shadow-md ring-1 ring-teal-100/80 sm:p-5 ${className}`}
+      className={`nq-card rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50 to-emerald-50/80 p-4 shadow-md ring-1 ring-teal-100/80 sm:p-5 ${className}`}
       role="region"
       aria-label={`Upgrade to unlock ${lockedLabel}`}
     >
       <p className="flex items-start gap-2 text-sm font-semibold text-teal-950">
-        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-teal-700" aria-hidden />
+        <Lock weight="duotone" size={20} className="mt-0.5 shrink-0 text-teal-700" aria-hidden />
         <span>
           <span className="sr-only">Locked: </span>
           {lockedLabel}

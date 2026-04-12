@@ -4,7 +4,7 @@ import { useRef, useEffect, useLayoutEffect, useState, type CSSProperties } from
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Bot } from 'lucide-react'
+import { X, Robot } from '@phosphor-icons/react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useChatSession } from './useChatSession'
 import { ChatMessage } from './ChatMessage'
@@ -148,7 +148,7 @@ export function ChatPopover({ isOpen, onClose, triggerRef, extraTriggerRefs, cla
           <div className="bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-4 py-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
+                <Robot weight="duotone" size={20} className="text-white" aria-hidden />
               </div>
               <div>
                 <h2 className="font-bold text-white text-base">Ask NQ</h2>
@@ -160,7 +160,7 @@ export function ChatPopover({ isOpen, onClose, triggerRef, extraTriggerRefs, cla
               className="p-1.5 rounded-lg text-white/90 hover:bg-white/20 transition-colors"
               aria-label="Close"
             >
-              <X size={18} />
+              <X weight="duotone" size={18} className="text-white/90" aria-hidden />
             </button>
           </div>
 
@@ -170,7 +170,7 @@ export function ChatPopover({ isOpen, onClose, triggerRef, extraTriggerRefs, cla
           >
             {!isAuthenticated && !authLoading ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-4 -mt-6">
-                <Bot className="w-10 h-10 text-teal-600 mb-3" />
+                <Robot weight="duotone" size={40} className="mb-3 text-teal-600" aria-hidden />
                 <h3 className="font-semibold text-slate-800 mb-2 text-base">Log in to chat with NQ</h3>
                 <p className="text-sm text-slate-600 mb-4 max-w-[220px]">
                   Get personalized answers about pre-approval, mortgages, offers, and more.

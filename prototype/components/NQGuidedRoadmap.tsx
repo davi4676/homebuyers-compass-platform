@@ -155,7 +155,7 @@ function OverviewRecentActivity() {
 
   return (
     <section
-      className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
+      className="nq-card rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
       aria-labelledby="journey-recent-activity-heading"
     >
       <h2 id="journey-recent-activity-heading" className="text-sm font-semibold text-slate-800">
@@ -1142,7 +1142,7 @@ export default function NQGuidedRoadmap({
               initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduceMotion ? 0.01 : 0.35 }}
-              className="relative overflow-hidden rounded-2xl border-2 border-teal-400/70 bg-gradient-to-br from-teal-50 via-white to-emerald-50/40 p-5 shadow-lg ring-1 ring-teal-200/60 sm:p-6"
+              className="nq-card relative overflow-hidden rounded-2xl border-2 border-teal-400/70 bg-gradient-to-br from-teal-50 via-white to-emerald-50/40 p-5 shadow-lg ring-1 ring-teal-200/60 sm:p-6"
               role="region"
               aria-label="Getting started"
             >
@@ -1184,7 +1184,7 @@ export default function NQGuidedRoadmap({
 
           {/* 1. Welcome + personalization */}
           <section
-            className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
+            className="nq-card rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
             aria-labelledby="journey-icp-welcome"
           >
             <h2
@@ -1218,7 +1218,7 @@ export default function NQGuidedRoadmap({
               initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduceMotion ? 0.01 : 0.35 }}
-              className="rounded-2xl border-2 border-teal-300/70 bg-gradient-to-br from-white via-millennial-primary-light/30 to-emerald-50/35 p-5 shadow-lg ring-1 ring-teal-100/80"
+              className="nq-card rounded-2xl border-2 border-teal-300/70 bg-gradient-to-br from-white via-millennial-primary-light/30 to-emerald-50/35 p-5 shadow-lg ring-1 ring-teal-100/80"
             >
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-900/90">Readiness score</p>
               <p className="mt-1.5 text-sm font-semibold text-slate-700">{overviewWarmth}</p>
@@ -1235,7 +1235,7 @@ export default function NQGuidedRoadmap({
               )}
             </motion.section>
             <div className="flex flex-col gap-3">
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
+              <div className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current phase</p>
                 <p className="mt-1 text-lg font-bold text-slate-900">{phaseHeadingTitle}</p>
                 <p className="text-sm text-slate-500">Phase {displayPhaseOrder} of {phaseTotalForDisplay} · Milestone {milestoneIndexInPhase} of {milestonesInPhase}</p>
@@ -1249,7 +1249,7 @@ export default function NQGuidedRoadmap({
 
           <section
             aria-label="Journey timeline"
-            className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
+            className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
           >
             <h2 className="font-display text-lg font-bold text-slate-900 sm:text-xl">Your NestQuest phases</h2>
             <p className="mt-1 text-sm text-slate-600">
@@ -1285,7 +1285,7 @@ export default function NQGuidedRoadmap({
             initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
-            className="rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/25 to-emerald-50/25 p-5 shadow-lg sm:p-6"
+            className="nq-card rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/25 to-emerald-50/25 p-5 shadow-lg sm:p-6"
           >
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-millennial-primary-light/70 to-teal-100/55 shadow-lg ring-2 ring-teal-200/50">
@@ -1301,7 +1301,7 @@ export default function NQGuidedRoadmap({
             <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
               {renderNqSaysContext(displayStep.nqContext)}
             </p>
-            <div className="mt-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4">
+            <div className="nq-card mt-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-500">What to do</p>
               <p className="mt-1.5 text-sm leading-relaxed text-slate-800">
                 {renderWithAnnualCreditReportLink(displayStep.nqWhatToDo)}
@@ -1370,7 +1370,7 @@ export default function NQGuidedRoadmap({
           </section>
 
           {/* 6. Alerts & tasks — collapsible */}
-          <details className="group rounded-2xl border border-slate-200/90 bg-white shadow-sm" open={inboxTasks.some((t) => !t.done)}>
+          <details className="nq-card group rounded-2xl border border-slate-200/90 bg-white shadow-sm" open={inboxTasks.some((t) => !t.done)}>
             <summary className="flex cursor-pointer items-center justify-between gap-3 p-5 sm:p-6">
               <span className="text-sm font-bold uppercase tracking-wide text-slate-600">
                 Alerts &amp; tasks ({inboxTasks.filter((t) => !t.done).length} pending)
@@ -1445,7 +1445,7 @@ export default function NQGuidedRoadmap({
           </div>
           <section
             aria-label="Phase roadmap timeline"
-            className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
+            className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
           >
             <h2 className="font-display text-lg font-bold text-slate-900 sm:text-xl">Your customized NestQuest journey</h2>
             <p className="mt-1 text-sm text-slate-600">
@@ -1490,7 +1490,7 @@ export default function NQGuidedRoadmap({
               ctaHref="/upgrade?source=budget-inline&tier=navigator"
             />
           ) : null}
-          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white/90 p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
+          <div className="nq-card flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white/90 p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
             <div>
               <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
                 {content.budgetHeadline}
@@ -1521,7 +1521,7 @@ export default function NQGuidedRoadmap({
             }}
           />
           {budgetMonthlyPair.base > 0 && budgetMonthlyPair.sketch < budgetMonthlyPair.base ? (
-            <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/60 p-5 shadow-sm">
+            <div className="nq-card rounded-2xl border border-emerald-200/80 bg-emerald-50/60 p-5 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-wide text-emerald-900/90">Savings impact (illustrative)</p>
               <p className="mt-2 text-sm text-slate-700">
                 Your sketch is{' '}
@@ -1539,7 +1539,7 @@ export default function NQGuidedRoadmap({
               </p>
             </div>
           ) : null}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
+          <div className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
             <p className="text-sm font-semibold text-slate-800">You may qualify for additional help.</p>
             <button
               type="button"
@@ -1558,7 +1558,7 @@ export default function NQGuidedRoadmap({
               <ArrowRight className="h-4 w-4" aria-hidden />
             </button>
           </div>
-          <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 p-5 sm:p-6">
+          <div className="nq-card rounded-2xl border border-slate-200/90 bg-slate-50/90 p-5 sm:p-6">
             <h3 className="text-sm font-bold uppercase tracking-wide text-slate-600">Why these numbers matter</h3>
             <p className="mt-2 text-sm leading-relaxed text-slate-700 sm:text-base">
               Lenders look at debt-to-income (DTI), reserves, and how comfortably a payment fits your life — not
@@ -1643,7 +1643,7 @@ export default function NQGuidedRoadmap({
           ) : null}
 
           {showFullHosaBreakdown ? (
-            <div className="rounded-2xl border border-emerald-200/80 bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100/70">
+            <div className="nq-card rounded-2xl border border-emerald-200/80 bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100/70">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-900/90">HOSA Savings Score</p>
               <p className="mt-2 font-display text-3xl font-black tabular-nums text-emerald-900 sm:text-4xl">
                 {snapshot ? Math.round(snapshot.readiness.total) : '—'}<span className="text-xl font-bold text-slate-500 sm:text-2xl">/100</span>
@@ -1661,7 +1661,7 @@ export default function NQGuidedRoadmap({
             />
           ) : null}
 
-          <div className="rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white to-teal-50/40 p-5 shadow-sm sm:p-6">
+          <div className="nq-card rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white to-teal-50/40 p-5 shadow-sm sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
                 <Gift className="h-5 w-5" aria-hidden />
@@ -1692,7 +1692,7 @@ export default function NQGuidedRoadmap({
               <div className="h-px flex-1 bg-gradient-to-l from-transparent via-slate-300 to-slate-300 sm:from-slate-300 sm:via-slate-300" aria-hidden />
             </div>
 
-            <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 px-5 py-5 shadow-lg ring-1 ring-slate-200/50 sm:px-6 sm:py-6 md:px-8">
+            <div className="nq-card rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 px-5 py-5 shadow-lg ring-1 ring-slate-200/50 sm:px-6 sm:py-6 md:px-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p
@@ -1739,7 +1739,7 @@ export default function NQGuidedRoadmap({
             </div>
           </section>
 
-          <div className="flex flex-col gap-2 rounded-2xl border border-slate-200/90 bg-white/85 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="nq-card flex flex-col gap-2 rounded-2xl border border-slate-200/90 bg-white/85 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={handleBack}
@@ -1772,7 +1772,7 @@ export default function NQGuidedRoadmap({
 
           <DailyInsightCard />
 
-          <section className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
+          <section className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
             <JourneyTimeline
               phaseOrders={NQ_GUIDED_PHASE_ORDERS}
               effectiveTier={effectiveTier}
@@ -1810,7 +1810,7 @@ export default function NQGuidedRoadmap({
           ) : null}
 
           {nextRefiTitle || nextRepeatBuyerTitle || nextLibraryPhase ? (
-            <div className="rounded-2xl border border-millennial-border bg-gradient-to-br from-millennial-primary-light/35 to-white p-4 shadow-sm sm:p-5">
+            <div className="nq-card rounded-2xl border border-millennial-border bg-gradient-to-br from-millennial-primary-light/35 to-white p-4 shadow-sm sm:p-5">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-millennial-cta-secondary">Coming up</p>
               <p className="mt-1.5 text-base font-bold text-slate-900 sm:text-lg">
                 Phase {displayPhaseOrder + 1} —{' '}
@@ -1839,7 +1839,7 @@ export default function NQGuidedRoadmap({
                 animate="visible"
                 exit="exit"
                 transition={{ duration: 0.25 }}
-                className="relative rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/28 to-emerald-50/28 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/60 sm:rounded-3xl"
+                className="nq-card relative rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/28 to-emerald-50/28 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/60 sm:rounded-3xl"
               >
                 <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl sm:rounded-3xl" aria-hidden>
                   <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[rgb(var(--navy))] via-millennial-cta-primary to-teal-400" />
@@ -1967,7 +1967,7 @@ export default function NQGuidedRoadmap({
                             What to do now
                           </h3>
                         </div>
-                        <div className="relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md ring-1 ring-slate-100/80 sm:p-5">
+                        <div className="nq-card relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md ring-1 ring-slate-100/80 sm:p-5">
                           <div className="absolute right-2 top-2 opacity-[0.06] sm:right-3 sm:top-3">
                             <Target weight="duotone" size={56} className="text-[rgb(var(--navy))]" aria-hidden />
                           </div>
@@ -2006,7 +2006,7 @@ export default function NQGuidedRoadmap({
                       </div>
 
                       {phaseChecklistItems && phaseChecklistItems.length > 0 ? (
-                        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 sm:p-4">
+                        <div className="nq-card rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 sm:p-4">
                           <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
                             Check off as you go
                           </p>
@@ -2099,7 +2099,7 @@ export default function NQGuidedRoadmap({
           </div>
 
           <section
-            className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50/80 to-white p-4 shadow-sm sm:p-5"
+            className="nq-card rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50/80 to-white p-4 shadow-sm sm:p-5"
             aria-label="Learn and Library"
           >
             <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">Confidence builders</p>
@@ -2159,7 +2159,7 @@ export default function NQGuidedRoadmap({
           />
 
           {quizTxnMeta.icpType === 'first-gen' ? (
-            <section className="rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50/60 to-white p-5 shadow-sm" aria-labelledby="firstgen-learn-hub-heading">
+            <section className="nq-card rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50/60 to-white p-5 shadow-sm" aria-labelledby="firstgen-learn-hub-heading">
               <h3 id="firstgen-learn-hub-heading" className="font-display text-lg font-bold text-slate-900">
                 First-Gen Hub
               </h3>
@@ -2319,7 +2319,7 @@ export default function NQGuidedRoadmap({
               <Link
                 key={item.id}
                 href={item.href}
-                className="group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md"
+                className="nq-card group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md"
               >
                 <div className="flex flex-wrap gap-1.5">
                   {item.moneyTags.includes('saves_money') ? (
@@ -2425,7 +2425,7 @@ export default function NQGuidedRoadmap({
                   Why it matters
                 </h3>
               </div>
-              <div className="relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md ring-1 ring-slate-100/80 sm:p-6">
+              <div className="nq-card relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md ring-1 ring-slate-100/80 sm:p-6">
                 <div className="absolute right-2 top-2 opacity-[0.06] sm:right-3 sm:top-3">
                   <Lightbulb weight="duotone" size={56} className="text-millennial-cta-primary" aria-hidden />
                 </div>
@@ -2521,7 +2521,7 @@ export default function NQGuidedRoadmap({
           )}
 
           {nextStepTitles.length > 0 ? (
-            <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5">
+            <div className="nq-card rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                 Recommended for your phase · {phaseHeadingTitle ?? 'this phase'}
               </p>
@@ -2623,7 +2623,7 @@ export default function NQGuidedRoadmap({
           <ul className="space-y-3" role="list">
             {libraryFiltered.slice(0, 3).map((item) => (
               <li key={item.id}>
-                <div className="block rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md sm:p-5">
+                <div className="nq-card block rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
                       {JOURNEY_LIBRARY_CATEGORY_LABEL[item.category]}
@@ -2691,7 +2691,7 @@ export default function NQGuidedRoadmap({
                         return (
                           <li key={item.id}>
                             <div
-                              className={`rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5 ${
+                              className={`nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5 ${
                                 canOpen
                                   ? 'transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md'
                                   : 'opacity-80'
@@ -2784,7 +2784,7 @@ export default function NQGuidedRoadmap({
             />
           ) : null}
 
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
+          <div className="nq-card rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
             <p className="text-sm font-bold uppercase tracking-wide text-slate-600">Suggested next steps</p>
             <ul className="mt-3 list-none space-y-3">
               {nextEngine.actions.map((a) => (
@@ -2815,7 +2815,7 @@ export default function NQGuidedRoadmap({
             />
           ) : null}
 
-          <section aria-labelledby="inbox-alerts-heading" className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-5 sm:p-6">
+          <section aria-labelledby="inbox-alerts-heading" className="nq-card rounded-2xl border border-amber-200/80 bg-amber-50/50 p-5 sm:p-6">
             <h3 id="inbox-alerts-heading" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-900">
               <Bell className="h-4 w-4 shrink-0" aria-hidden />
               Alerts
@@ -2835,7 +2835,7 @@ export default function NQGuidedRoadmap({
             </ul>
           </section>
 
-          <section aria-labelledby="inbox-tasks-heading" className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
+          <section aria-labelledby="inbox-tasks-heading" className="nq-card rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
             <h3 id="inbox-tasks-heading" className="text-sm font-bold uppercase tracking-wide text-slate-600">
               Tasks
             </h3>
@@ -2903,7 +2903,7 @@ export default function NQGuidedRoadmap({
             </ul>
           </section>
 
-          <section aria-labelledby="inbox-messages-heading" className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 sm:p-6">
+          <section aria-labelledby="inbox-messages-heading" className="nq-card rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 sm:p-6">
             <h3 id="inbox-messages-heading" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-600">
               <Envelope weight="duotone" className="h-4 w-4 shrink-0" aria-hidden />
               Messages

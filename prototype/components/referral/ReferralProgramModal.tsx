@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Copy, Check, Gift } from 'lucide-react'
+import { X, Copy, Check, Gift } from '@phosphor-icons/react'
 import {
   REFERRAL_PROGRAM_HEADLINE,
   referralProgramUrl,
@@ -106,7 +106,7 @@ export default function ReferralProgramModal({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
-                    <Gift className="h-5 w-5" aria-hidden />
+                    <Gift weight="duotone" size={20} aria-hidden />
                   </span>
                   <div className="min-w-0">
                     <p
@@ -124,7 +124,7 @@ export default function ReferralProgramModal({
                   className="shrink-0 rounded-lg p-1.5 text-white/90 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                   aria-label="Close"
                 >
-                  <X className="h-5 w-5" />
+                  <X weight="duotone" size={20} className="text-white/90" aria-hidden />
                 </button>
               </div>
             </div>
@@ -147,7 +147,7 @@ export default function ReferralProgramModal({
                   onClick={copy}
                   className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-700"
                 >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? <Check weight="duotone" size={20} /> : <Copy weight="duotone" size={20} />}
                   {copied ? 'Copied' : 'Copy link'}
                 </button>
               </div>

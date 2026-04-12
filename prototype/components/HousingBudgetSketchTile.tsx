@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Info, Lock, RotateCcw } from 'lucide-react'
+import { Info, Lock, ArrowCounterClockwise } from '@phosphor-icons/react'
 import UpgradeLockCallout from '@/components/monetization/UpgradeLockCallout'
 import type { QuizData } from '@/lib/calculations'
 import {
@@ -143,7 +143,7 @@ function AssumptionHint({ fieldKey, accentColor }: { fieldKey: keyof LineState; 
         aria-label={`Assumption for ${shortLabel}`}
         onClick={() => setOpen((v) => !v)}
       >
-        <Info className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+        <Info weight="duotone" size={14} aria-hidden />
       </button>
       {open ? (
         <span
@@ -632,7 +632,7 @@ export default function HousingBudgetSketchTile({
                 boxShadow: `inset 0 0 0 1px ${budgetSkin.ring}`,
               }}
             >
-              <Lock className="h-3 w-3" aria-hidden />
+              <Lock weight="duotone" size={12} aria-hidden />
               Momentum
             </span>
           ) : null}
@@ -707,7 +707,7 @@ export default function HousingBudgetSketchTile({
           onClick={reset}
           className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
-          <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+          <ArrowCounterClockwise weight="duotone" size={14} aria-hidden />
           Reset to snapshot
         </button>
       </div>
