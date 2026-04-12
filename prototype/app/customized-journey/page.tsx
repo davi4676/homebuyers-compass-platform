@@ -43,6 +43,10 @@ import { useJourneyPhaseRingProgress } from '@/hooks/use-journey-phase-ring'
 import { calculateMomentumScore, getMomentumColor } from '@/lib/momentum-score'
 import { useMomentumFactors } from '@/hooks/use-momentum-factors'
 import { track } from '@/lib/analytics'
+import { useCompass } from '@/lib/ai/useCompass'
+import { buildCompassUserFromJourney } from '@/lib/ai/build-compass-user'
+import { CompassWidget } from '@/components/CompassWidget'
+import { CompassPanel } from '@/components/CompassPanel'
 
 const CERT_PURCHASE_TRACKED_SS = 'nq_certificate_purchased_tracked_session'
 const JOURNEY_ENTERED_TRACKED_SS = 'nq_journey_entered_posthog'
@@ -61,6 +65,7 @@ export default function CustomizedJourneyPage() {
   const [referralModalKick, setReferralModalKick] = useState(0)
   const [showRefLandingBanner, setShowRefLandingBanner] = useState(false)
   const [identitySnapshot, setIdentitySnapshot] = useState<UserSnapshot | null>(null)
+  const [compassLsTick, setCompassLsTick] = useState(0)
 
   const plainEnglishTooltip =
     'Plain English Mode replaces financial jargon with simple explanations. Perfect if this is your first time buying a home.'
@@ -138,6 +143,17 @@ export default function CustomizedJourneyPage() {
   useEffect(() => {
     void activeJourneyTab
   }, [activeJourneyTab, journeySearchKey, pathname, router])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const bump = () => setCompassLsTick((n) => n + 1)
+    window.addEventListener('nq-journey-progress', bump)
+    window.addEventListener('storage', bump)
+    return () => {
+      window.removeEventListener('nq-journey-progress', bump)
+      window.removeEventListener('storage', bump)
+    }
+  }, [])
 
   const referralFromAccount = useMemo(
     () => referralSlugFromUser(user ?? null),
@@ -243,6 +259,25 @@ export default function CustomizedJourneyPage() {
       localStorage.setItem('journeyMode', 'today')
     }
   }, [roadmapExperiment.isReady, roadmapExperiment.isTreatment, roadmapExperiment.variant, searchParams])
+
+  const compassUser = useMemo(
+    () =>
+      buildCompassUserFromJourney({
+        authUser: user,
+        snapshot: identitySnapshot,
+        completionPercent: heroPhaseProgress.pct,
+        budgetSketchComplete: momentumFactors.budgetSketchCompleted,
+      }),
+    [
+      user,
+      identitySnapshot,
+      heroPhaseProgress.pct,
+      momentumFactors.budgetSketchCompleted,
+      compassLsTick,
+    ]
+  )
+
+  const compass = useCompass(compassUser)
 
   const goToDownPaymentEstimate = () => {
     if (typeof window === 'undefined') {
@@ -592,6 +627,16 @@ export default function CustomizedJourneyPage() {
           </motion.div>
         </div>
       </main>
+
+      {user ? (
+        <>
+          <CompassWidget compass={compass} />
+          <CompassPanel
+            compass={compass}
+            currentPhase={compassUser.currentPhase ?? 'Getting started'}
+          />
+        </>
+      ) : null}
     </div>
   )
 }

@@ -8,18 +8,32 @@ import { evaluateTriggers } from '@/lib/ai/triggerEngine'
 
 export type CompassMessage = { role: 'user' | 'assistant'; content: string }
 
+export type CompassTriggerData = {
+  shouldShow: boolean
+  triggerType: string
+  suggestedPrompt: string
+}
+
+export type UseCompassReturn = {
+  messages: CompassMessage[]
+  isOpen: boolean
+  isTyping: boolean
+  triggerData: CompassTriggerData | null
+  sendMessage: (userText: string) => Promise<void>
+  dismiss: () => void
+  open: () => void
+  /** Close chat panel only — does not persist trigger dismissal. */
+  close: () => void
+}
+
 /**
  * Wires journey context, system prompt, proactive triggers, and chat API for Compass.
  */
-export function useCompass(user: CompassUser | null | undefined) {
+export function useCompass(user: CompassUser | null | undefined): UseCompassReturn {
   const [messages, setMessages] = useState<CompassMessage[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
-  const [triggerData, setTriggerData] = useState<{
-    shouldShow: boolean
-    triggerType: string
-    suggestedPrompt: string
-  } | null>(null)
+  const [triggerData, setTriggerData] = useState<CompassTriggerData | null>(null)
 
   const context = useMemo(() => buildJourneyContext(user), [user])
   const systemPrompt = useMemo(() => buildSystemPrompt(context), [context])
@@ -142,5 +156,9 @@ export function useCompass(user: CompassUser | null | undefined) {
     setIsOpen(true)
   }, [])
 
-  return { messages, isOpen, isTyping, triggerData, sendMessage, dismiss, open }
+  const close = useCallback(() => {
+    setIsOpen(false)
+  }, [])
+
+  return { messages, isOpen, isTyping, triggerData, sendMessage, dismiss, open, close }
 }
