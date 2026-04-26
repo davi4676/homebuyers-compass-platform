@@ -30,12 +30,15 @@ BUYER PROFILE:
 - Savings: $${formatMoney(profile.savings)} toward a $${formatMoney(profile.savingsGoal)} goal
 - Target home price: $${formatMoney(profile.targetHomePrice)}
 - Credit score range: ${profile.creditScoreRange}
+- Estimated annual household income: $${formatMoney(profile.householdIncome)}
 - Estimated DTI: ${profile.dti}%
+- NestQuest tier: ${profile.tier}
 
 BEHAVIORAL CONTEXT:
 - Days since last visit: ${behavior.daysSinceLastVisit}
 - Current streak: ${behavior.streak ?? 'n/a'} days
 - Stuck on current phase: ${behavior.stuckOnCurrentPhase}
+- Budget sketch complete: ${behavior.budgetSketchComplete ? 'yes' : 'not yet'}
 - Completed actions: ${completedSummary}
 
 MARKET CONDITIONS:

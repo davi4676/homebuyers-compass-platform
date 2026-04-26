@@ -2,9 +2,26 @@
  * Persistent globally visible money trackers for Customized Journey.
  */
 
-import type { UserSnapshot } from '@/lib/user-snapshot'
+import { loadQuizDataFromLocalStorage, type UserSnapshot } from '@/lib/user-snapshot'
 import type { UserTier } from '@/lib/tiers'
 import { estimateTrackerTotals } from '@/lib/money-engine'
+import { syncNqSavingsMilestonePct } from '@/lib/nq-savings-milestone-sync'
+
+function runSavingsMilestoneSyncAfterPersist(): void {
+  if (typeof window === 'undefined') return
+  try {
+    const q = loadQuizDataFromLocalStorage()
+    const down = q?.downPayment ?? 0
+    const trackers = loadPersistedMoneyTrackers()
+    const currentSavings = down + trackers.savingsFoundSoFar
+    const target = q?.targetHomePrice ?? 0
+    const savingsGoal =
+      target > 0 ? Math.round(target * 0.2) : Math.max(Math.round(down * 2), 20_000)
+    syncNqSavingsMilestonePct(currentSavings, savingsGoal)
+  } catch {
+    /* ignore */
+  }
+}
 
 export const MONEY_TRACKERS_STORAGE_KEY = 'nq_money_trackers_v1'
 
@@ -37,6 +54,7 @@ export function savePersistedMoneyTrackers(next: PersistedMoneyTrackers): void {
   try {
     localStorage.setItem(MONEY_TRACKERS_STORAGE_KEY, JSON.stringify(next))
     window.dispatchEvent(new CustomEvent('moneyTrackersUpdated', { detail: next }))
+    runSavingsMilestoneSyncAfterPersist()
   } catch {
     // ignore
   }

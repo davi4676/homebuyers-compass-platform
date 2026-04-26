@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   CaretDown,
   Compass,
@@ -23,17 +23,30 @@ const QUICK_REPLIES: Record<string, string[]> = {
 export type CompassPanelProps = {
   compass: UseCompassReturn
   currentPhase: string
+  /** Raw `?tab=` query (e.g. `budget`) for suggestion copy aligned with spec examples. */
+  rawJourneyTab?: string | null
 }
 
-export function CompassPanel({ compass, currentPhase }: CompassPanelProps) {
-  const { messages, isOpen, isTyping, triggerData, sendMessage, close } = compass
+export function CompassPanel({ compass, currentPhase, rawJourneyTab }: CompassPanelProps) {
+  const {
+    messages,
+    isOpen,
+    isTyping,
+    triggerData,
+    sendMessage,
+    close,
+    aiUnavailable,
+    retryLastAssistantReply,
+    clearAiUnavailable,
+  } = compass
   const [input, setInput] = useState('')
   const [narrow, setNarrow] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
+    const mq = window.matchMedia('(max-width: 768px)')
     const fn = () => setNarrow(mq.matches)
     fn()
     mq.addEventListener('change', fn)
@@ -61,7 +74,40 @@ export function CompassPanel({ compass, currentPhase }: CompassPanelProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [isOpen, close])
 
-  const topSuggestion = useMemo(() => getCompassPhaseSuggestion(currentPhase), [currentPhase])
+  useEffect(() => {
+    if (!isOpen) return
+    const root = panelRef.current
+    if (!root) return
+    const getFocusable = () =>
+      Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => !el.closest('[aria-hidden="true"]'))
+    const els = getFocusable()
+    const first = els[0]
+    const last = els[els.length - 1]
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      if (!root.contains(document.activeElement)) return
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last?.focus()
+        }
+      } else if (document.activeElement === last) {
+        e.preventDefault()
+        first?.focus()
+      }
+    }
+    root.addEventListener('keydown', onKey)
+    return () => root.removeEventListener('keydown', onKey)
+  }, [isOpen, messages.length])
+
+  const topSuggestion = useMemo(
+    () => getCompassPhaseSuggestion(currentPhase, { rawJourneyTab }),
+    [currentPhase, rawJourneyTab]
+  )
 
   const chips = useMemo(() => {
     const t = triggerData?.triggerType
@@ -98,36 +144,32 @@ export function CompassPanel({ compass, currentPhase }: CompassPanelProps) {
   const panelAnimate = { x: 0, y: 0 }
 
   return (
-    <AnimatePresence>
-      {isOpen ? (
-        <motion.div
-          key="compass-shell"
-          className="fixed inset-0 z-[1001]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div
-            role="presentation"
-            className="absolute inset-0 bg-black/20 backdrop-blur-[4px]"
-            onClick={close}
-          />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Compass chat"
-            initial={panelInitial}
-            animate={panelAnimate}
-            exit={panelInitial}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className={`absolute z-[1] flex flex-col bg-[var(--white)] shadow-[var(--shadow-lg)] ${
-              narrow
-                ? 'bottom-0 left-0 right-0 h-[70vh] max-h-[90vh] rounded-t-2xl'
-                : 'bottom-0 right-0 top-0 w-[380px] max-w-[100vw] border-l border-black/[0.06]'
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
+    <motion.div
+      className="nq-compass-root fixed inset-0 z-[1001]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div
+        role="presentation"
+        className="absolute inset-0 bg-black/20 backdrop-blur-[4px]"
+        onClick={close}
+      />
+      <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Compass chat"
+        initial={panelInitial}
+        animate={panelAnimate}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className={`absolute z-[1] flex max-h-[100dvh] min-h-0 flex-col bg-[var(--white)] shadow-[var(--shadow-lg)] ${
+          narrow
+            ? 'bottom-0 left-0 right-0 h-[70vh] max-h-[90vh] rounded-t-2xl'
+            : 'bottom-0 right-0 top-0 h-full w-[380px] max-w-[min(100vw,380px)] border-l border-black/[0.06]'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
             <header className="flex h-16 shrink-0 items-center justify-between border-b border-black/[0.06] bg-[var(--surface-2)] px-4">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="relative">
@@ -168,9 +210,30 @@ export function CompassPanel({ compass, currentPhase }: CompassPanelProps) {
               </div>
             </header>
 
+            {aiUnavailable ? (
+              <div
+                role="status"
+                className="flex flex-wrap items-center gap-2 border-b border-amber-200/80 bg-amber-50 px-4 py-2 text-sm text-amber-950"
+              >
+                <span className="min-w-0 flex-1">
+                  Compass is taking a break. Try again in a moment.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearAiUnavailable()
+                    void retryLastAssistantReply()
+                  }}
+                  className="shrink-0 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : null}
+
             <div
               ref={scrollRef}
-              className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4"
+              className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-4 py-4"
             >
               {messages.map((m, i) =>
                 m.role === 'assistant' ? (
@@ -266,9 +329,7 @@ export function CompassPanel({ compass, currentPhase }: CompassPanelProps) {
                 </button>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+      </motion.div>
+    </motion.div>
   )
 }

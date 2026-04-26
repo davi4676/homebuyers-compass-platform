@@ -9,7 +9,7 @@ const NQ_INBOX_TAB_SEEN_KEY = 'nq_inbox_tab_seen'
 export function syncNqUnreadFromInboxState(activeTab: JourneyTab, inboxTasks: { done: boolean }[]) {
   if (typeof window === 'undefined') return
   try {
-    if (activeTab === 'inbox') {
+    if (activeTab === 'today') {
       localStorage.setItem(NQ_INBOX_TAB_SEEN_KEY, '1')
       localStorage.removeItem(NQ_UNREAD_ALERTS_KEY)
       window.dispatchEvent(new Event(NQ_UNREAD_ALERTS_CHANGED))

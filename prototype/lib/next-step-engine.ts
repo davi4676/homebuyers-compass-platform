@@ -171,13 +171,13 @@ export function runNextStepEngineWithContext(ctx: {
       label: ctx.recentActivity.budgetSketchEdited
         ? `Lock your budget sketch edits to keep roughly $${est.savings}/mo in cash-flow room`
         : `Tune one budget line item to target about $${est.savings}/mo in monthly savings`,
-      hint: 'budget',
+      hint: 'plan',
       pillar: 'savings',
     },
     {
       id: 'funding-action',
       label: `Run funding matches and check eligibility for up to ~$${est.funds.toLocaleString()} in programs`,
-      hint: 'library',
+      hint: 'money',
       pillar: 'funds',
     },
     {
@@ -195,7 +195,7 @@ export function runNextStepEngineWithContext(ctx: {
     actions[1] = {
       id: 'funding-doc-review',
       label: 'Have a specialist review your funding docs before submission to avoid missed assistance',
-      hint: 'upgrades',
+      hint: 'today',
       pillar: 'funds',
     }
   }

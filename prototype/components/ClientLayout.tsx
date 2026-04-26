@@ -23,6 +23,7 @@ import { isCustomizedJourneyPath } from '@/lib/journey-nav-tabs'
 import { MilestoneGateProvider } from '@/components/journey/MilestoneGate'
 import TrialLossAversionModal from '@/components/journey/TrialLossAversionModal'
 import { initAnalytics, trackTrialExpiredIfDowngradedClient } from '@/lib/analytics'
+import NqSessionTracking from '@/components/NqSessionTracking'
 
 const EmptyFallback = () => (
   <div className="app-page-shell flex flex-col items-center justify-center p-8 text-center">
@@ -95,6 +96,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       <HomebuyerChatbotWidget />
       <CookieConsent />
       <OfflineIndicator />
+      <NqSessionTracking />
       {process.env.NODE_ENV === 'development' ? <DeveloperTierSwitcher /> : null}
       <TrialLossAversionModal />
     </div>

@@ -394,6 +394,7 @@ body {
   }
 
   .nq-journey-ds .nq-compass-pulse-ring,
+  .nq-journey-ds .pulseRing,
   .nq-journey-ds .nq-compass-banner-enter,
   .nq-journey-ds .nq-compass-typing-dot {
     animation: none !important;
@@ -401,11 +402,13 @@ body {
 }
 
 /* Compass AI (Phase 7) — journey tab FAB + panel */
-.nq-journey-ds .nq-compass-pulse-ring {
-  animation: nq-compass-pulse-ring 2s ease-in-out infinite;
+/* Spec name: pulseRing (amber ring around FAB when a trigger is pending) */
+.nq-journey-ds .nq-compass-pulse-ring,
+.nq-journey-ds .pulseRing {
+  animation: pulseRing 2s ease-in-out infinite;
 }
 
-@keyframes nq-compass-pulse-ring {
+@keyframes pulseRing {
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(244, 162, 97, 0.55);
@@ -456,6 +459,26 @@ body {
   50% {
     transform: translateY(-4px);
     opacity: 1;
+  }
+}
+
+/* Phase 8 — integration QA: focus rings + reduced motion */
+.nq-journey-ds button:focus-visible,
+.nq-journey-ds a:focus-visible,
+.nq-journey-ds input:focus-visible,
+.nq-journey-ds textarea:focus-visible,
+.nq-journey-ds select:focus-visible,
+.nq-compass-root button:focus-visible,
+.nq-compass-root a:focus-visible,
+.nq-compass-root input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
   }
 }
 

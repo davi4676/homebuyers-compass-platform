@@ -19,11 +19,11 @@ type Props = {
   className?: string
 }
 
-function resolveJourneyStartIso(user: User | null, guestFallback: string | null): string {
+function resolveJourneyStartIso(user: User | null, guestFallback: string | null): string | null {
   if (user?.journeyStartDate) return user.journeyStartDate
   if (user?.createdAt) return user.createdAt
-  if (guestFallback) return guestFallback
-  return new Date().toISOString()
+  if (!user && guestFallback) return guestFallback
+  return null
 }
 
 export default function JourneyProgressIdentityHeader({ user, snapshot, className = '' }: Props) {

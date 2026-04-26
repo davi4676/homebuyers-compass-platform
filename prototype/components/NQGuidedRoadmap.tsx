@@ -91,7 +91,8 @@ import JourneyTimeline from '@/components/journey/JourneyTimeline'
 import DailyInsightCard from '@/components/journey/DailyInsightCard'
 import JourneyWinsBoard from '@/components/journey/JourneyWinsBoard'
 import JourneyNextMilestoneTeaser from '@/components/journey/JourneyNextMilestoneTeaser'
-import { appendNqCompletedAction, labelForWinsBoard } from '@/lib/nq-completed-actions'
+import { labelForWinsBoard } from '@/lib/nq-completed-actions'
+import { recordCompletion, setNextActionStartedNow } from '@/lib/nq-record-completion'
 import { useICP } from '@/lib/icp-context'
 import LearningCard from '@/components/journey/LearningCard'
 import LockedFeatureCard from '@/components/journey/LockedFeatureCard'
@@ -790,15 +791,16 @@ export default function NQGuidedRoadmap({
     setCompletedSteps((prev) => new Set(prev).add(currentStepIndex))
     const doneStep = getNQStepByIndex(currentStepIndex)
     if (doneStep && typeof window !== 'undefined') {
-      appendNqCompletedAction({
+      recordCompletion({
         id: `nq-step-${doneStep.id}`,
         label: personalizeNqStep(doneStep, snapshot).title,
-        completedAt: Date.now(),
+        completedAt: new Date().toISOString(),
       })
     }
     if (!isLastStep) {
       setTimeout(() => {
         setCurrentStepIndex((i) => i + 1)
+        setNextActionStartedNow()
       }, 350)
     }
   }
@@ -820,10 +822,10 @@ export default function NQGuidedRoadmap({
         const base = prev.length === items.length ? prev : Array(items.length).fill(false)
         const next = base.map((v, i) => (i === index ? !v : v))
         if (!base[index] && next[index]) {
-          appendNqCompletedAction({
+          recordCompletion({
             id: `nq-checklist-${step.id}-${index}`,
             label: labelForWinsBoard(items[index]),
-            completedAt: Date.now(),
+            completedAt: new Date().toISOString(),
           })
         }
         try {
@@ -1402,10 +1404,10 @@ export default function NQGuidedRoadmap({
                           setInboxTasks((prev) => {
                             const cur = prev[idx]
                             if (cur && !cur.done) {
-                              appendNqCompletedAction({
+                              recordCompletion({
                                 id: `nq-inbox-${cur.id}`,
                                 label: cur.label,
-                                completedAt: Date.now(),
+                                completedAt: new Date().toISOString(),
                               })
                             }
                             return prev.map((t, i) => (i === idx ? { ...t, done: !t.done } : t))
@@ -2850,10 +2852,10 @@ export default function NQGuidedRoadmap({
                       setInboxTasks((prev) => {
                         const cur = prev[idx]
                         if (cur && !cur.done) {
-                          appendNqCompletedAction({
+                          recordCompletion({
                             id: `nq-inbox-${cur.id}`,
                             label: cur.label,
-                            completedAt: Date.now(),
+                            completedAt: new Date().toISOString(),
                           })
                         }
                         return prev.map((t, i) => (i === idx ? { ...t, done: !t.done } : t))

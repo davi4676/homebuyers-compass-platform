@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { getJourneyPhaseMilestoneLabel } from '@/lib/journey-phase-ring'
+import {
+  getJourneyPhaseMilestoneLabel,
+  getJourneyPhaseMilestoneShortLabel,
+} from '@/lib/journey-phase-ring'
 
 const RING_TRANSITION = 'stroke-dashoffset 800ms ease-out'
 
@@ -11,7 +14,13 @@ const sizeMap: Record<
   Size,
   { dim: number; stroke: number; r: number; pctClass: string; labelClass: string }
 > = {
-  sm: { dim: 48, stroke: 3.5, r: 19, pctClass: 'text-[11px]', labelClass: 'text-[7px] leading-tight' },
+  sm: {
+    dim: 52,
+    stroke: 3.5,
+    r: 21,
+    pctClass: 'text-[11px] leading-none',
+    labelClass: 'text-[8px] leading-[1.1]',
+  },
   md: { dim: 72, stroke: 4, r: 30, pctClass: 'text-lg', labelClass: 'text-[9px] leading-tight' },
   lg: { dim: 112, stroke: 5, r: 48, pctClass: 'text-3xl', labelClass: 'text-xs leading-snug' },
 }
@@ -62,15 +71,17 @@ export default function JourneyPhaseProgressRing({
     setDashOffset(targetOffset)
   }, [circumference, targetOffset, reduceMotion])
 
-  const label = getJourneyPhaseMilestoneLabel(clamped)
+  const labelFull = getJourneyPhaseMilestoneLabel(clamped)
+  const label =
+    size === 'sm' ? getJourneyPhaseMilestoneShortLabel(clamped) : labelFull
   const displayPct = Math.round(clamped)
 
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center ${className}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full ${className}`}
       style={{ width: dim, height: dim }}
       role="img"
-      aria-label={`Journey progress ${displayPct} percent. ${label}`}
+      aria-label={`Journey ${displayPct}% complete. ${labelFull}`}
     >
       <svg
         className="absolute inset-0"
@@ -103,11 +114,17 @@ export default function JourneyPhaseProgressRing({
           }}
         />
       </svg>
-      <div className="pointer-events-none flex max-w-[85%] flex-col items-center justify-center px-1 text-center">
-        <span className={`font-bold tabular-nums text-slate-900 ${pctClass}`}>{displayPct}%</span>
+      <div
+        className={`pointer-events-none flex min-h-0 min-w-0 flex-col items-center justify-center text-center ${
+          size === 'sm' ? 'max-w-[78%] px-0.5' : 'max-w-[85%] px-1'
+        }`}
+      >
+        <span className={`shrink-0 font-bold tabular-nums text-slate-900 ${pctClass}`}>
+          {displayPct}%
+        </span>
         <span
-          className={`mt-0.5 line-clamp-2 font-semibold text-slate-600 ${labelClass} ${
-            size === 'lg' ? 'max-w-[7rem]' : 'max-w-[3.35rem]'
+          className={`mt-0.5 line-clamp-2 min-h-0 font-semibold text-slate-600 ${labelClass} ${
+            size === 'lg' ? 'max-w-[7rem]' : size === 'sm' ? 'max-w-[5.5rem]' : 'max-w-[3.35rem]'
           }`}
         >
           {label}

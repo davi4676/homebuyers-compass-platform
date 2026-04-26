@@ -23,6 +23,18 @@ export function getJourneyPhaseMilestoneLabel(pct: number): string {
 }
 
 /**
+ * Ultra-short copy for tiny rings (e.g. 48px header) so text fits inside the circle.
+ * Full phrases live in `getJourneyPhaseMilestoneLabel`.
+ */
+export function getJourneyPhaseMilestoneShortLabel(pct: number): string {
+  if (pct >= 100) return 'Closing 🎉'
+  if (pct >= 76) return 'Final stretch'
+  if (pct >= 51) return 'Traction'
+  if (pct >= 26) return 'Momentum'
+  return 'Foundation'
+}
+
+/**
  * Derives phase completion from the same localStorage keys as NQGuidedRoadmap
  * (`nq_current_step`, `nq_completed_steps`) plus quiz meta for refi 5-phase mode.
  */

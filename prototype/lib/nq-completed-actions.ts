@@ -30,6 +30,17 @@ export function loadNqCompletedActions(): NqCompletedAction[] {
   }
 }
 
+/** Strip common NQ markdown from checklist lines for the wins board. */
+export function labelForWinsBoard(raw: string): string {
+  return raw
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\[\[g:([^\]]+)\]\]/g, '$1')
+    .replace(/\[\[y:([^\]]+)\]\]/g, '$1')
+    .replace(/\[\[s:[^\]]*\]\]/g, '')
+    .replace(/\{\{[^}]+\}\}/g, '')
+    .trim()
+}
+
 export function appendNqCompletedAction(entry: NqCompletedAction): void {
   if (typeof window === 'undefined') return
   try {

@@ -24,23 +24,35 @@ export function formatUsd(n: number): string {
 
 /**
  * Resolves savings bar values: profile first, then quiz snapshot.
+ * `showBar` is false when there is no savings goal signal (Phase 8 graceful degrade).
  */
 export function resolveSavingsProgress(
   user: User | null,
   snapshot: UserSnapshot | null
-): { current: number; goal: number } {
+): { current: number; goal: number; showBar: boolean } {
   const fromQuiz = snapshot?.quiz
-  const current = user?.currentSavings ?? fromQuiz?.downPayment ?? 20_000
-  let goal = user?.savingsGoal
-  if (goal == null || goal <= 0) {
-    const aff = snapshot?.affordability
-    if (aff && aff.realisticMax > 0) {
-      goal = Math.round(aff.realisticMax * 0.2)
-    } else {
-      goal = 60_000
-    }
+  const currentRaw = user?.currentSavings ?? fromQuiz?.downPayment ?? 0
+  const safeCurrent = Math.max(0, currentRaw)
+
+  const explicit = user?.savingsGoal
+  if (explicit != null && explicit > 0) {
+    const safeGoal = Math.max(safeCurrent + 1, explicit)
+    return { current: safeCurrent, goal: safeGoal, showBar: true }
   }
-  const safeCurrent = Math.max(0, current)
-  const safeGoal = Math.max(safeCurrent + 1, goal)
-  return { current: safeCurrent, goal: safeGoal }
+
+  const targetHome = fromQuiz?.targetHomePrice ?? 0
+  if (targetHome > 0) {
+    const goal = Math.round(targetHome * 0.2)
+    const safeGoal = Math.max(safeCurrent + 1, goal)
+    return { current: safeCurrent, goal: safeGoal, showBar: true }
+  }
+
+  const aff = snapshot?.affordability
+  if (aff && aff.realisticMax > 0) {
+    const goal = Math.round(aff.realisticMax * 0.2)
+    const safeGoal = Math.max(safeCurrent + 1, goal)
+    return { current: safeCurrent, goal: safeGoal, showBar: true }
+  }
+
+  return { current: safeCurrent, goal: 0, showBar: false }
 }

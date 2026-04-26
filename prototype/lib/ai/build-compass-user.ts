@@ -53,6 +53,17 @@ export function buildCompassUserFromJourney(input: {
   const targetHomePrice =
     targetHome > 0 ? targetHome : (quiz?.targetHomePrice ?? snapshot?.affordability?.realisticMax ?? 0)
 
+  if (typeof window !== 'undefined') {
+    const missing: string[] = []
+    if (!firstName) missing.push('firstName')
+    if (!quiz?.income) missing.push('householdIncome')
+    if (!targetHomePrice) missing.push('targetHomePrice')
+    if (!snapshot?.asOf) missing.push('journeyStartDate')
+    if (missing.length) {
+      console.warn('[Compass] Optional profile fields missing — degrading gracefully:', missing.join(', '))
+    }
+  }
+
   return {
     firstName,
     currentPhase,

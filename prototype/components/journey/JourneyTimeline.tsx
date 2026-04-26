@@ -289,7 +289,7 @@ export default function JourneyTimeline({
 
       <div ref={rootRef} className="overflow-visible">
         {/* Desktop / md+: horizontal */}
-        <div className="scrollbar-hide hidden overflow-x-auto pb-2 md:block">
+        <div className="scrollbar-hide hidden overflow-x-auto pb-2 lg:block">
           <div className="flex min-w-max items-center justify-center gap-0 px-2 py-1">
             {phaseOrders.map((order, i) => (
               <div key={order} className="flex items-center">
@@ -312,7 +312,7 @@ export default function JourneyTimeline({
         </div>
 
         {/* Mobile: vertical */}
-        <div className="relative pl-4 md:hidden">
+        <div className="relative pl-4 lg:hidden">
           <div
             className="pointer-events-none absolute bottom-1 left-[18px] top-3 w-0.5 border-l-2 border-dashed border-[#B7C9C0]"
             aria-hidden

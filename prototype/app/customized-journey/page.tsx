@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense, useMemo, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Bell, BookOpen, X } from '@phosphor-icons/react'
@@ -46,7 +47,11 @@ import { track } from '@/lib/analytics'
 import { useCompass } from '@/lib/ai/useCompass'
 import { buildCompassUserFromJourney } from '@/lib/ai/build-compass-user'
 import { CompassWidget } from '@/components/CompassWidget'
-import { CompassPanel } from '@/components/CompassPanel'
+
+const CompassPanel = dynamic(
+  () => import('@/components/CompassPanel').then((mod) => ({ default: mod.CompassPanel })),
+  { ssr: false, loading: () => null }
+)
 
 const CERT_PURCHASE_TRACKED_SS = 'nq_certificate_purchased_tracked_session'
 const JOURNEY_ENTERED_TRACKED_SS = 'nq_journey_entered_posthog'
@@ -91,6 +96,14 @@ export default function CustomizedJourneyPage() {
   }, [])
   /** Same source as TopNav tab highlight — keeps roadmap panels in sync with `?tab=` (avoids nested useSearchParams drift). */
   const journeySearchKey = searchParams.toString()
+  const rawJourneyTabParam = useMemo(() => {
+    try {
+      const v = new URLSearchParams(journeySearchKey).get('tab')
+      return v?.trim() && v.trim() !== '' ? v.trim() : null
+    } catch {
+      return null
+    }
+  }, [journeySearchKey])
   const activeJourneyTab: JourneyTab = useMemo(
     () => parseJourneyTabParam(new URLSearchParams(journeySearchKey).get('tab')),
     [journeySearchKey]
@@ -628,14 +641,13 @@ export default function CustomizedJourneyPage() {
         </div>
       </main>
 
-      {user ? (
-        <>
-          <CompassWidget compass={compass} />
-          <CompassPanel
-            compass={compass}
-            currentPhase={compassUser.currentPhase ?? 'Getting started'}
-          />
-        </>
+      {user ? <CompassWidget compass={compass} /> : null}
+      {user && compass.isOpen ? (
+        <CompassPanel
+          compass={compass}
+          currentPhase={compassUser.currentPhase ?? 'Getting started'}
+          rawJourneyTab={rawJourneyTabParam}
+        />
       ) : null}
     </div>
   )

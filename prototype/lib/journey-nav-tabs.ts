@@ -1,46 +1,30 @@
 /** Shared journey tab ids for `/customized-journey` (header + roadmap panels). */
 
-export type JourneyTab =
-  | 'overview'
-  | 'phase'
-  | 'budget'
-  | 'learn'
-  | 'library'
-  | 'inbox'
-  | 'upgrades'
-  | 'assistance'
-  | 'firstgen'
+export type JourneyTab = 'today' | 'plan' | 'money' | 'learn'
 
-export const JOURNEY_TAB_IDS: JourneyTab[] = [
-  'overview',
-  'phase',
-  'budget',
-  'assistance',
-  'learn',
-  'library',
-  'inbox',
-  'upgrades',
-  'firstgen',
-]
+export const JOURNEY_TAB_IDS: JourneyTab[] = ['today', 'plan', 'money', 'learn']
 
 /** Microcopy for tab tooltips (`title` / accessible descriptions). */
 export const JOURNEY_TAB_TOOLTIPS: Record<JourneyTab, string> = {
-  overview: 'Where you stand today — readiness, numbers, next step.',
-  phase: 'Your current step in the 8‑phase journey.',
-  budget: 'Stress‑test your monthly payment — every line is editable.',
-  learn: 'Bite‑sized concepts that build confidence.',
-  assistance: 'Down payment & closing cost programs matched to you.',
-  firstgen: 'First‑gen resources: counselors, glossary, gift funds, and family scripts.',
-  library: 'Scripts, guides, and checklists.',
-  inbox: 'Your alerts, tasks, and messages.',
-  upgrades: 'Choose the support level that fits your journey.',
+  today: 'What to do right now — your current step, readiness, and alerts.',
+  plan: 'Phase progress, milestones, and your budget sketch.',
+  money: 'DPA programs, savings, funding — everything financial in one place.',
+  learn: 'Concepts for your current step plus the full script and guide library.',
 }
 
-/** Deep-link aliases for `?tab=` (e.g. marketing links). */
+/** Deep-link aliases for `?tab=` (e.g. marketing links or old bookmarks). */
 const LEGACY_TAB_MAP: Record<string, JourneyTab> = {
-  timeline: 'phase',
-  checklist: 'library',
-  action: 'inbox',
+  overview: 'today',
+  phase: 'plan',
+  budget: 'plan',
+  timeline: 'plan',
+  assistance: 'money',
+  library: 'learn',
+  checklist: 'learn',
+  inbox: 'today',
+  action: 'today',
+  upgrades: 'today',
+  firstgen: 'learn',
 }
 
 export function isJourneyTab(v: string): v is JourneyTab {
@@ -51,7 +35,7 @@ export function parseJourneyTabParam(v: string | null | undefined): JourneyTab {
   const raw = typeof v === 'string' ? v.trim().toLowerCase() : ''
   if (raw && isJourneyTab(raw)) return raw
   if (raw && LEGACY_TAB_MAP[raw]) return LEGACY_TAB_MAP[raw]
-  return 'overview'
+  return 'today'
 }
 
 export const JOURNEY_PAGE_PATH = '/customized-journey'
@@ -64,7 +48,7 @@ export function isCustomizedJourneyPath(pathname: string | null | undefined): bo
 
 /**
  * Base path for `?tab=` links. Nested customized-journey routes must still link to the hub,
- * otherwise URLs like `/customized-journey/detail/...?tab=library` break.
+ * otherwise URLs like `/customized-journey/detail/...?tab=learn` break.
  */
 export function journeyTabLinkBasePath(pathname: string | null | undefined): string {
   if (isCustomizedJourneyPath(pathname)) return JOURNEY_PAGE_PATH

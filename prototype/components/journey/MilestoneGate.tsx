@@ -21,6 +21,7 @@ import {
 import { useICP } from "@/lib/icp-context";
 import { track } from "@/lib/analytics";
 import { getStoredQuizTransactionMeta } from "@/lib/user-snapshot";
+import JourneyConfettiBurst from "@/components/journey/JourneyConfettiBurst";
 
 type GateCopy = {
   celebration: string;
@@ -157,6 +158,7 @@ function MilestoneGateModal({
   const { icpType } = useICP();
   const [entered, setEntered] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [burstKey] = useState(() => Date.now());
 
   useEffect(() => {
     setMounted(true);
@@ -179,21 +181,6 @@ function MilestoneGateModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onDismiss]);
-
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      void import("canvas-confetti").then((mod) => {
-        const confetti = mod.default;
-        confetti({
-          particleCount: 120,
-          spread: 70,
-          origin: { y: 0.35 },
-          colors: [copy.accent, "#ffffff", "#94A3B8"],
-        });
-      });
-    }, 300);
-    return () => clearTimeout(t);
-  }, [copy.accent]);
 
   const achievementBlock = useMemo(() => {
     if (gateType === "money" && achievementValue) {
@@ -266,6 +253,16 @@ function MilestoneGateModal({
         aria-label="Dismiss milestone dialog"
         onClick={onDismiss}
       />
+      {entered ? (
+        <div
+          className="pointer-events-none absolute left-1/2 top-[20%] z-[250] -translate-x-1/2 sm:top-[22%]"
+          aria-hidden
+        >
+          <div className="relative h-0 w-0">
+            <JourneyConfettiBurst active burstKey={burstKey} />
+          </div>
+        </div>
+      ) : null}
       <div
         className={`relative z-10 flex max-h-[min(92vh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl transition-all duration-300 ease-out sm:max-h-[85vh] sm:rounded-2xl ${
           entered

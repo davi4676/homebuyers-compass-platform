@@ -46,7 +46,7 @@ export function CompassWidget({ compass }: CompassWidgetProps) {
   const prompt = triggerData?.suggestedPrompt?.trim() ?? ''
 
   return (
-    <>
+    <div className="nq-compass-root">
       {bannerVisible && prompt ? (
         <div
           className="nq-compass-banner-enter pointer-events-auto fixed bottom-[88px] right-6 z-[1000] w-[280px] rounded-[14px] border border-black/[0.06] bg-[var(--white)] p-3 shadow-[var(--shadow-md)]"
@@ -88,7 +88,7 @@ export function CompassWidget({ compass }: CompassWidgetProps) {
       <div className="pointer-events-auto fixed bottom-6 right-6 z-[1000]">
         {showPulse ? (
           <span
-            className="nq-compass-pulse-ring pointer-events-none absolute -inset-1 rounded-full"
+            className="nq-compass-pulse-ring pulseRing pointer-events-none absolute -inset-1 rounded-full"
             aria-hidden
           />
         ) : null}
@@ -115,6 +115,6 @@ export function CompassWidget({ compass }: CompassWidgetProps) {
           </span>
         </button>
       </div>
-    </>
+    </div>
   )
 }
