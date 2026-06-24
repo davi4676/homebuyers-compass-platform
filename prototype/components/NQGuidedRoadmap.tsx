@@ -8,10 +8,12 @@ import {
   useCallback,
   type ReactNode,
 } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useSafeSearchParams } from '@/lib/use-safe-search-params'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Lock,
   ArrowRight,
@@ -37,7 +39,7 @@ import {
   MapPin,
   CaretRight,
 } from '@phosphor-icons/react'
-import { ChatPopover } from '@/components/chatbot/ChatPopover'
+import { openCompassChat } from '@/lib/open-compass-chat'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
 import {
   type JourneyTab,
@@ -85,12 +87,15 @@ import AssistanceProgramsTab from '@/components/journey/AssistanceProgramsTab'
 import { useMilestoneGate } from '@/components/journey/MilestoneGate'
 import FirstGenJourneyHub from '@/components/journey/FirstGenJourneyHub'
 import TierBadge from '@/components/TierBadge'
+import TierPreviewSwitcher from '@/components/TierPreviewSwitcher'
 import { useTierMindset } from '@/components/tier-mindset/TierMindsetProvider'
 import MindsetTag from '@/components/journey/MindsetTag'
 import JourneyTimeline from '@/components/journey/JourneyTimeline'
 import DailyInsightCard from '@/components/journey/DailyInsightCard'
+import WeeklyLessonCard from '@/components/journey/WeeklyLessonCard'
 import JourneyWinsBoard from '@/components/journey/JourneyWinsBoard'
 import JourneyNextMilestoneTeaser from '@/components/journey/JourneyNextMilestoneTeaser'
+import JourneyTabHeroShell from '@/components/journey/JourneyTabHeroShell'
 import { labelForWinsBoard } from '@/lib/nq-completed-actions'
 import { recordCompletion, setNextActionStartedNow } from '@/lib/nq-record-completion'
 import { useICP } from '@/lib/icp-context'
@@ -100,15 +105,19 @@ import UpgradeLockCallout, {
   upgradeLockSecondaryLinkClass,
 } from '@/components/monetization/UpgradeLockCallout'
 import JourneyOnboardingFlow from '@/components/journey/JourneyOnboardingFlow'
+import JourneyTodayChecklistCard from '@/components/journey/JourneyTodayChecklistCard'
+import JourneyTodayStatusStrip from '@/components/journey/JourneyTodayStatusStrip'
+import JourneyPlanTab from '@/components/journey/JourneyPlanTab'
 import MoneyInsights from '@/components/journey/MoneyInsights'
 import WhyItMattersCard from '@/components/journey/WhyItMattersCard'
 import NextStepCard from '@/components/journey/NextStepCard'
-import { SocialProofPulse } from '@/components/journey/SocialProofPulse'
 import { CertificatePreview } from '@/components/journey/CertificatePreview'
-import { MomentumScoreHeader } from '@/components/journey/MomentumScoreHeader'
-import { DailySignalCard } from '@/components/journey/DailySignalCard'
+import HudCounselorHandoffCard from '@/components/journey/HudCounselorHandoffCard'
+import PhaseCertificateModal from '@/components/journey/PhaseCertificateModal'
+import PhaseReengagementModal from '@/components/journey/PhaseReengagementModal'
+import { isPhaseCertificateModalDismissed } from '@/lib/phase-certificates'
+import { isPhaseReengagementModalShown } from '@/lib/phase-reengagement'
 import { SavingsLedger } from '@/components/journey/SavingsLedger'
-import { readNqActivityLog } from '@/lib/nq-activity-log'
 import { syncNqUnreadFromInboxState } from '@/lib/nq-unread-alerts'
 import { startMomentumTrialFromUi } from '@/lib/start-momentum-trial-client'
 import HomeownerHubSection from '@/components/journey/HomeownerHubSection'
@@ -135,115 +144,7 @@ import {
 } from '@/lib/journey-learn-money-items'
 import MoneyTag from '@/components/journey/MoneyTag'
 import { formatCurrency } from '@/lib/calculations'
-import type { ReadinessScore } from '@/lib/calculations'
 import { consumeMoveUpWizardJourneySync } from '@/lib/move-up-journey-sync'
-
-function OverviewRecentActivity() {
-  const [items, setItems] = useState<{ at: number; label: string }[]>([])
-
-  useEffect(() => {
-    const load = () => setItems(readNqActivityLog().slice(0, 3))
-    load()
-    const onStorage = () => load()
-    const onLog = () => load()
-    window.addEventListener('storage', onStorage)
-    window.addEventListener('nq-activity-log-updated', onLog)
-    return () => {
-      window.removeEventListener('storage', onStorage)
-      window.removeEventListener('nq-activity-log-updated', onLog)
-    }
-  }, [])
-
-  return (
-    <section
-      className="nq-card rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
-      aria-labelledby="journey-recent-activity-heading"
-    >
-      <h2 id="journey-recent-activity-heading" className="text-sm font-semibold text-slate-800">
-        Recent activity
-      </h2>
-      {items.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-500">No recent activity yet.</p>
-      ) : (
-        <ul className="mt-3 list-none space-y-3 p-0">
-          {items.map((e, i) => (
-            <li
-              key={`${e.at}-${i}`}
-              className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 last:border-0 last:pb-0"
-            >
-              <span className="text-sm text-slate-800">{e.label}</span>
-              <time
-                className="text-xs text-slate-400"
-                dateTime={new Date(e.at).toISOString()}
-              >
-                {new Date(e.at).toLocaleString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-              </time>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  )
-}
-
-function ReadinessScoreReveal({ readiness }: { readiness: ReadinessScore }) {
-  const reduceMotion = useReducedMotion() ?? false
-  const target = Math.max(0, Math.min(100, Math.round(readiness.total)))
-  const [displayed, setDisplayed] = useState(reduceMotion ? target : 0)
-
-  useEffect(() => {
-    if (reduceMotion) {
-      setDisplayed(target)
-      return
-    }
-    setDisplayed(0)
-    let raf = 0
-    const started = performance.now()
-    const durationMs = 1100
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - started) / durationMs)
-      const eased = 1 - (1 - t) ** 3
-      setDisplayed(Math.round(eased * target))
-      if (t < 1) raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [target, reduceMotion])
-
-  return (
-    <span className="flex min-w-0 flex-1 flex-col gap-2 sm:max-w-lg sm:flex-1">
-      <span>
-        <strong
-          className="text-slate-900 tabular-nums"
-          aria-label={`Readiness score ${target} out of 100`}
-        >
-          <span aria-hidden>
-            {displayed}
-            /100
-          </span>
-        </strong>
-        <span className="text-slate-600"> — {readiness.interpretation}</span>
-      </span>
-      <div
-        className="h-1.5 w-full max-w-[11rem] overflow-hidden rounded-full bg-slate-200/90"
-        aria-hidden
-      >
-        <div
-          className={`h-full rounded-full bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary ${
-            reduceMotion ? '' : 'transition-[width] duration-150 ease-out'
-          }`}
-          style={{ width: `${displayed}%` }}
-        />
-      </div>
-    </span>
-  )
-}
 
 function getOverviewWarmth(snapshot: UserSnapshot | null): string {
   if (snapshot == null) {
@@ -294,7 +195,7 @@ function renderWithAnnualCreditReportLink(text: string): ReactNode {
               href="https://www.annualcreditreport.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-millennial-cta-primary underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
+              className="font-semibold text-[var(--nq-ed-accent)] underline decoration-[var(--nq-ed-accent)]/70 underline-offset-2 hover:text-[#0f6058]"
             >
               {ANNUAL_CREDIT_REPORT_MARKER}
             </a>
@@ -316,7 +217,7 @@ function renderNqSaysContext(text: string): ReactNode {
     const blue = chunk.match(/^\*\*([^*]+)\*\*$/)
     if (blue) {
       return (
-        <strong key={i} className="font-bold not-italic text-millennial-cta-primary">
+        <strong key={i} className="font-bold not-italic text-[var(--nq-ed-accent)]">
           {blue[1]}
         </strong>
       )
@@ -357,7 +258,7 @@ const itemVariants = {
 
 const WHY_IT_MATTERS_MYTH_ICONS = [Receipt, Calendar, Gauge] as const
 const WHY_IT_MATTERS_MYTH_ICON_STYLES = [
-  'bg-millennial-primary-light/50 text-teal-800 ring-teal-200/80',
+  'bg-[var(--nq-ed-accent-soft)] text-[var(--nq-ed-accent)] ring-[var(--nq-ed-accent)]/20/80',
   'bg-amber-100 text-amber-800 ring-amber-200/70',
   'bg-violet-100 text-violet-700 ring-violet-200/70',
 ] as const
@@ -365,9 +266,6 @@ const WHY_IT_MATTERS_MYTH_ICON_STYLES = [
 const PHASE_CHECKLIST_LS = 'nq_phase_checklist_v1'
 
 const ONBOARDING_LS = 'nq_customized_onboarding_v1'
-
-/** First visit to customized journey — show "Start here" → Budget tab (onboarding bridge from quiz → hub). */
-const START_HERE_CARD_LS = 'nq_journey_start_here_v1'
 
 const REFINANCE_PHASE_TITLES: Record<number, string> = {
   1: 'Review Current Loan & Goals',
@@ -467,6 +365,10 @@ export default function NQGuidedRoadmap({
   )
 
   useEffect(() => {
+    setPreviewTier(userTier)
+  }, [userTier])
+
+  useEffect(() => {
     if (activeTab !== 'learn' || typeof window === 'undefined') return
     sessionStorage.setItem('nq_library_seen', '1')
     setJourneyNavChrome({ libraryHasNew: false })
@@ -481,30 +383,6 @@ export default function NQGuidedRoadmap({
     }
     setOnboardingHydrated(true)
   }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    try {
-      setStartHereState(localStorage.getItem(START_HERE_CARD_LS) === '1' ? 'hide' : 'show')
-    } catch {
-      setStartHereState('show')
-    }
-  }, [])
-
-  const dismissStartHereCard = useCallback(() => {
-    try {
-      localStorage.setItem(START_HERE_CARD_LS, '1')
-    } catch {
-      /* ignore */
-    }
-    setStartHereState('hide')
-  }, [])
-
-  const goToBudgetFromStartHere = useCallback(() => {
-    trackActivity('tool_used', { tool: 'journey_start_here_budget' })
-    dismissStartHereCard()
-    goTab('plan')
-  }, [dismissStartHereCard, goTab])
 
   const handleCertificatePurchase = useCallback(async () => {
     try {
@@ -523,15 +401,10 @@ export default function NQGuidedRoadmap({
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
-  const [chatOpen, setChatOpen] = useState(false)
-  const [chatAnchor, setChatAnchor] = useState<'message' | 'help'>('message')
   const [snapshot, setSnapshot] = useState<UserSnapshot | null>(null)
   const [quizTxnMeta, setQuizTxnMeta] = useState<
     ReturnType<typeof getStoredQuizTransactionMeta>
   >({ transactionType: null, icpType: null })
-  const chatTriggerRef = useRef<HTMLButtonElement>(null)
-  const helpChatTriggerRef = useRef<HTMLButtonElement>(null)
-  const chatExtraTriggerRefs = useMemo(() => [chatTriggerRef, helpChatTriggerRef], [])
 
   const refreshSnapshot = useCallback(() => {
     const q = loadQuizDataFromLocalStorage()
@@ -629,9 +502,13 @@ export default function NQGuidedRoadmap({
   }, [completedSteps, currentStepIndex])
 
   const referralPromptPrevCompletedRef = useRef<Set<number> | null>(null)
+  const phaseCompletionPrevRef = useRef<Set<number> | null>(null)
   const [referralRoadmapOpen, setReferralRoadmapOpen] = useState<
     null | 'preapproval' | 'phase7' | 'quiz'
   >(null)
+  const [reengagementPhase, setReengagementPhase] = useState<number | null>(null)
+  const [certificatePhase, setCertificatePhase] = useState<number | null>(null)
+  const [pendingCertificatePhase, setPendingCertificatePhase] = useState<number | null>(null)
 
   useEffect(() => {
     if (requestReferralModalOpen > 0) {
@@ -671,6 +548,37 @@ export default function NQGuidedRoadmap({
     } catch {
       /* ignore */
     }
+  }, [completedSteps])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const phaseOrders = [1, 2, 3, 4, 5, 6, 7] as const
+    const currentlyComplete = new Set(phaseOrders.filter((o) => isNqGuidedPhaseFullyComplete(o, completedSteps)))
+
+    if (phaseCompletionPrevRef.current === null) {
+      phaseCompletionPrevRef.current = currentlyComplete
+      return
+    }
+
+    const prev = phaseCompletionPrevRef.current
+    for (const order of phaseOrders) {
+      const nowComplete = currentlyComplete.has(order)
+      const wasComplete = prev.has(order)
+      if (!nowComplete || wasComplete) continue
+
+      const showReengagement = order <= 6 && !isPhaseReengagementModalShown(order)
+      const showCertificate = !isPhaseCertificateModalDismissed(order)
+
+      if (showReengagement) {
+        setReengagementPhase(order)
+        if (showCertificate) setPendingCertificatePhase(order)
+      } else if (showCertificate) {
+        setCertificatePhase(order)
+      }
+      break
+    }
+
+    phaseCompletionPrevRef.current = currentlyComplete
   }, [completedSteps])
 
   const step = getNQStepByIndex(currentStepIndex) ?? NQ_GUIDED_STEPS[0]
@@ -716,7 +624,7 @@ export default function NQGuidedRoadmap({
   const [budgetMonthlyPair, setBudgetMonthlyPair] = useState({ sketch: 0, base: 0 })
   const [onboardingComplete, setOnboardingComplete] = useState(false)
   const [onboardingHydrated, setOnboardingHydrated] = useState(false)
-  const [startHereState, setStartHereState] = useState<'loading' | 'show' | 'hide'>('loading')
+  const [previewTier, setPreviewTier] = useState<UserTier>(userTier)
   const [docTaskTouched, setDocTaskTouched] = useState(false)
   const phaseChecklistItems = displayStep?.nqPhaseChecklist
   const phaseChecklistSig = phaseChecklistItems?.join('\u0001') ?? ''
@@ -1105,9 +1013,72 @@ export default function NQGuidedRoadmap({
     })
   }, [libraryQuery, libraryCategory])
 
+  const showTodayLoading = activeTab === 'today' && !onboardingHydrated
+  const showOnboardingTour = onboardingHydrated && !onboardingComplete && activeTab === 'today'
+  const showTodayPanel = activeTab === 'today' && onboardingHydrated && !showOnboardingTour
+
+  const todayChecklistSlot =
+    displayStep && showOnboardingTour ? (
+      <JourneyTodayChecklistCard
+        embedded
+        displayStep={displayStep}
+        phaseChecklistItems={phaseChecklistItems}
+        phaseChecklistDone={phaseChecklistDone}
+        togglePhaseChecklist={togglePhaseChecklist}
+        renderNqSaysContext={renderNqSaysContext}
+        renderWithAnnualCreditReportLink={renderWithAnnualCreditReportLink}
+        onIDidIt={handleIDidIt}
+        onSkip={handleSkip}
+        onBack={handleBack}
+        currentStepMarkedDone={currentStepMarkedDone}
+        isLastStep={isLastStep}
+        currentStepIndex={currentStepIndex}
+        reduceMotion={reduceMotion ?? false}
+      />
+    ) : null
+
+  const todayStatusStrip = (
+    <JourneyTodayStatusStrip
+      inset
+      displayPhaseOrder={displayPhaseOrder}
+      phaseTotalForDisplay={phaseTotalForDisplay}
+      phaseHeadingTitle={phaseHeadingTitle}
+      milestoneIndexInPhase={milestoneIndexInPhase}
+      milestonesInPhase={milestonesInPhase}
+      progressPct={progressPct}
+      accentColor={content.accentColor}
+    />
+  )
+
   return (
-    <div className="space-y-8 sm:space-y-10 md:space-y-12 leading-relaxed pb-4 pt-2 sm:pt-4">
-      {onboardingHydrated && !onboardingComplete ? (
+    <div
+      className="nq-ed-roadmap nq-journey-roadmap-root leading-relaxed"
+      data-active-tab={activeTab}
+    >
+      {showTodayLoading ? (
+        <div
+          role="tabpanel"
+          id="journey-panel-today"
+          aria-labelledby="journey-tab-today"
+          className="nq-journey-tab-panel"
+          aria-busy="true"
+        >
+          <JourneyTabHeroShell
+            eyebrow="Today"
+            title="Your next move"
+            description="Loading your current step…"
+            headingId="journey-today-heading"
+          />
+        </div>
+      ) : null}
+
+      {showOnboardingTour ? (
+        <div
+          role="tabpanel"
+          id="journey-panel-today"
+          aria-labelledby="journey-tab-today"
+          className="nq-journey-tab-panel"
+        >
         <JourneyOnboardingFlow
           userTier={userTier}
           effectiveTier={effectiveTier}
@@ -1120,462 +1091,137 @@ export default function NQGuidedRoadmap({
           onPhaseSelect={goToPhase}
           goTab={goTab}
           quizIcpType={quizTxnMeta.icpType}
+          statusStrip={todayStatusStrip}
+          todayChecklist={todayChecklistSlot}
           onComplete={() => {
-            try {
-              localStorage.setItem(ONBOARDING_LS, '1')
-            } catch {
-              // ignore
-            }
-            setOnboardingComplete(true)
-          }}
-          reduceMotion={reduceMotion ?? false}
-        />
+              try {
+                localStorage.setItem(ONBOARDING_LS, '1')
+                window.dispatchEvent(new Event('nq-onboarding-complete'))
+              } catch {
+                // ignore
+              }
+              setOnboardingComplete(true)
+            }}
+            reduceMotion={reduceMotion ?? false}
+          />
+        </div>
       ) : null}
 
-      {activeTab === 'today' ? (
+      {showTodayPanel ? (
         <div
           role="tabpanel"
           id="journey-panel-today"
           aria-labelledby="journey-tab-today"
-          className="space-y-4 scroll-mt-28 sm:space-y-5 md:space-y-6"
+          className="nq-journey-tab-panel"
         >
-          {startHereState === 'show' ? (
-            <motion.div
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduceMotion ? 0.01 : 0.35 }}
-              className="nq-card relative overflow-hidden rounded-2xl border-2 border-teal-400/70 bg-gradient-to-br from-teal-50 via-white to-emerald-50/40 p-5 shadow-lg ring-1 ring-teal-200/60 sm:p-6"
-              role="region"
-              aria-label="Getting started"
-            >
-              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-teal-200/20 blur-2xl" aria-hidden />
-              <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-teal-900">
-                    <Sparkle className="h-4 w-4 text-teal-600" aria-hidden />
-                    Start here
-                  </p>
-                  <h2 className="mt-2 font-display text-xl font-bold text-[rgb(var(--navy))] sm:text-2xl">
-                    Welcome — here&apos;s your next move
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-                    Each time you open this page, Today shows your single most important action.
-                    Tap &ldquo;My Plan&rdquo; for the full roadmap and budget, or &ldquo;Money&rdquo; for programs you qualify for.
-                  </p>
-                </div>
-                <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:min-w-[11rem]">
-                  <button
-                    type="button"
-                    onClick={goToBudgetFromStartHere}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-teal-700"
-                  >
-                    Go to My Plan
-                    <ArrowRight className="h-4 w-4" aria-hidden />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={dismissStartHereCard}
-                    className="text-center text-sm font-semibold text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-slate-800"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ) : null}
-
-          {/* 1. Welcome + personalization */}
-          <section
-            className="nq-card rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6"
-            aria-labelledby="journey-icp-welcome"
+          <JourneyTabHeroShell
+            eyebrow="Today"
+            title="Your next move"
+            description="One focused task at a time — finish today's step, then use Plan, Money, or Learn for more depth."
+            headingId="journey-today-heading"
           >
-            <h2
-              id="journey-icp-welcome"
-              className="font-display text-xl font-bold sm:text-2xl"
-              style={{ color: content.accentColor }}
-            >
-              {content.welcomeHeadline}
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">{content.welcomeSubtext}</p>
-            {quizTxnMeta.icpType === 'first-gen' ? (
-              <button
-                type="button"
-                onClick={() => goTab('learn')}
-                className="mt-4 text-sm font-semibold underline decoration-2 underline-offset-2"
-                style={{ color: content.accentColor }}
-              >
-                First-Gen Hub
-                <CaretRight className="ml-0.5 inline h-4 w-4 align-text-bottom" aria-hidden />
-              </button>
-            ) : null}
-          </section>
+            {todayStatusStrip}
+          </JourneyTabHeroShell>
 
-          {/* 2. Daily signal + momentum — compact status strip */}
-          <DailySignalCard className="!mx-0 !mt-0 max-w-none p-3 sm:p-4" />
-          <MomentumScoreHeader />
+          {displayStep ? (
+            <>
+              <section className="nq-ed-soft-card border border-[var(--nq-ed-line)] p-5 sm:p-6">
+                <JourneyTodayChecklistCard
+                  embedded
+                  displayStep={displayStep}
+                  phaseChecklistItems={phaseChecklistItems}
+                  phaseChecklistDone={phaseChecklistDone}
+                  togglePhaseChecklist={togglePhaseChecklist}
+                  renderNqSaysContext={renderNqSaysContext}
+                  renderWithAnnualCreditReportLink={renderWithAnnualCreditReportLink}
+                  onIDidIt={handleIDidIt}
+                  onSkip={handleSkip}
+                  onBack={handleBack}
+                  currentStepMarkedDone={currentStepMarkedDone}
+                  isLastStep={isLastStep}
+                  currentStepIndex={currentStepIndex}
+                  reduceMotion={reduceMotion ?? false}
+                />
+              </section>
 
-          {/* 3. Readiness + progress — the number that matters */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <motion.section
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: reduceMotion ? 0.01 : 0.35 }}
-              className="nq-card rounded-2xl border-2 border-teal-300/70 bg-gradient-to-br from-white via-millennial-primary-light/30 to-emerald-50/35 p-5 shadow-lg ring-1 ring-teal-100/80"
-            >
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-900/90">Readiness score</p>
-              <p className="mt-1.5 text-sm font-semibold text-slate-700">{overviewWarmth}</p>
-              {snapshot ? (
-                <div className="mt-3 border-t border-teal-100/90 pt-3">
-                  <ReadinessScoreReveal readiness={snapshot.readiness} />
-                </div>
-              ) : (
-                <div className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white/90 p-3 text-center">
-                  <button type="button" onClick={onGoToResults} className="text-sm font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900">
-                    Run the savings snapshot
-                  </button>
-                </div>
-              )}
-            </motion.section>
-            <div className="flex flex-col gap-3">
-              <div className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current phase</p>
-                <p className="mt-1 text-lg font-bold text-slate-900">{phaseHeadingTitle}</p>
-                <p className="text-sm text-slate-500">Phase {displayPhaseOrder} of {phaseTotalForDisplay} · Milestone {milestoneIndexInPhase} of {milestonesInPhase}</p>
-                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/90">
-                  <div className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none" style={{ width: `${progressPct}%`, background: content.accentColor }} />
-                </div>
-              </div>
-              <SavingsLedger className="!mx-0 mt-0 max-w-none" compact />
-            </div>
-          </div>
-
-          <section
-            aria-label="Journey timeline"
-            className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
-          >
-            <h2 className="font-display text-lg font-bold text-slate-900 sm:text-xl">Your NestQuest phases</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Visual map of every phase — same roadmap as the Learn tab, optimized for a quick scan.
-            </p>
-            <div className="mt-4">
-              <JourneyTimeline
-                compact
-                phaseOrders={NQ_GUIDED_PHASE_ORDERS}
-                effectiveTier={effectiveTier}
-                currentPhaseOrder={displayPhaseOrder}
-                currentSavings={snapshot?.quiz.downPayment ?? 0}
-                canAccessPhase={(phaseOrder) =>
-                  getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess) !== null
-                }
-                onSelectPhase={(order) => {
-                  goToPhase(order)
-                  goTab('learn')
-                }}
-                onLockedPhaseClick={onRoadmapLockedPhase}
-                isPhaseComplete={(phaseOrder) => isNqGuidedPhaseFullyComplete(phaseOrder, completedSteps)}
-                getPhaseBlockedHint={(phaseOrder) =>
-                  phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)
-                    ? 'Complete all milestones in Post-Closing first.'
-                    : undefined
-                }
-              />
-            </div>
-          </section>
-
-          {/* 4. Current step — the single most important action */}
-          <motion.div
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0.01 : 0.45 }}
-            className="nq-card rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/25 to-emerald-50/25 p-5 shadow-lg sm:p-6"
-          >
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-millennial-primary-light/70 to-teal-100/55 shadow-lg ring-2 ring-teal-200/50">
-                <Target className="h-6 w-6 text-teal-700" aria-hidden />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: content.accentColor }}>
-                  Your next move
-                </p>
-                <h2 className="mt-1 font-display text-xl font-bold text-slate-900 sm:text-2xl">{displayStep.title}</h2>
-              </div>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
-              {renderNqSaysContext(displayStep.nqContext)}
-            </p>
-            <div className="nq-card mt-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">What to do</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-800">
-                {renderWithAnnualCreditReportLink(displayStep.nqWhatToDo)}
+              <p className="text-center text-sm text-[var(--nq-ed-muted)]">
+                Need more depth?{' '}
+                <button
+                  type="button"
+                  onClick={() => goTab('plan')}
+                  className="font-semibold text-[var(--nq-ed-accent)] underline decoration-[var(--nq-ed-accent)]/40 underline-offset-2 hover:text-[#0f6058]"
+                >
+                  My Plan
+                </button>
+                {' · '}
+                <button
+                  type="button"
+                  onClick={() => goTab('money')}
+                  className="font-semibold text-[var(--nq-ed-accent)] underline decoration-[var(--nq-ed-accent)]/40 underline-offset-2 hover:text-[#0f6058]"
+                >
+                  Money
+                </button>
+                {' · '}
+                <button
+                  type="button"
+                  onClick={() => goTab('learn')}
+                  className="font-semibold text-[var(--nq-ed-accent)] underline decoration-[var(--nq-ed-accent)]/40 underline-offset-2 hover:text-[#0f6058]"
+                >
+                  Learn
+                </button>
               </p>
-            </div>
-            {phaseChecklistItems && phaseChecklistItems.length > 0 ? (
-              <ul className="mt-4 space-y-2" role="list">
-                {phaseChecklistItems.map((item, idx) => (
-                  <li key={`today-cl-${idx}`} className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={phaseChecklistDone[idx] ?? false}
-                      onChange={() => togglePhaseChecklist(idx)}
-                      className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
-                    />
-                    <span className={`text-sm ${phaseChecklistDone[idx] ? 'text-slate-400 line-through' : 'font-medium text-slate-800'}`}>
-                      {renderWithAnnualCreditReportLink(item)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={handleIDidIt} disabled={currentStepMarkedDone} className="btn-primary nq-cta-pulse inline-flex items-center gap-2 px-5 py-3 text-sm disabled:opacity-50">
-                <Check weight="duotone" size={20} aria-hidden /> {currentStepMarkedDone ? 'Done' : 'I did it'}
-              </button>
-              <button type="button" onClick={handleSkip} disabled={isLastStep} className="text-sm font-semibold text-slate-500 underline underline-offset-2 hover:text-slate-800 disabled:opacity-40">Skip</button>
-              <button type="button" onClick={handleBack} disabled={currentStepIndex === 0} className="text-sm font-semibold text-slate-500 underline underline-offset-2 hover:text-slate-800 disabled:opacity-40">Back</button>
-            </div>
-          </motion.div>
-
-          {/* 5. Quick actions — navigate to other tabs */}
-          <section aria-label="Quick actions">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <button type="button" onClick={() => goTab('plan')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <MapPin weight="duotone" size={20} className="shrink-0" style={{ color: content.accentColor }} aria-hidden />
-                    <span className="font-display text-base font-bold text-slate-900">My Plan</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">Roadmap and budget sketch</p>
-                </div>
-                <CaretRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
-              </button>
-              <button type="button" onClick={() => goTab('money')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Gift className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
-                    <span className="font-display text-base font-bold text-slate-900">Money</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">Programs and savings you qualify for</p>
-                </div>
-                <CaretRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
-              </button>
-              <button type="button" onClick={() => goTab('learn')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/90 p-4 text-left shadow-sm transition hover:border-slate-300" style={{ backgroundColor: content.accentColorLight }}>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 shrink-0" style={{ color: content.accentColor }} aria-hidden />
-                    <span className="font-display text-base font-bold text-slate-900">Learn</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">Concepts, scripts, and guides</p>
-                </div>
-                <CaretRight className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
-              </button>
-            </div>
-          </section>
-
-          {/* 6. Alerts & tasks — collapsible */}
-          <details className="nq-card group rounded-2xl border border-slate-200/90 bg-white shadow-sm" open={inboxTasks.some((t) => !t.done)}>
-            <summary className="flex cursor-pointer items-center justify-between gap-3 p-5 sm:p-6">
-              <span className="text-sm font-bold uppercase tracking-wide text-slate-600">
-                Alerts &amp; tasks ({inboxTasks.filter((t) => !t.done).length} pending)
-              </span>
-              <CaretDown className="h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180" aria-hidden />
-            </summary>
-            <div className="space-y-5 border-t border-slate-100 p-5 sm:p-6">
-              <section aria-label="Alerts">
-                <ul className="space-y-3 text-sm text-amber-950" role="list">
-                  <li className="flex gap-2 rounded-lg bg-amber-50 px-3 py-2 shadow-sm">
-                    <WarningCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
-                    <span>Rate quotes are moving weekly — refresh quotes before you go under contract.</span>
-                  </li>
-                  <li className="flex gap-2 rounded-lg bg-amber-50 px-3 py-2 shadow-sm">
-                    <WarningCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden />
-                    <span>Wire fraud reminder: always confirm wiring instructions by phone on a number you trust.</span>
-                  </li>
-                </ul>
-              </section>
-              <section aria-label="Tasks">
-                <ul className="list-none space-y-3" role="list">
-                  {inboxTasks.map((task, idx) => (
-                    <li key={task.id} className="flex items-start gap-3">
-                      <input
-                        id={`today-task-${task.id}`}
-                        type="checkbox"
-                        checked={task.done}
-                        onChange={() => {
-                          setInboxTasks((prev) => {
-                            const cur = prev[idx]
-                            if (cur && !cur.done) {
-                              recordCompletion({
-                                id: `nq-inbox-${cur.id}`,
-                                label: cur.label,
-                                completedAt: new Date().toISOString(),
-                              })
-                            }
-                            return prev.map((t, i) => (i === idx ? { ...t, done: !t.done } : t))
-                          })
-                          if (!task.done && /upload|document|pay stub|lender portal/i.test(task.label)) setDocTaskTouched(true)
-                        }}
-                        className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
-                      />
-                      <label htmlFor={`today-task-${task.id}`} className={`cursor-pointer text-sm ${task.done ? 'text-slate-400 line-through' : 'font-medium text-slate-800'}`}>
-                        {task.label}
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            </div>
-          </details>
-
-          {/* 7. Social proof + activity — low priority, at bottom */}
-          <SocialProofPulse />
-          <OverviewRecentActivity />
+            </>
+          ) : (
+            <p className="text-center text-sm text-[var(--nq-ed-muted)]">Loading your current step…</p>
+          )}
         </div>
       ) : null}
 
       {activeTab === 'plan' ? (
-        <div
-          role="tabpanel"
-          id="journey-panel-plan"
-          aria-labelledby="journey-tab-plan"
-          className="scroll-mt-28 space-y-6"
-        >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-end">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <TierBadge tier={effectiveTier} className="max-w-sm" />
-              <MindsetTag mindset={mindsetFor(effectiveTier)} className="hidden sm:inline-flex max-w-[280px]" />
-            </div>
-          </div>
-          <section
-            aria-label="Phase roadmap timeline"
-            className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5"
-          >
-            <h2 className="font-display text-lg font-bold text-slate-900 sm:text-xl">Your customized NestQuest journey</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Every phase at a glance — jump into the Learn tab to work the active step.
-            </p>
-            <div className="mt-4">
-              <JourneyTimeline
-                phaseOrders={NQ_GUIDED_PHASE_ORDERS}
-                effectiveTier={effectiveTier}
-                currentPhaseOrder={displayPhaseOrder}
-                currentSavings={snapshot?.quiz.downPayment ?? 0}
-                canAccessPhase={(phaseOrder) =>
-                  getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess) !== null
-                }
-                onSelectPhase={(order) => {
-                  goToPhase(order)
-                  goTab('learn')
-                }}
-                onLockedPhaseClick={onRoadmapLockedPhase}
-                isPhaseComplete={(phaseOrder) => isNqGuidedPhaseFullyComplete(phaseOrder, completedSteps)}
-                getPhaseBlockedHint={(phaseOrder) =>
-                  phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)
-                    ? 'Complete all milestones in Post-Closing first.'
-                    : undefined
-                }
-              />
-            </div>
-          </section>
-          <MoneyInsights
-            totals={moneyTotals}
-            savingsDetails={savingsDetails}
-            fundingDetails={fundingDetails}
-            alternativeDetails={alternativeDetails}
-            detailsUnlocked={moneyInsightsDetailsUnlocked}
-            upgradeHref="/upgrade?source=journey-budget-insights&tier=momentum"
-          />
-          {!hasJourneyFeature(effectiveTier, 'affordability_review') ? (
-            <UpgradeLockCallout
-              lockedLabel="Expert affordability review"
-              reason={`${getMomentumToNavigatorUpgradeCopy(quizTxnMeta.icpType)} Navigator mindset: “${TIER_DEFINITIONS.navigator.mindset}”`}
-              ctaLabel={quizTxnMeta.icpType === 'first-gen' ? 'Get expert review →' : 'Explore Navigator'}
-              ctaHref="/upgrade?source=budget-inline&tier=navigator"
-            />
-          ) : null}
-          <div className="nq-card flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white/90 p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                {content.budgetHeadline}
-              </h2>
-              <p className="mt-2 text-sm text-slate-600 sm:text-base">{content.budgetSubtext}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => document.getElementById('nq-budget-sketch-reset')?.click()}
-              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25"
-            >
-              Reset
-            </button>
-          </div>
-          <HousingBudgetSketchTile
-            snapshot={snapshot}
-            maxEditableLineItems={budgetSketchLineCap}
-            budgetUpgradeHref="/upgrade?source=budget-sketch-lines&tier=momentum"
-            onSketchDirtyChange={(dirty) => {
-              setBudgetSketchDirty(dirty)
-              setJourneyNavChrome({ budgetSketchEdited: dirty })
-            }}
-            onSketchMonthlyCompare={(sketch, base) => {
-              setBudgetMonthlyPair({ sketch, base })
-            }}
-            onBudgetSketchFirstCustomized={(monthlyTotal) => {
-              tryOpenGate('discovery', String(Math.round(monthlyTotal)))
-            }}
-          />
-          {budgetMonthlyPair.base > 0 && budgetMonthlyPair.sketch < budgetMonthlyPair.base ? (
-            <div className="nq-card rounded-2xl border border-emerald-200/80 bg-emerald-50/60 p-5 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-900/90">Savings impact (illustrative)</p>
-              <p className="mt-2 text-sm text-slate-700">
-                Your sketch is{' '}
-                <strong className="font-semibold text-emerald-900 tabular-nums">
-                  {formatCurrency(budgetMonthlyPair.base - budgetMonthlyPair.sketch)}
-                </strong>{' '}
-                lower per month than the snapshot baseline — about{' '}
-                <strong className="font-semibold text-emerald-900 tabular-nums">
-                  {formatCurrency(Math.round((budgetMonthlyPair.base - budgetMonthlyPair.sketch) * 12))}
-                </strong>{' '}
-                a year in cash-flow room before other optimizations.
-              </p>
-              <p className="mt-2 text-sm font-medium text-emerald-900">
-                Nice — this adjustment saves you {formatCurrency(budgetMonthlyPair.base - budgetMonthlyPair.sketch)}/mo.
-              </p>
-            </div>
-          ) : null}
-          <div className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm">
-            <p className="text-sm font-semibold text-slate-800">You may qualify for additional help.</p>
-            <button
-              type="button"
-              onClick={() => goTab('money')}
-              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
-            >
-              Funding opportunities based on your profile
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => goTab('learn')}
-              className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-violet-700 underline decoration-violet-400/70 underline-offset-2 hover:text-violet-900"
-            >
-              Alternative options you may consider
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </button>
-          </div>
-          <div className="nq-card rounded-2xl border border-slate-200/90 bg-slate-50/90 p-5 sm:p-6">
-            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-600">Why these numbers matter</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-700 sm:text-base">
-              Lenders look at debt-to-income (DTI), reserves, and how comfortably a payment fits your life — not
-              just whether you can clear a minimum. Your sketch is a safe sandbox before you talk to a loan officer.
-            </p>
-            <button
-              type="button"
-              onClick={() => goTab('learn')}
-              className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-teal-800 underline decoration-millennial-cta-primary/70 underline-offset-2 hover:text-teal-900"
-            >
-              Browse the Learn library
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </button>
-          </div>
-        </div>
+        <JourneyPlanTab
+          effectiveTier={effectiveTier}
+          displayPhaseOrder={displayPhaseOrder}
+          phaseTotalForDisplay={phaseTotalForDisplay}
+          phaseHeadingTitle={phaseHeadingTitle}
+          milestoneIndexInPhase={milestoneIndexInPhase}
+          milestonesInPhase={milestonesInPhase}
+          progressPct={progressPct}
+          accentColor={content.accentColor}
+          snapshot={snapshot}
+          readinessWarmth={overviewWarmth}
+          readinessScore={snapshot ? Math.round(snapshot.readiness.total) : undefined}
+          moneyTotals={moneyTotals}
+          budgetHeadline={content.budgetHeadline}
+          budgetSubtext={content.budgetSubtext}
+          budgetSketchLineCap={budgetSketchLineCap}
+          budgetMonthlyPair={budgetMonthlyPair}
+          canAccessPhase={(phaseOrder) =>
+            getNqGuidedFirstAccessibleIndexInPhase(phaseOrder, canAccess) !== null
+          }
+          onSelectPhase={(order) => {
+            goToPhase(order)
+            goTab('learn')
+          }}
+          onLockedPhaseClick={onRoadmapLockedPhase}
+          isPhaseComplete={(phaseOrder) => isNqGuidedPhaseFullyComplete(phaseOrder, completedSteps)}
+          getPhaseBlockedHint={(phaseOrder) =>
+            phaseOrder === 8 && !isHomeownerHubPhaseUnlocked(completedSteps)
+              ? 'Complete all milestones in Post-Closing first.'
+              : undefined
+          }
+          goTab={goTab}
+          onGoToResults={onGoToResults}
+          onSketchDirtyChange={(dirty) => {
+            setBudgetSketchDirty(dirty)
+            setJourneyNavChrome({ budgetSketchEdited: dirty })
+          }}
+          onSketchMonthlyCompare={(sketch, base) => {
+            setBudgetMonthlyPair({ sketch, base })
+          }}
+          onBudgetSketchFirstCustomized={(monthlyTotal) => {
+            tryOpenGate('discovery', String(Math.round(monthlyTotal)))
+          }}
+        />
       ) : null}
 
       {activeTab === 'money' && (
@@ -1583,22 +1229,53 @@ export default function NQGuidedRoadmap({
           role="tabpanel"
           id="journey-panel-money"
           aria-labelledby="journey-tab-money"
-          className="scroll-mt-28 space-y-6"
+          className="nq-journey-tab-panel"
         >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-end">
-            <div className="flex flex-wrap items-center justify-end gap-2">
+          <JourneyTabHeroShell
+            eyebrow="Money"
+            title="Your capital briefing"
+            description="Programs, savings, and alternatives grouped so you can scan impact before diving into detail."
+            headingId="journey-money-heading"
+          >
+            <div className="flex flex-wrap items-center gap-2">
               <TierBadge tier={effectiveTier} className="max-w-sm" />
               <MindsetTag mindset={mindsetFor(effectiveTier)} className="hidden sm:inline-flex max-w-[280px]" />
             </div>
+          </JourneyTabHeroShell>
+          <div className="nq-journey-tab-grid">
+            <div className="nq-journey-tab-stack">
+              <MoneyInsights
+                totals={moneyTotals}
+                savingsDetails={savingsDetails}
+                fundingDetails={fundingDetails}
+                alternativeDetails={alternativeDetails}
+                detailsUnlocked={moneyInsightsDetailsUnlocked}
+                upgradeHref="/upgrade?source=journey-money-insights&tier=momentum"
+              />
+            </div>
+            <aside className="nq-ed-quote hidden lg:flex" aria-label="Capital briefing">
+              <div className="flex flex-col justify-between gap-6">
+                <div>
+                  <span className="nq-ed-eyebrow">Capital</span>
+                  <h3 className="mt-3 font-display text-xl font-semibold text-[var(--nq-ed-text)] sm:text-2xl">
+                    Numbers as a briefing — not widget clutter.
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--nq-ed-muted)]">
+                    Programs, savings, and alternatives stay grouped so you can scan impact before diving into detail.
+                  </p>
+                </div>
+                <div className="nq-ed-row">
+                  <div className="nq-ed-chip">$</div>
+                  <div className="min-w-0">
+                    <strong className="text-[var(--nq-ed-text)]">Verify with administrators</strong>
+                    <div className="text-sm text-[var(--nq-ed-muted)]">
+                      Illustrative totals — confirm eligibility and dollars with lenders and program offices.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
-          <MoneyInsights
-            totals={moneyTotals}
-            savingsDetails={savingsDetails}
-            fundingDetails={fundingDetails}
-            alternativeDetails={alternativeDetails}
-            detailsUnlocked={moneyInsightsDetailsUnlocked}
-            upgradeHref="/upgrade?source=journey-money-insights&tier=momentum"
-          />
 
           {unclaimedSavingsAmount != null ? (
             <UpgradeLockCallout
@@ -1615,30 +1292,30 @@ export default function NQGuidedRoadmap({
           <SavingsLedger className="!mx-0 mt-0 max-w-none" />
 
           {snapshot ? (
-            <section className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-lg sm:p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Savings snapshot summary</p>
-              <p className="mt-1.5 text-sm text-slate-600">
+            <section className="nq-ed-soft-card rounded-3xl border border-[var(--nq-ed-line)] p-5 shadow-lg sm:p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--nq-ed-muted)]">Savings snapshot summary</p>
+              <p className="mt-1.5 text-sm text-[var(--nq-ed-muted)]">
                 Based on your target home price (when set) — not the income-based comfortable max.
               </p>
-              <ul className="mt-3 space-y-2.5 text-sm text-slate-700 sm:text-base">
-                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
-                  <span className="font-medium text-slate-500">Potential home price</span>
-                  <span className="font-semibold text-slate-900 tabular-nums sm:text-right">
-                    {snapshot.tokens.targetHome || <span className="font-normal text-slate-500">Not set</span>}
+              <ul className="mt-3 space-y-2.5 text-sm text-[var(--nq-ed-muted)] sm:text-base">
+                <li className="flex flex-col gap-0.5 border-b border-[var(--nq-ed-line-soft)] pb-3 sm:flex-row sm:justify-between sm:gap-4">
+                  <span className="font-medium text-[var(--nq-ed-muted)]">Potential home price</span>
+                  <span className="font-semibold text-[var(--nq-ed-text)] tabular-nums sm:text-right">
+                    {snapshot.tokens.targetHome || <span className="font-normal text-[var(--nq-ed-muted)]">Not set</span>}
                   </span>
                 </li>
-                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
-                  <span className="font-medium text-slate-500">Down payment</span>
-                  <span className="font-semibold text-slate-900 tabular-nums sm:text-right">{snapshot.tokens.downPayment}</span>
+                <li className="flex flex-col gap-0.5 border-b border-[var(--nq-ed-line-soft)] pb-3 sm:flex-row sm:justify-between sm:gap-4">
+                  <span className="font-medium text-[var(--nq-ed-muted)]">Down payment</span>
+                  <span className="font-semibold text-[var(--nq-ed-text)] tabular-nums sm:text-right">{snapshot.tokens.downPayment}</span>
                 </li>
-                <li className="flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
-                  <span className="font-medium text-slate-500">Indicative monthly</span>
-                  <span className="shrink-0 font-semibold text-slate-900 tabular-nums sm:text-right">
-                    {snapshot.tokens.targetMonthly ? <>{snapshot.tokens.targetMonthly}/mo</> : <span className="font-normal text-slate-500">—</span>}
+                <li className="flex flex-col gap-0.5 border-b border-[var(--nq-ed-line-soft)] pb-3 sm:flex-row sm:justify-between sm:gap-4">
+                  <span className="font-medium text-[var(--nq-ed-muted)]">Indicative monthly</span>
+                  <span className="shrink-0 font-semibold text-[var(--nq-ed-text)] tabular-nums sm:text-right">
+                    {snapshot.tokens.targetMonthly ? <>{snapshot.tokens.targetMonthly}/mo</> : <span className="font-normal text-[var(--nq-ed-muted)]">—</span>}
                   </span>
                 </li>
               </ul>
-              <button type="button" onClick={onGoToResults} className="mt-4 inline-flex items-center justify-center rounded-xl border-2 border-millennial-cta-primary bg-white px-5 py-3 text-sm font-bold text-teal-900 shadow-md transition hover:bg-millennial-primary-light/25">
+              <button type="button" onClick={onGoToResults} className="mt-4 inline-flex items-center justify-center rounded-xl border-2 border-[var(--nq-ed-accent)] bg-white px-5 py-3 text-sm font-bold text-[var(--nq-ed-accent)] shadow-md transition hover:bg-[var(--nq-ed-accent-soft)]">
                 Update snapshot
               </button>
             </section>
@@ -1648,7 +1325,7 @@ export default function NQGuidedRoadmap({
             <div className="nq-card rounded-2xl border border-emerald-200/80 bg-white/90 p-4 shadow-sm ring-1 ring-emerald-100/70">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-900/90">HOSA Savings Score</p>
               <p className="mt-2 font-display text-3xl font-black tabular-nums text-emerald-900 sm:text-4xl">
-                {snapshot ? Math.round(snapshot.readiness.total) : '—'}<span className="text-xl font-bold text-slate-500 sm:text-2xl">/100</span>
+                {snapshot ? Math.round(snapshot.readiness.total) : '—'}<span className="text-xl font-bold text-[var(--nq-ed-muted)] sm:text-2xl">/100</span>
               </p>
               <Link href="/results" className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-emerald-900 underline decoration-emerald-600/60 underline-offset-2 hover:text-emerald-950">
                 View full HOSA breakdown <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
@@ -1663,17 +1340,18 @@ export default function NQGuidedRoadmap({
             />
           ) : null}
 
-          <div className="nq-card rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white to-teal-50/40 p-5 shadow-sm sm:p-6">
+          <div className="nq-ed-soft-card border border-[var(--nq-ed-line)] p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
+              <span className="nq-ed-chip flex h-10 w-10 shrink-0 items-center justify-center !rounded-xl">
                 <Gift className="h-5 w-5" aria-hidden />
               </span>
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-lg font-bold text-slate-900">Know someone buying a home?</h3>
-                <p className="mt-1 text-sm text-slate-600">Share your link and you both get $50 off your next plan.</p>
+                <span className="nq-ed-eyebrow">Referral</span>
+                <h3 className="mt-1 font-display text-lg font-bold text-[var(--nq-ed-text)]">Know someone buying a home?</h3>
+                <p className="mt-1 text-sm text-[var(--nq-ed-muted)]">Share your link and you both get $50 off your next plan.</p>
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <code className="truncate rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800">{referralProgramUrl(hubReferralSlug)}</code>
-                  <button type="button" onClick={() => { void navigator.clipboard.writeText(referralProgramUrl(hubReferralSlug)); setReferralCopied(true); window.setTimeout(() => setReferralCopied(false), 2000) }} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">
+                  <code className="truncate rounded-lg border border-[var(--nq-ed-line)] bg-white px-3 py-2 text-xs text-[var(--nq-ed-text)]">{referralProgramUrl(hubReferralSlug)}</code>
+                  <button type="button" onClick={() => { void navigator.clipboard.writeText(referralProgramUrl(hubReferralSlug)); setReferralCopied(true); window.setTimeout(() => setReferralCopied(false), 2000) }} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--nq-ed-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f6058]">
                     <Copy className="h-4 w-4" aria-hidden /> {referralCopied ? 'Copied' : 'Copy Link'}
                   </button>
                 </div>
@@ -1684,83 +1362,111 @@ export default function NQGuidedRoadmap({
       )}
 
       {activeTab === 'learn' ? (
-        <div role="tabpanel" id="journey-panel-learn" aria-labelledby="journey-tab-learn" className="scroll-mt-28 space-y-8">
-          <section className="space-y-4 rounded-3xl border border-slate-200/90 bg-white/90 p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-slate-300 sm:max-w-[min(100%,12rem)]" aria-hidden />
-              <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
-                {content.phaseFraming}
-              </p>
-              <div className="h-px flex-1 bg-gradient-to-l from-transparent via-slate-300 to-slate-300 sm:from-slate-300 sm:via-slate-300" aria-hidden />
-            </div>
-
-            <div className="nq-card rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 px-5 py-5 shadow-lg ring-1 ring-slate-200/50 sm:px-6 sm:py-6 md:px-8">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p
-                    className="text-[11px] font-bold uppercase tracking-[0.22em]"
-                    style={{ color: content.accentColor }}
-                  >
-                    Phase {displayPhaseOrder} of {phaseTotalForDisplay}
+        <div
+          role="tabpanel"
+          id="journey-panel-learn"
+          aria-labelledby="journey-tab-learn"
+          className="nq-journey-tab-panel"
+        >
+          <JourneyTabHeroShell
+            eyebrow="Learn"
+            title="Your active phase guidance"
+            description="Scripts, milestones, and checklists for where you are today — one calm headline at a time."
+            headingId="journey-learn-heading"
+          />
+          <div className="nq-journey-tab-grid">
+            <div className="nq-journey-tab-stack">
+              <section className="nq-ed-soft-card space-y-4 border border-[var(--nq-ed-line)] p-4 sm:p-5">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--nq-ed-line)] to-[var(--nq-ed-line)] sm:max-w-[min(100%,12rem)]" aria-hidden />
+                  <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.28em] text-[var(--nq-ed-muted)]">
+                    {content.phaseFraming}
                   </p>
-                  <h1
-                    id="nq-phase-heading"
-                    className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl md:text-[2.25rem] md:leading-tight"
-                  >
-                    {phaseHeadingTitle}
-                  </h1>
-                  {libraryPhase?.description && !refinancePhaseTitle && !repeatBuyerPhaseTitle ? (
-                    <p className="mt-2 max-w-prose text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
-                      {libraryPhase.description}
-                    </p>
-                  ) : null}
-                  <p className="mt-2 text-sm text-slate-500">Milestone {milestoneIndexInPhase} of {milestonesInPhase}</p>
-                  {!(phaseChecklistItems && phaseChecklistItems.length > 0) ? (
-                    <p className="mt-1 text-xs italic text-slate-500 sm:text-sm">Most buyers spend 2–4 weeks in this phase.</p>
-                  ) : null}
+                  <div className="h-px flex-1 bg-gradient-to-l from-transparent via-[var(--nq-ed-line)] to-[var(--nq-ed-line)] sm:from-[var(--nq-ed-line)] sm:via-[var(--nq-ed-line)]" aria-hidden />
+                </div>
+
+                <div className="nq-ed-quote px-5 py-5 sm:px-6 sm:py-6 md:px-8">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--nq-ed-accent)]">
+                        Phase {displayPhaseOrder} of {phaseTotalForDisplay}
+                      </p>
+                      <h1
+                        id="nq-phase-heading"
+                        className="mt-2 text-2xl font-bold tracking-tight text-[var(--nq-ed-text)] sm:text-3xl md:text-[2.25rem] md:leading-tight"
+                      >
+                        {phaseHeadingTitle}
+                      </h1>
+                      {libraryPhase?.description && !refinancePhaseTitle && !repeatBuyerPhaseTitle ? (
+                        <p className="mt-2 max-w-prose text-sm font-medium leading-relaxed text-[var(--nq-ed-muted)] sm:text-base">
+                          {libraryPhase.description}
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">Milestone {milestoneIndexInPhase} of {milestonesInPhase}</p>
+                      {!(phaseChecklistItems && phaseChecklistItems.length > 0) ? (
+                        <p className="mt-1 text-xs italic text-[var(--nq-ed-muted)] sm:text-sm">Most buyers spend 2–4 weeks in this phase.</p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div
+                    className="my-4 h-[3px] w-full rounded-full bg-gradient-to-r from-transparent via-[var(--nq-ed-accent)] to-transparent sm:my-5"
+                    aria-hidden
+                  />
+
+                  <div className="h-1.5 w-full max-w-xl overflow-hidden rounded-full bg-[var(--nq-ed-line-soft)]">
+                    <div
+                      className="h-full rounded-full bg-[var(--nq-ed-accent)] transition-[width] duration-500 ease-out motion-reduce:transition-none"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
+              </section>
+            </div>
+            <aside className="nq-ed-quote hidden lg:flex" aria-label="Learn briefing">
+              <div className="flex flex-col justify-between gap-6">
+                <div>
+                  <span className="nq-ed-eyebrow">Active phase</span>
+                  <h3 className="mt-3 font-display text-xl font-semibold text-[var(--nq-ed-text)] sm:text-2xl">
+                    One calm headline for where you are today.
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--nq-ed-muted)]">
+                    Progress and milestones stay readable at a glance — the briefing column carries tone without competing with the checklist.
+                  </p>
+                </div>
+                <div className="nq-ed-row">
+                  <div className="nq-ed-chip">◇</div>
+                  <div className="min-w-0">
+                    <strong className="text-[var(--nq-ed-text)]">Work below the fold</strong>
+                    <div className="text-sm text-[var(--nq-ed-muted)]">
+                      Scripts, timeline, and “I did it” live in the main column so action stays central.
+                    </div>
+                  </div>
                 </div>
               </div>
+            </aside>
+          </div>
 
-              <div
-                className="my-4 h-[3px] w-full rounded-full sm:my-5"
-                aria-hidden
-                style={{
-                  background: `linear-gradient(to right, transparent, ${content.accentColor}, ${content.accentColor}, transparent)`,
-                }}
-              />
-
-              <div className="h-1.5 w-full max-w-xl overflow-hidden rounded-full bg-slate-200/90">
-                <div
-                  className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
-                  style={{
-                    width: `${progressPct}%`,
-                    background: `linear-gradient(to right, ${content.accentColor}, ${content.accentColor})`,
-                  }}
-                />
-              </div>
-            </div>
-          </section>
-
-          <div className="nq-card flex flex-col gap-2 rounded-2xl border border-slate-200/90 bg-white/85 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="nq-card flex flex-col gap-2 rounded-2xl border border-[var(--nq-ed-line)] bg-white/85 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={handleBack}
               disabled={currentStepIndex === 0}
-              className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[var(--nq-ed-muted)] transition-colors hover:text-[var(--nq-ed-text)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <CaretLeft className="h-4 w-4" /> Back
             </button>
             <div
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-white/90 px-3 py-1.5 text-xs text-slate-600"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--nq-ed-line-soft)] bg-white/90 px-3 py-1.5 text-xs text-[var(--nq-ed-muted)]"
               title="How many roadmap phases you have finished"
             >
               <Sparkle className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden />
-              <span className="font-semibold text-slate-800">
+              <span className="font-semibold text-[var(--nq-ed-text)]">
                 <span className="tabular-nums">{phasesDoneCount}</span>
-                <span className="mx-1 font-normal text-slate-400">/</span>
+                <span className="mx-1 font-normal text-[var(--nq-ed-muted)]">/</span>
                 <span className="tabular-nums">{guidedPhaseTotal}</span>
               </span>
-              <span className="text-slate-500">phases done</span>
+              <span className="text-[var(--nq-ed-muted)]">phases done</span>
             </div>
           </div>
 
@@ -1769,12 +1475,14 @@ export default function NQGuidedRoadmap({
           />
           <NextStepCard
             action={nextEngine.actions[0]?.label ?? 'Open your checklist and complete one item'}
-            onAction={() => followNextHint(nextEngine.actions[0]?.hint ?? 'phase')}
+            onAction={() => followNextHint(nextEngine.actions[0]?.hint ?? 'plan')}
           />
 
           <DailyInsightCard />
 
-          <section className="nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
+          <WeeklyLessonCard />
+
+          <section className="nq-card rounded-2xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-sm sm:p-5">
             <JourneyTimeline
               phaseOrders={NQ_GUIDED_PHASE_ORDERS}
               effectiveTier={effectiveTier}
@@ -1812,19 +1520,19 @@ export default function NQGuidedRoadmap({
           ) : null}
 
           {nextRefiTitle || nextRepeatBuyerTitle || nextLibraryPhase ? (
-            <div className="nq-card rounded-2xl border border-millennial-border bg-gradient-to-br from-millennial-primary-light/35 to-white p-4 shadow-sm sm:p-5">
+            <div className="nq-card rounded-2xl border border-[var(--nq-ed-line)] bg-gradient-to-br from-[var(--nq-ed-accent-soft)]/35 to-white p-4 shadow-sm sm:p-5">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-millennial-cta-secondary">Coming up</p>
-              <p className="mt-1.5 text-base font-bold text-slate-900 sm:text-lg">
+              <p className="mt-1.5 text-base font-bold text-[var(--nq-ed-text)] sm:text-lg">
                 Phase {displayPhaseOrder + 1} —{' '}
                 {nextRefiTitle ?? nextRepeatBuyerTitle ?? nextLibraryPhase?.title}
               </p>
               {nextRefiTitle || nextRepeatBuyerTitle ? null : (
-                <p className="mt-1.5 text-sm text-slate-600">{nextLibraryPhase?.description}</p>
+                <p className="mt-1.5 text-sm text-[var(--nq-ed-muted)]">{nextLibraryPhase?.description}</p>
               )}
               <button
                 type="button"
-                onClick={() => goTab('learn')}
-                className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-teal-800 hover:text-teal-900"
+                onClick={() => goTab('library')}
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--nq-ed-accent)] hover:text-[#0f6058]"
               >
                 Scripts &amp; checklists in Library
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -1841,15 +1549,9 @@ export default function NQGuidedRoadmap({
                 animate="visible"
                 exit="exit"
                 transition={{ duration: 0.25 }}
-                className="nq-card relative rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-millennial-primary-light/28 to-emerald-50/28 shadow-xl shadow-slate-900/10 ring-1 ring-teal-100/60 sm:rounded-3xl"
+                className="nq-ed-soft-card relative border border-[var(--nq-ed-line)] sm:rounded-2xl"
               >
-                <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl sm:rounded-3xl" aria-hidden>
-                  <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[rgb(var(--navy))] via-millennial-cta-primary to-teal-400" />
-                  <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-millennial-cta-primary/10 blur-3xl" />
-                  <div className="absolute -left-16 bottom-0 h-32 w-32 rounded-full bg-millennial-cta-primary/10 blur-3xl" />
-                </div>
-
-                <div className="relative z-10 border-l-4 border-millennial-cta-primary bg-gradient-to-b from-transparent to-white/70 p-4 pl-4 sm:p-6 sm:pl-6">
+                <div className="relative z-10 border-l-4 p-4 pl-4 sm:p-6 sm:pl-6" style={{ borderLeftColor: content.accentColor }}>
                   {showMomentumRoadmapBanner ? (
                     <UpgradeLockCallout
                       className="mb-4"
@@ -1862,7 +1564,7 @@ export default function NQGuidedRoadmap({
                   <motion.div variants={itemVariants} className="mb-4 flex items-start gap-3 sm:gap-4">
                       <div className="relative">
                         <motion.div
-                          className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-millennial-primary-light/70 to-teal-100/55 shadow-xl shadow-teal-600/15 ring-2 ring-teal-200/60"
+                          className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--nq-ed-line-soft)] bg-[var(--nq-ed-surface)] shadow-sm"
                           whileHover={{ scale: 1.03 }}
                           transition={{ type: 'spring', stiffness: 400 }}
                         >
@@ -1877,7 +1579,7 @@ export default function NQGuidedRoadmap({
                         </motion.div>
                       </div>
                       <div className="min-w-0 flex-1 pt-0.5">
-                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--nq-ed-muted)]">
                           {milestonesInPhase > 1 ? (
                             <>
                               Milestone {milestoneIndexInPhase} of {milestonesInPhase}
@@ -1886,33 +1588,19 @@ export default function NQGuidedRoadmap({
                             <>This step</>
                           )}
                         </p>
-                        <h2 className="text-xl font-bold leading-tight tracking-tight text-slate-900 sm:text-2xl md:text-[1.75rem] md:leading-snug">
+                        <h2 className="text-xl font-bold leading-tight tracking-tight text-[var(--nq-ed-text)] sm:text-2xl md:text-[1.75rem] md:leading-snug">
                           {step.title}
                         </h2>
                       </div>
                       <div className="relative shrink-0">
                         <button
-                          ref={chatTriggerRef}
                           type="button"
-                          onClick={() => {
-                            setChatAnchor('message')
-                            setChatOpen((o) => !o)
-                          }}
-                          title="Ask NQ a question"
-                          className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 shadow-sm transition-all ${
-                            chatOpen
-                              ? 'border-millennial-cta-primary bg-millennial-primary-light/50 text-teal-900 ring-2 ring-teal-200'
-                              : 'border-teal-200 bg-white text-millennial-cta-primary hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 hover:shadow-md'
-                          }`}
+                          onClick={openCompassChat}
+                          title="Ask Compass"
+                          className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-teal-200 bg-white text-[var(--nq-ed-accent)] shadow-sm transition-all hover:border-[var(--nq-ed-accent)] hover:bg-[var(--nq-ed-accent-soft)] hover:shadow-md"
                         >
                           <ChatCircle weight="duotone" size={24} />
                         </button>
-                        <ChatPopover
-                          isOpen={chatOpen}
-                          onClose={() => setChatOpen(false)}
-                          triggerRef={chatAnchor === 'help' ? helpChatTriggerRef : chatTriggerRef}
-                          extraTriggerRefs={chatExtraTriggerRefs}
-                        />
                       </div>
                     </motion.div>
 
@@ -1921,11 +1609,11 @@ export default function NQGuidedRoadmap({
                         variants={itemVariants}
                         className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm"
                       >
-                        <span className="font-semibold text-slate-600">Coming up next</span>
+                        <span className="font-semibold text-[var(--nq-ed-muted)]">Coming up next</span>
                         {nextStepTitles.map((t, i) => (
-                          <span key={t} className="inline-flex items-center gap-1.5 text-slate-600">
+                          <span key={t} className="inline-flex items-center gap-1.5 text-[var(--nq-ed-muted)]">
                             {i > 0 ? <span className="text-slate-300">·</span> : null}
-                            <span className="rounded-full border border-slate-200/90 bg-white/90 px-2.5 py-1 font-medium shadow-sm">
+                            <span className="rounded-full border border-[var(--nq-ed-line)] bg-white/90 px-2.5 py-1 font-medium shadow-sm">
                               {t}
                             </span>
                           </span>
@@ -1934,12 +1622,12 @@ export default function NQGuidedRoadmap({
                     ) : null}
 
                     <motion.div variants={itemVariants} className="space-y-4 pt-3">
-                      <div className="rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary p-[2px] shadow-md shadow-slate-900/12">
+                      <div className="rounded-xl bg-[var(--nq-ed-accent)] p-[2px] shadow-md shadow-slate-900/12">
                         <div className="relative overflow-visible rounded-[calc(0.75rem-2px)] bg-white/90 px-4 pb-3 pt-6 shadow-inner shadow-slate-100/50 sm:px-5 sm:pb-3.5 sm:pt-7">
                           <h3 className="sr-only">From NQ</h3>
                           <div className="pointer-events-none absolute left-3 top-0 z-20 -translate-y-1/2 sm:left-4">
                             <span className="relative inline-flex items-center">
-                              <span className="inline-flex items-center rounded-full bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary py-1 pl-[1.35rem] pr-2.5 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-slate-900/15 sm:py-1.5 sm:pl-7 sm:pr-3 sm:text-base">
+                              <span className="inline-flex items-center rounded-full bg-[var(--nq-ed-accent)] py-1 pl-[1.35rem] pr-2.5 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-slate-900/15 sm:py-1.5 sm:pl-7 sm:pr-3 sm:text-base">
                                 NQ says
                               </span>
                               <span
@@ -1956,7 +1644,7 @@ export default function NQGuidedRoadmap({
                               </span>
                             </span>
                           </div>
-                          <p className="relative z-10 font-serif text-base italic leading-relaxed text-slate-700 sm:text-lg sm:leading-relaxed">
+                          <p className="relative z-10 text-base italic leading-relaxed text-[var(--nq-ed-muted)] sm:text-lg sm:leading-relaxed">
                             &ldquo;{renderNqSaysContext(displayStep.nqContext)}&rdquo;
                           </p>
                         </div>
@@ -1969,11 +1657,11 @@ export default function NQGuidedRoadmap({
                             What to do now
                           </h3>
                         </div>
-                        <div className="nq-card relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-md ring-1 ring-slate-100/80 sm:p-5">
+                        <div className="nq-card relative min-h-0 overflow-hidden rounded-2xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-md ring-1 ring-slate-100/80 sm:p-5">
                           <div className="absolute right-2 top-2 opacity-[0.06] sm:right-3 sm:top-3">
                             <Target weight="duotone" size={56} className="text-[rgb(var(--navy))]" aria-hidden />
                           </div>
-                          <p className="relative text-lg font-semibold leading-relaxed text-slate-900 sm:text-xl">
+                          <p className="relative text-lg font-semibold leading-relaxed text-[var(--nq-ed-text)] sm:text-xl">
                             {renderWithAnnualCreditReportLink(displayStep.nqWhatToDo)}
                           </p>
                           {displayStep.toolLink &&
@@ -1983,7 +1671,7 @@ export default function NQGuidedRoadmap({
                                   href={displayStep.toolLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="group relative mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-teal-400 via-millennial-cta-primary to-millennial-cta-secondary px-5 py-3 text-base font-bold text-white shadow-md shadow-slate-900/15 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-millennial-primary-light/60"
+                                  className="group relative mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--nq-ed-accent)] hover:bg-[#0f6058] px-5 py-3 text-base font-bold text-white shadow-md shadow-slate-900/15 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-millennial-primary-light/60"
                                 >
                                   {displayStep.toolLabel || 'Open tool'}{' '}
                                   <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
@@ -1991,7 +1679,7 @@ export default function NQGuidedRoadmap({
                               ) : (
                                 <Link
                                   href={displayStep.toolLink}
-                                  className="group relative mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-teal-400 via-millennial-cta-primary to-millennial-cta-secondary px-5 py-3 text-base font-bold text-white shadow-md shadow-slate-900/15 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-millennial-primary-light/60"
+                                  className="group relative mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--nq-ed-accent)] hover:bg-[#0f6058] px-5 py-3 text-base font-bold text-white shadow-md shadow-slate-900/15 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-millennial-primary-light/60"
                                 >
                                   {displayStep.toolLabel || 'Open tool'}{' '}
                                   <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
@@ -2008,8 +1696,8 @@ export default function NQGuidedRoadmap({
                       </div>
 
                       {phaseChecklistItems && phaseChecklistItems.length > 0 ? (
-                        <div className="nq-card rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 sm:p-4">
-                          <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
+                        <div className="nq-card rounded-2xl border border-[var(--nq-ed-line)]/80 bg-slate-50/80 p-3.5 sm:p-4">
+                          <p className="text-xs font-bold uppercase tracking-wide text-[var(--nq-ed-muted)]">
                             Check off as you go
                           </p>
                           <ul className="mt-2 list-none space-y-2" role="list">
@@ -2029,7 +1717,7 @@ export default function NQGuidedRoadmap({
                                   <label
                                     htmlFor={cid}
                                     className={`cursor-pointer text-sm leading-snug sm:text-base ${
-                                      done ? 'text-slate-500 line-through' : 'font-medium text-slate-800'
+                                      done ? 'text-[var(--nq-ed-muted)] line-through' : 'font-medium text-[var(--nq-ed-text)]'
                                     }`}
                                   >
                                     {renderNqSaysContext(line)}
@@ -2038,24 +1726,30 @@ export default function NQGuidedRoadmap({
                               )
                             })}
                           </ul>
-                          <p className="mt-2 text-xs text-slate-500">
+                          <p className="mt-2 text-xs text-[var(--nq-ed-muted)]">
                             Most buyers spend 2–4 weeks in this phase.
                           </p>
                         </div>
                       ) : null}
 
                       {displayStep.nqEncouragement ? (
-                        <div className="rounded-xl border-l-4 border-millennial-cta-primary bg-gradient-to-r from-millennial-primary-light/40 to-transparent py-2.5 pl-4 pr-2">
-                          <p className="text-base font-semibold italic text-teal-900">
+                        <div className="rounded-xl border-l-4 border-[var(--nq-ed-accent)] bg-gradient-to-r from-[var(--nq-ed-accent-soft)]/40 to-transparent py-2.5 pl-4 pr-2">
+                          <p className="text-base font-semibold italic text-[var(--nq-ed-accent)]">
                             &ldquo;{displayStep.nqEncouragement}&rdquo;
                           </p>
                         </div>
                       ) : null}
                     </motion.div>
 
+                    {displayStep.phaseOrder === 2 ? (
+                      <motion.div variants={itemVariants} className="mt-4">
+                        <HudCounselorHandoffCard variant="journey" />
+                      </motion.div>
+                    ) : null}
+
                     <motion.div
                       variants={itemVariants}
-                      className="mt-5 flex flex-wrap gap-3 border-t border-slate-200/80 pt-4"
+                      className="mt-5 flex flex-wrap gap-3 border-t border-[var(--nq-ed-line)]/80 pt-4"
                     >
                       <motion.button
                         type="button"
@@ -2072,24 +1766,20 @@ export default function NQGuidedRoadmap({
                         I did it {currentStepMarkedDone ? '' : '✓'}
                       </motion.button>
                       <motion.button
-                        ref={helpChatTriggerRef}
                         type="button"
-                        onClick={() => {
-                          setChatAnchor('help')
-                          setChatOpen(true)
-                        }}
+                        onClick={openCompassChat}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3.5 text-lg font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 hover:shadow-md"
+                        className="inline-flex items-center gap-2 rounded-2xl border-2 border-[var(--nq-ed-line)] bg-white px-6 py-3.5 text-lg font-semibold text-[var(--nq-ed-text)] shadow-sm transition-all duration-200 hover:border-[var(--nq-ed-accent)] hover:bg-[var(--nq-ed-accent-soft)] hover:shadow-md"
                       >
-                        <Question weight="duotone" size={20} className="text-millennial-cta-primary" />
+                        <Question weight="duotone" size={20} className="text-[var(--nq-ed-accent)]" />
                         I need help
                       </motion.button>
                       {!isLastStep ? (
                         <button
                           type="button"
                           onClick={handleSkip}
-                          className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-base font-medium text-slate-500 underline-offset-4 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                          className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-base font-medium text-[var(--nq-ed-muted)] underline-offset-4 transition-colors hover:bg-slate-100 hover:text-[var(--nq-ed-muted)]"
                         >
                           Skip for now
                         </button>
@@ -2101,22 +1791,24 @@ export default function NQGuidedRoadmap({
           </div>
 
           <section
-            className="nq-card rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50/80 to-white p-4 shadow-sm sm:p-5"
+            className="nq-card nq-ed-soft-card rounded-2xl border border-[var(--nq-ed-line)] bg-gradient-to-br from-slate-50/80 to-white p-4 shadow-sm sm:p-5"
             aria-label="Learn and Library"
           >
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">Confidence builders</p>
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--nq-ed-muted)]">Confidence builders</p>
             <div className="mt-3 flex flex-wrap gap-2.5">
               <button
                 type="button"
-                onClick={() => goTab('learn')}
-                className="inline-flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:shadow-lg min-[480px]:flex-none"
+                onClick={() =>
+                  document.getElementById('journey-learn-hub')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+                className="inline-flex flex-1 items-center justify-center rounded-xl bg-[var(--nq-ed-accent)] px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:shadow-lg min-[480px]:flex-none"
               >
-                Learn
+                Short reads
               </button>
               <button
                 type="button"
-                onClick={() => goTab('learn')}
-                className="inline-flex flex-1 items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 min-[480px]:flex-none"
+                onClick={() => goTab('library')}
+                className="inline-flex flex-1 items-center justify-center rounded-xl border-2 border-[var(--nq-ed-line)] bg-white px-4 py-2.5 text-sm font-bold text-[var(--nq-ed-text)] shadow-sm transition hover:border-[var(--nq-ed-accent)] hover:bg-[var(--nq-ed-accent-soft)] min-[480px]:flex-none"
               >
                 Library
               </button>
@@ -2133,58 +1825,95 @@ export default function NQGuidedRoadmap({
 
       {activeTab === 'learn' ? (
         <div
-          role="tabpanel"
-          id="journey-panel-learn"
-          aria-labelledby="journey-tab-learn"
-          className="scroll-mt-28 space-y-8"
+          role="region"
+          id="journey-learn-hub"
+          aria-labelledby="journey-learn-hub-heading"
+          className="nq-journey-tab-panel nq-journey-tab-panel--section"
         >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Learn</h2>
-              <p className="mt-2 max-w-prose text-slate-600">
-                Short reads matched to <span className="font-semibold text-slate-800">{step.title}</span>.
-              </p>
+          <div className="nq-journey-tab-grid">
+            <div className="nq-journey-tab-stack">
+              <div className="nq-ed-section-frame">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <span className="nq-ed-eyebrow">Learn</span>
+                    <h2
+                      id="journey-learn-hub-heading"
+                      className="mt-2 text-2xl font-bold tracking-tight text-[var(--nq-ed-text)] sm:text-3xl"
+                    >
+                      Short reads for this step
+                    </h2>
+                    <p className="mt-2 max-w-prose text-[var(--nq-ed-muted)]">
+                      Matched to <span className="font-semibold text-[var(--nq-ed-text)]">{step.title}</span>.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <TierBadge tier={effectiveTier} compact className="max-w-[220px]" />
+                    <MindsetTag mindset={mindsetFor(effectiveTier)} />
+                  </div>
+                </div>
+              </div>
+
+              <MoneyInsights
+                totals={moneyTotals}
+                savingsDetails={savingsDetails}
+                fundingDetails={fundingDetails}
+                alternativeDetails={alternativeDetails}
+                detailsUnlocked={moneyInsightsDetailsUnlocked}
+                upgradeHref="/upgrade?source=journey-learn-insights&tier=momentum"
+              />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <TierBadge tier={effectiveTier} compact className="max-w-[220px]" />
-              <MindsetTag mindset={mindsetFor(effectiveTier)} />
-            </div>
+            <aside className="nq-ed-quote hidden lg:flex" aria-label="Learn library briefing">
+              <div className="flex flex-col justify-between gap-6">
+                <div>
+                  <span className="nq-ed-eyebrow">Reads</span>
+                  <h3 className="mt-3 font-display text-xl font-semibold text-[var(--nq-ed-text)] sm:text-2xl">
+                    Confidence builders beside your numbers.
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--nq-ed-muted)]">
+                    Budget signals stay visible while articles stay contextual to the step you&apos;re on — same pattern as Today and Money.
+                  </p>
+                </div>
+                <div className="nq-ed-row">
+                  <div className="nq-ed-chip">◎</div>
+                  <div className="min-w-0">
+                    <strong className="text-[var(--nq-ed-text)]">First-Gen &amp; Solo hubs below</strong>
+                    <div className="text-sm text-[var(--nq-ed-muted)]">
+                      When they apply, tailored cards follow without breaking the briefing frame.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
 
-          <MoneyInsights
-            totals={moneyTotals}
-            savingsDetails={savingsDetails}
-            fundingDetails={fundingDetails}
-            alternativeDetails={alternativeDetails}
-            detailsUnlocked={moneyInsightsDetailsUnlocked}
-            upgradeHref="/upgrade?source=journey-learn-insights&tier=momentum"
-          />
-
           {quizTxnMeta.icpType === 'first-gen' ? (
-            <section className="nq-card rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50/60 to-white p-5 shadow-sm" aria-labelledby="firstgen-learn-hub-heading">
-              <h3 id="firstgen-learn-hub-heading" className="font-display text-lg font-bold text-slate-900">
+            <section
+              className="nq-card nq-ed-quote rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50/60 to-white p-5 shadow-sm"
+              aria-labelledby="firstgen-learn-hub-heading"
+            >
+              <h3 id="firstgen-learn-hub-heading" className="font-display text-lg font-bold text-[var(--nq-ed-text)]">
                 First-Gen Hub
               </h3>
-              <p className="mt-1 text-sm text-slate-600">Resources picked for buyers who are first in their family to own.</p>
+              <p className="mt-1 text-sm text-[var(--nq-ed-muted)]">Resources picked for buyers who are first in their family to own.</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-center gap-2 text-teal-700">
+                <div className="rounded-xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-[var(--nq-ed-accent)]">
                     <BookOpen className="h-5 w-5" aria-hidden />
-                    <p className="font-bold text-slate-900">Glossary</p>
+                    <p className="font-bold text-[var(--nq-ed-text)]">Glossary</p>
                   </div>
-                  <p className="mt-2 text-sm text-slate-600">25 terms every first-time buyer needs to know</p>
+                  <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">25 terms every first-time buyer needs to know</p>
                   <button
                     type="button"
                     onClick={() => setFirstGenGlossaryOpen((o) => !o)}
-                    className="mt-3 text-sm font-semibold text-teal-800 underline"
+                    className="mt-3 text-sm font-semibold text-[var(--nq-ed-accent)] underline"
                   >
                     {firstGenGlossaryOpen ? 'Hide glossary' : 'View glossary'}
                   </button>
                   {firstGenGlossaryOpen ? (
-                    <ul className="mt-3 max-h-60 list-none space-y-2 overflow-y-auto text-sm text-slate-700">
+                    <ul className="mt-3 max-h-60 list-none space-y-2 overflow-y-auto text-sm text-[var(--nq-ed-muted)]">
                       {FIRSTGEN_GLOSSARY_TERMS.map((g) => (
                         <li key={g.term} className="rounded-lg bg-slate-50 px-2 py-1.5">
-                          <strong className="text-slate-900">{g.term}</strong> — {g.def}
+                          <strong className="text-[var(--nq-ed-text)]">{g.term}</strong> — {g.def}
                         </li>
                       ))}
                     </ul>
@@ -2194,34 +1923,34 @@ export default function NQGuidedRoadmap({
                   href="https://www.hud.gov/i_want_to/talk_to_a_housing_counselor"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-300"
+                  className="rounded-xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-sm transition hover:border-[var(--nq-ed-accent)]/30"
                 >
-                  <div className="flex items-center gap-2 text-teal-700">
+                  <div className="flex items-center gap-2 text-[var(--nq-ed-accent)]">
                     <ArrowSquareOut className="h-5 w-5" aria-hidden />
-                    <p className="font-bold text-slate-900">HUD Counselors</p>
+                    <p className="font-bold text-[var(--nq-ed-text)]">HUD Counselors</p>
                   </div>
-                  <p className="mt-2 text-sm text-slate-600">Free, government-approved housing counselors in your area</p>
-                  <span className="mt-3 inline-flex text-sm font-semibold text-teal-800">Open HUD directory →</span>
+                  <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">Free, government-approved housing counselors in your area</p>
+                  <span className="mt-3 inline-flex text-sm font-semibold text-[var(--nq-ed-accent)]">Open HUD directory →</span>
                 </a>
                 <Link
                   href="/resources"
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-300"
+                  className="rounded-xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-sm transition hover:border-[var(--nq-ed-accent)]/30"
                 >
-                  <p className="font-bold text-slate-900">Gift Fund Guide</p>
-                  <p className="mt-2 text-sm text-slate-600">
+                  <p className="font-bold text-[var(--nq-ed-text)]">Gift Fund Guide</p>
+                  <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">
                     How to use family money for your down payment — the right way
                   </p>
-                  <span className="mt-3 inline-flex text-sm font-semibold text-teal-800">Read guide →</span>
+                  <span className="mt-3 inline-flex text-sm font-semibold text-[var(--nq-ed-accent)]">Read guide →</span>
                 </Link>
                 <Link
                   href="/learn/buying-solo"
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-teal-300"
+                  className="rounded-xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-sm transition hover:border-[var(--nq-ed-accent)]/30"
                 >
-                  <p className="font-bold text-slate-900">Family Conversation Scripts</p>
-                  <p className="mt-2 text-sm text-slate-600">
+                  <p className="font-bold text-[var(--nq-ed-text)]">Family Conversation Scripts</p>
+                  <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">
                     How to talk to your family about helping you buy a home
                   </p>
-                  <span className="mt-3 inline-flex text-sm font-semibold text-teal-800">Open scripts →</span>
+                  <span className="mt-3 inline-flex text-sm font-semibold text-[var(--nq-ed-accent)]">Open scripts →</span>
                 </Link>
               </div>
             </section>
@@ -2229,21 +1958,21 @@ export default function NQGuidedRoadmap({
 
           {quizTxnMeta.icpType === 'solo' ? (
             <section className="space-y-3" aria-label="Solo buyer learn cards">
-              <div className="rounded-xl border border-teal-200/80 bg-gradient-to-r from-teal-50/90 to-white p-4 text-sm text-slate-700 shadow-sm">
-                <p className="font-bold text-teal-950">Buying solo</p>
+              <div className="nq-ed-quote rounded-xl border border-teal-200/80 bg-gradient-to-r from-teal-50/90 to-white p-4 text-sm text-[var(--nq-ed-muted)] shadow-sm">
+                <p className="font-bold text-[var(--nq-ed-text)]">Buying solo</p>
                 <p className="mt-1">Extra picks below — then the rest of the Learn library still applies.</p>
               </div>
               <div className="grid gap-3 md:grid-cols-3">
                 {tierAtLeast(effectiveTier, 'momentum') ? (
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p className="font-bold text-slate-900">Qualifying on One Income</p>
-                    <p className="mt-2 text-sm text-slate-600">
+                  <div className="rounded-xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-sm">
+                    <p className="font-bold text-[var(--nq-ed-text)]">Qualifying on One Income</p>
+                    <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">
                       Lenders look at your debt-to-income ratio. Here&apos;s how to maximize your qualification on a
                       single income.
                     </p>
                     <Link
                       href="/mortgage-shopping"
-                      className="mt-3 inline-flex text-sm font-semibold text-teal-800 underline"
+                      className="mt-3 inline-flex text-sm font-semibold text-[var(--nq-ed-accent)] underline"
                     >
                       Calculate My DTI →
                     </Link>
@@ -2257,21 +1986,21 @@ export default function NQGuidedRoadmap({
                     ctaHref="/upgrade?source=solo-dti&tier=momentum"
                   />
                 )}
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="font-bold text-slate-900">The Solo Buyer Advocate Checklist</p>
-                  <p className="mt-2 text-sm text-slate-600">
+                <div className="rounded-xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-sm">
+                  <p className="font-bold text-[var(--nq-ed-text)]">The Solo Buyer Advocate Checklist</p>
+                  <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">
                     Buying alone means you need to be your own advocate. Here are 12 things to verify before signing
                     anything.
                   </p>
                   <button
                     type="button"
                     onClick={() => setSoloAdvocateOpen((o) => !o)}
-                    className="mt-3 text-sm font-semibold text-teal-800 underline"
+                    className="mt-3 text-sm font-semibold text-[var(--nq-ed-accent)] underline"
                   >
                     {soloAdvocateOpen ? 'Hide checklist' : 'View Checklist →'}
                   </button>
                   {soloAdvocateOpen ? (
-                    <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-slate-700">
+                    <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-[var(--nq-ed-muted)]">
                       {SOLO_ADVOCATE_12.map((line, i) => (
                         <li key={i}>{line}</li>
                       ))}
@@ -2307,7 +2036,7 @@ export default function NQGuidedRoadmap({
                   className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
                     active
                       ? 'bg-[rgb(var(--navy))] text-white shadow-sm'
-                      : 'border border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-millennial-primary-light/25'
+                      : 'border border-[var(--nq-ed-line)] bg-white text-[var(--nq-ed-muted)] hover:border-[var(--nq-ed-accent)]/30 hover:bg-[var(--nq-ed-accent-soft)]'
                   }`}
                 >
                   {label}
@@ -2317,11 +2046,13 @@ export default function NQGuidedRoadmap({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {learnMoneyFiltered.map((item) => (
+            {learnMoneyFiltered.map((item, idx) => (
               <Link
                 key={item.id}
                 href={item.href}
-                className="nq-card group rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md"
+                className={`nq-card group rounded-2xl border border-[var(--nq-ed-line)] p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-[var(--nq-ed-accent)]/30 hover:shadow-md ${
+                  idx === 0 ? 'nq-ed-quote' : 'nq-ed-soft-card'
+                }`}
               >
                 <div className="flex flex-wrap gap-1.5">
                   {item.moneyTags.includes('saves_money') ? (
@@ -2335,9 +2066,9 @@ export default function NQGuidedRoadmap({
                 <span className="mt-2 inline-block rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">
                   {item.tag}
                 </span>
-                <p className="mt-2 font-bold text-slate-900">{item.title}</p>
-                <p className="mt-1 text-sm text-slate-600">{item.sub}</p>
-                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-teal-800">
+                <p className="mt-2 font-bold text-[var(--nq-ed-text)]">{item.title}</p>
+                <p className="mt-1 text-sm text-[var(--nq-ed-muted)]">{item.sub}</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[var(--nq-ed-accent)]">
                   Open
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
                 </span>
@@ -2366,7 +2097,7 @@ export default function NQGuidedRoadmap({
 
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wide text-violet-800/90">Start here — myth cards</h3>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-[var(--nq-ed-muted)]">
               Quick reframes that make the next conversation with a lender or agent calmer.
             </p>
           </div>
@@ -2421,25 +2152,25 @@ export default function NQGuidedRoadmap({
 
           {hasLearnContent ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,7.5rem)_1fr] sm:items-stretch">
-              <div className="flex flex-row items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-4 py-3 shadow-lg shadow-slate-900/15 ring-1 ring-white/20 sm:flex-col sm:gap-2.5 sm:px-3 sm:py-4 sm:text-center">
+              <div className="flex flex-row items-center justify-center gap-3 rounded-2xl bg-[var(--nq-ed-accent)] px-4 py-3 shadow-lg shadow-slate-900/15 ring-1 ring-white/20 sm:flex-col sm:gap-2.5 sm:px-3 sm:py-4 sm:text-center">
                 <Lightbulb weight="duotone" size={20} className="shrink-0 text-white/90" aria-hidden />
                 <h3 className="text-xs font-bold uppercase leading-snug tracking-[0.12em] text-white/95 sm:max-w-[7rem] sm:text-sm sm:leading-tight">
                   Why it matters
                 </h3>
               </div>
-              <div className="nq-card relative min-h-0 overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md ring-1 ring-slate-100/80 sm:p-6">
+              <div className="nq-card nq-ed-quote relative min-h-0 overflow-hidden rounded-2xl border border-[var(--nq-ed-line)] p-5 shadow-md ring-1 ring-slate-100/80 sm:p-6">
                 <div className="absolute right-2 top-2 opacity-[0.06] sm:right-3 sm:top-3">
-                  <Lightbulb weight="duotone" size={56} className="text-millennial-cta-primary" aria-hidden />
+                  <Lightbulb weight="duotone" size={56} className="text-[var(--nq-ed-accent)]" aria-hidden />
                 </div>
                 {displayStep.nqWhyItMattersCards && displayStep.nqWhyItMattersCards.length > 0 ? (
                   <div className="relative">
-                    <h4 className="mb-5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
+                    <h4 className="mb-5 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--nq-ed-muted)]">
                       Myths worth knowing
                     </h4>
                     <ul className="grid list-none gap-4 lg:grid-cols-3 lg:gap-4" role="list">
                       {displayStep.nqWhyItMattersCards.map((card, i) => {
                         const Icon = WHY_IT_MATTERS_MYTH_ICONS[i] ?? Lightbulb
-                        const ring = WHY_IT_MATTERS_MYTH_ICON_STYLES[i] ?? 'bg-slate-100 text-slate-700 ring-slate-200'
+                        const ring = WHY_IT_MATTERS_MYTH_ICON_STYLES[i] ?? 'bg-slate-100 text-[var(--nq-ed-muted)] ring-slate-200'
                         const expanded = openMythTitle === card.title
                         return (
                           <motion.li
@@ -2447,7 +2178,7 @@ export default function NQGuidedRoadmap({
                             layout
                             whileHover={reduceMotion ? undefined : { y: -2 }}
                             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                            className="rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 p-4 shadow-sm ring-1 ring-slate-100/70"
+                            className="rounded-xl border border-[var(--nq-ed-line)] bg-gradient-to-b from-white to-slate-50/90 p-4 shadow-sm ring-1 ring-slate-100/70"
                           >
                             <button
                               type="button"
@@ -2463,9 +2194,9 @@ export default function NQGuidedRoadmap({
                               </div>
                               <div className="min-w-0 flex-1 pt-0.5">
                                 <span className="flex items-start justify-between gap-2">
-                                  <span className="text-base font-bold leading-snug text-slate-900">{card.title}</span>
+                                  <span className="text-base font-bold leading-snug text-[var(--nq-ed-text)]">{card.title}</span>
                                   <CaretDown
-                                    className={`mt-0.5 h-5 w-5 shrink-0 text-slate-400 transition-transform ${
+                                    className={`mt-0.5 h-5 w-5 shrink-0 text-[var(--nq-ed-muted)] transition-transform ${
                                       expanded ? 'rotate-180' : ''
                                     }`}
                                     aria-hidden
@@ -2474,11 +2205,11 @@ export default function NQGuidedRoadmap({
                               </div>
                             </button>
                             {expanded ? (
-                              <p className="mt-3 border-t border-slate-100 pt-3 text-sm leading-relaxed text-slate-600">
+                              <p className="mt-3 border-t border-[var(--nq-ed-line-soft)] pt-3 text-sm leading-relaxed text-[var(--nq-ed-muted)]">
                                 {renderNqSaysContext(card.detail)}
                               </p>
                             ) : (
-                              <p className="mt-2 text-xs text-slate-500">Tap to expand</p>
+                              <p className="mt-2 text-xs text-[var(--nq-ed-muted)]">Tap to expand</p>
                             )}
                           </motion.li>
                         )
@@ -2495,36 +2226,36 @@ export default function NQGuidedRoadmap({
                       aria-expanded={openMythTitle === '__whatItMeans__'}
                       className="flex w-full items-center justify-between gap-3 text-left"
                     >
-                      <span className="text-sm font-bold uppercase tracking-wide text-slate-600">
+                      <span className="text-sm font-bold uppercase tracking-wide text-[var(--nq-ed-muted)]">
                         Why this step matters
                       </span>
                       <CaretDown
-                        className={`h-5 w-5 shrink-0 text-slate-400 transition-transform ${
+                        className={`h-5 w-5 shrink-0 text-[var(--nq-ed-muted)] transition-transform ${
                           openMythTitle === '__whatItMeans__' ? 'rotate-180' : ''
                         }`}
                         aria-hidden
                       />
                     </button>
                     {openMythTitle === '__whatItMeans__' ? (
-                      <p className="mt-3 text-lg leading-relaxed text-slate-800 sm:text-xl sm:leading-relaxed">
+                      <p className="mt-3 text-lg leading-relaxed text-[var(--nq-ed-text)] sm:text-xl sm:leading-relaxed">
                         {renderNqSaysContext(displayStep.nqWhatItMeans)}
                       </p>
                     ) : (
-                      <p className="mt-2 text-xs text-slate-500">Tap to expand</p>
+                      <p className="mt-2 text-xs text-[var(--nq-ed-muted)]">Tap to expand</p>
                     )}
                   </div>
                 ) : null}
               </div>
             </div>
           ) : (
-            <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-6 text-slate-600">
+            <p className="rounded-2xl border border-dashed border-[var(--nq-ed-line)] bg-slate-50/80 p-6 text-[var(--nq-ed-muted)]">
               NQ will drop in more &ldquo;myths worth knowing&rdquo; and explainers as you move through milestones. Meanwhile, start with the library picks above.
             </p>
           )}
 
           {nextStepTitles.length > 0 ? (
-            <div className="nq-card rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+            <div className="nq-card nq-ed-soft-card rounded-2xl border border-[var(--nq-ed-line)] bg-slate-50/80 p-5">
+              <p className="text-xs font-bold uppercase tracking-wide text-[var(--nq-ed-muted)]">
                 Recommended for your phase · {phaseHeadingTitle ?? 'this phase'}
               </p>
               <ul className="mt-3 list-none space-y-2">
@@ -2532,8 +2263,8 @@ export default function NQGuidedRoadmap({
                   <li key={t}>
                     <button
                       type="button"
-                      onClick={() => goTab('phase')}
-                      className="text-left text-sm font-semibold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2 hover:text-teal-950"
+                      onClick={() => goTab('plan')}
+                      className="text-left text-sm font-semibold text-[var(--nq-ed-accent)] underline decoration-[var(--nq-ed-accent)]/60 underline-offset-2 hover:text-[var(--nq-ed-text)]"
                     >
                       {t}
                     </button>
@@ -2550,27 +2281,26 @@ export default function NQGuidedRoadmap({
           role="tabpanel"
           id="journey-panel-library"
           aria-labelledby="journey-tab-library"
-          className="scroll-mt-28 space-y-6"
+          className="nq-journey-tab-panel"
         >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Library</h2>
-              <p className="mt-2 max-w-prose text-slate-600">
-                Scripts, guides, and checklists — curated to pair with your journey. Full archive also lives on the
-                site resources area.
-              </p>
-            </div>
+          <JourneyTabHeroShell
+            eyebrow="Library"
+            title="Scripts, guides & checklists"
+            description="Curated to pair with your journey. Full archive also lives on the site resources area."
+            headingId="journey-library-heading"
+          >
             <div className="flex flex-wrap items-center gap-2">
               <TierBadge tier={effectiveTier} compact className="sm:max-w-[220px]" />
               <MindsetTag mindset={mindsetFor(effectiveTier)} className="max-w-[260px]" />
             </div>
-          </div>
-
-          <div className="relative">
+          </JourneyTabHeroShell>
+          <div className="nq-journey-tab-grid">
+            <div className="nq-journey-tab-stack min-w-0">
+          <div className="nq-ed-soft-card relative rounded-2xl p-1">
             <MagnifyingGlass
               weight="duotone"
               size={20}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--nq-ed-muted)]"
               aria-hidden
             />
             <label htmlFor="journey-library-search" className="sr-only">
@@ -2582,12 +2312,12 @@ export default function NQGuidedRoadmap({
               value={libraryQuery}
               onChange={(e) => setLibraryQuery(e.target.value)}
               placeholder="Search titles and summaries…"
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm font-medium text-slate-900 shadow-sm outline-none ring-teal-200 transition focus:border-millennial-cta-primary focus:ring-2"
+              className="w-full rounded-xl border border-[var(--nq-ed-line)] bg-[var(--nq-ed-surface)] py-2.5 pl-10 pr-3 text-sm font-medium text-[var(--nq-ed-text)] shadow-sm outline-none transition focus:border-[var(--nq-ed-accent)] focus:ring-2 focus:ring-[var(--nq-ed-accent)]/20"
             />
           </div>
 
           <div
-            className="flex flex-wrap gap-2"
+            className="nq-ed-soft-card flex flex-wrap gap-2 p-3"
             role="group"
             aria-label="Library categories"
           >
@@ -2613,7 +2343,7 @@ export default function NQGuidedRoadmap({
                   className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
                     active
                       ? 'bg-[rgb(var(--navy))] text-white shadow-sm'
-                      : 'border border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-millennial-primary-light/25'
+                      : 'border border-[var(--nq-ed-line)] bg-white text-[var(--nq-ed-muted)] hover:border-[var(--nq-ed-accent)]/30 hover:bg-[var(--nq-ed-accent-soft)]'
                   }`}
                 >
                   {label}
@@ -2623,20 +2353,24 @@ export default function NQGuidedRoadmap({
           </div>
 
           <ul className="space-y-3" role="list">
-            {libraryFiltered.slice(0, 3).map((item) => (
+            {libraryFiltered.slice(0, 3).map((item, idx) => (
               <li key={item.id}>
-                <div className="nq-card block rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md sm:p-5">
+                <div
+                  className={`block transition hover:-translate-y-0.5 sm:p-5 ${
+                    idx === 0 ? 'nq-ed-quote p-4' : 'nq-ed-soft-card border border-[var(--nq-ed-line)] p-4 hover:border-[var(--nq-ed-line-soft)]'
+                  }`}
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--nq-ed-muted)]">
                       {JOURNEY_LIBRARY_CATEGORY_LABEL[item.category]}
                     </span>
-                    <span className="text-xs font-semibold text-slate-500">{item.readMin} min read</span>
+                    <span className="text-xs font-semibold text-[var(--nq-ed-muted)]">{item.readMin} min read</span>
                   </div>
-                  <p className="mt-2 text-lg font-bold text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.summary}</p>
+                  <p className="mt-2 text-lg font-bold text-[var(--nq-ed-text)]">{item.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--nq-ed-muted)]">{item.summary}</p>
                   <Link
                     href={item.href}
-                    className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-800"
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[var(--nq-ed-accent)]"
                   >
                     Open
                     <ArrowRight className="h-4 w-4" aria-hidden />
@@ -2651,7 +2385,7 @@ export default function NQGuidedRoadmap({
               <button
                 type="button"
                 onClick={() => setLibraryMoreExpanded((e) => !e)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:border-teal-200 hover:bg-millennial-primary-light/25"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--nq-ed-line)] bg-white px-4 py-3 text-center text-sm font-semibold text-[var(--nq-ed-muted)] shadow-sm transition hover:border-[var(--nq-ed-accent)]/30 hover:bg-[var(--nq-ed-accent-soft)]"
                 aria-expanded={libraryMoreExpanded}
               >
                 {libraryMoreExpanded ? (
@@ -2679,7 +2413,7 @@ export default function NQGuidedRoadmap({
                         ctaHref="/upgrade?source=library-bundle&tier=momentum"
                       />
                     ) : (
-                      <p className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
+                      <p className="nq-ed-soft-card rounded-xl border border-[var(--nq-ed-line)] px-4 py-3 text-sm text-[var(--nq-ed-muted)]">
                         You&apos;re on <strong>{TIER_DEFINITIONS.momentum.name}</strong> or higher — open any resource below
                         that your plan includes. Navigator+ unlocks the deepest guides marked in copy.
                       </p>
@@ -2693,32 +2427,32 @@ export default function NQGuidedRoadmap({
                         return (
                           <li key={item.id}>
                             <div
-                              className={`nq-card rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5 ${
+                              className={`nq-card rounded-2xl border border-[var(--nq-ed-line)] bg-white p-4 shadow-sm ring-1 ring-slate-100/80 sm:p-5 ${
                                 canOpen
-                                  ? 'transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-md'
+                                  ? 'transition hover:-translate-y-0.5 hover:border-[var(--nq-ed-accent)]/30 hover:shadow-md'
                                   : 'opacity-80'
                               }`}
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--nq-ed-muted)]">
                                   {JOURNEY_LIBRARY_CATEGORY_LABEL[item.category]}
                                 </span>
-                                <span className="text-xs font-semibold text-slate-500">{item.readMin} min read</span>
+                                <span className="text-xs font-semibold text-[var(--nq-ed-muted)]">{item.readMin} min read</span>
                               </div>
-                              <p className="mt-2 text-lg font-bold text-slate-900">{item.title}</p>
-                              <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.summary}</p>
+                              <p className="mt-2 text-lg font-bold text-[var(--nq-ed-text)]">{item.title}</p>
+                              <p className="mt-1 text-sm leading-relaxed text-[var(--nq-ed-muted)]">{item.summary}</p>
                               {canOpen ? (
                                 <Link
                                   href={item.href}
-                                  className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-teal-800"
+                                  className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[var(--nq-ed-accent)]"
                                 >
                                   Open
                                   <ArrowRight className="h-4 w-4" aria-hidden />
                                 </Link>
                               ) : (
-                                <p className="mt-3 text-sm text-slate-500">
-                                  <Lock className="inline h-3.5 w-3.5 text-slate-400" aria-hidden /> Included in{' '}
-                                  <span className="font-semibold text-slate-700">{unlockDef.name}</span>
+                                <p className="mt-3 text-sm text-[var(--nq-ed-muted)]">
+                                  <Lock className="inline h-3.5 w-3.5 text-[var(--nq-ed-muted)]" aria-hidden /> Included in{' '}
+                                  <span className="font-semibold text-[var(--nq-ed-muted)]">{unlockDef.name}</span>
                                   {tierAtLeast(effectiveTier, 'momentum') &&
                                   (minT === 'navigator' || minT === 'navigator_plus') ? (
                                     <Link
@@ -2742,18 +2476,42 @@ export default function NQGuidedRoadmap({
           ) : null}
 
           {libraryFiltered.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-6 text-center text-slate-600">
+            <p className="rounded-2xl border border-dashed border-[var(--nq-ed-line)] bg-slate-50/80 p-6 text-center text-[var(--nq-ed-muted)]">
               No matches — try another category or a shorter search.
             </p>
           ) : null}
 
           <Link
             href="/resources"
-            className="inline-flex items-center gap-2 text-sm font-bold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2 hover:text-teal-950"
+            className="inline-flex items-center gap-2 text-sm font-bold text-[var(--nq-ed-accent)] underline decoration-[var(--nq-ed-accent)]/60 underline-offset-2 hover:text-[#0f6058]"
           >
             Browse all resources on the site
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
+            </div>
+            <aside className="nq-ed-quote hidden lg:flex" aria-label="Library briefing">
+              <div className="flex flex-col justify-between gap-6">
+                <div>
+                  <span className="nq-ed-eyebrow">Archive</span>
+                  <h3 className="mt-3 font-display text-xl font-semibold text-[var(--nq-ed-text)] sm:text-2xl">
+                    Search and categories stay in the main column.
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--nq-ed-muted)]">
+                    The briefing rail signals this is a reference desk — not another dashboard tile farm.
+                  </p>
+                </div>
+                <div className="nq-ed-row">
+                  <div className="nq-ed-chip">✦</div>
+                  <div className="min-w-0">
+                    <strong className="text-[var(--nq-ed-text)]">Tier-aware locks</strong>
+                    <div className="text-sm text-[var(--nq-ed-muted)]">
+                      Unlocks still read clearly in the list; the rail doesn&apos;t duplicate commerce noise.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
         </div>
       ) : null}
 
@@ -2762,20 +2520,21 @@ export default function NQGuidedRoadmap({
           role="tabpanel"
           id="journey-panel-inbox"
           aria-labelledby="journey-tab-inbox"
-          className="scroll-mt-28 space-y-8"
+          className="nq-journey-tab-panel"
         >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Inbox</h2>
-              <p className="mt-2 max-w-prose text-slate-600">
-                Alerts, tasks, and messages — everything that needs your attention in one calm view.
-              </p>
-            </div>
+          <JourneyTabHeroShell
+            eyebrow="Inbox"
+            title="Alerts, tasks & messages"
+            description="Everything that needs your attention in one calm view."
+            headingId="journey-inbox-heading"
+          >
             <div className="flex flex-wrap items-center gap-2">
               <TierBadge tier={effectiveTier} compact className="sm:max-w-[220px]" />
               <MindsetTag mindset={mindsetFor(effectiveTier)} className="max-w-[260px]" />
             </div>
-          </div>
+          </JourneyTabHeroShell>
+          <div className="nq-journey-tab-grid">
+            <div className="nq-journey-tab-stack min-w-0">
 
           {!hasJourneyFeature(effectiveTier, 'inbox_priority_sort') ? (
             <LockedFeatureCard
@@ -2786,8 +2545,8 @@ export default function NQGuidedRoadmap({
             />
           ) : null}
 
-          <div className="nq-card rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
-            <p className="text-sm font-bold uppercase tracking-wide text-slate-600">Suggested next steps</p>
+          <div className="nq-ed-quote p-5 sm:p-6">
+            <span className="nq-ed-eyebrow">Suggested next steps</span>
             <ul className="mt-3 list-none space-y-3">
               {nextEngine.actions.map((a) => (
                 <li key={`inbox-ns-${a.id}`} className="flex flex-col gap-1.5">
@@ -2799,7 +2558,7 @@ export default function NQGuidedRoadmap({
                   <button
                     type="button"
                     onClick={() => followNextHint(a.hint)}
-                    className="text-left text-sm font-semibold text-teal-900 underline decoration-millennial-cta-primary/60 underline-offset-2"
+                    className="text-left text-sm font-semibold text-[var(--nq-ed-accent)] underline decoration-[var(--nq-ed-accent)]/60 underline-offset-2"
                   >
                     {a.label}
                   </button>
@@ -2817,7 +2576,10 @@ export default function NQGuidedRoadmap({
             />
           ) : null}
 
-          <section aria-labelledby="inbox-alerts-heading" className="nq-card rounded-2xl border border-amber-200/80 bg-amber-50/50 p-5 sm:p-6">
+          <section
+            aria-labelledby="inbox-alerts-heading"
+            className="nq-card nq-ed-soft-card rounded-2xl border border-amber-200/80 bg-amber-50/50 p-5 sm:p-6"
+          >
             <h3 id="inbox-alerts-heading" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-900">
               <Bell className="h-4 w-4 shrink-0" aria-hidden />
               Alerts
@@ -2837,8 +2599,11 @@ export default function NQGuidedRoadmap({
             </ul>
           </section>
 
-          <section aria-labelledby="inbox-tasks-heading" className="nq-card rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm sm:p-6">
-            <h3 id="inbox-tasks-heading" className="text-sm font-bold uppercase tracking-wide text-slate-600">
+          <section
+            aria-labelledby="inbox-tasks-heading"
+            className="nq-card nq-ed-soft-card rounded-2xl border border-[var(--nq-ed-line)] p-5 shadow-sm sm:p-6"
+          >
+            <h3 id="inbox-tasks-heading" className="text-sm font-bold uppercase tracking-wide text-[var(--nq-ed-muted)]">
               Tasks
             </h3>
             <ul className="mt-4 list-none space-y-3" role="list">
@@ -2868,12 +2633,12 @@ export default function NQGuidedRoadmap({
                         setDocTaskTouched(true)
                       }
                     }}
-                    className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-millennial-cta-primary focus:ring-millennial-cta-primary"
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-[var(--nq-ed-accent)] focus:ring-millennial-cta-primary"
                   />
                   <label
                     htmlFor={`inbox-task-${task.id}`}
                     className={`cursor-pointer text-sm leading-snug sm:text-base ${
-                      task.done ? 'text-slate-400 line-through' : 'font-medium text-slate-800'
+                      task.done ? 'text-[var(--nq-ed-muted)] line-through' : 'font-medium text-[var(--nq-ed-text)]'
                     }`}
                   >
                     {task.label}
@@ -2887,7 +2652,7 @@ export default function NQGuidedRoadmap({
                       {task.altUnlock ? <MoneyTag variant="alternative" /> : null}
                     </span>
                     {!task.done ? (
-                      <span className="mt-1 block text-xs font-medium text-slate-600">
+                      <span className="mt-1 block text-xs font-medium text-[var(--nq-ed-muted)]">
                         {task.findsAmount != null && task.findsAmount > 0
                           ? `You just unlocked a potential funding move worth about ${formatCurrency(task.findsAmount)}.`
                           : task.savesAmount != null && task.savesAmount > 0
@@ -2905,34 +2670,61 @@ export default function NQGuidedRoadmap({
             </ul>
           </section>
 
-          <section aria-labelledby="inbox-messages-heading" className="nq-card rounded-2xl border border-slate-200/90 bg-slate-50/80 p-5 sm:p-6">
-            <h3 id="inbox-messages-heading" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-600">
+          <section
+            aria-labelledby="inbox-messages-heading"
+            className="nq-card nq-ed-soft-card rounded-2xl border border-[var(--nq-ed-line)] bg-slate-50/80 p-5 sm:p-6"
+          >
+            <h3 id="inbox-messages-heading" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-[var(--nq-ed-muted)]">
               <Envelope weight="duotone" className="h-4 w-4 shrink-0" aria-hidden />
               Messages
             </h3>
             <div className="mt-4 space-y-3">
-              <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">NQ</p>
-                <p className="mt-1 text-sm text-slate-700">
-                  When you&apos;re ready, open <strong className="font-semibold text-slate-900">Your Phase</strong> and
+              <div className="rounded-xl border border-[var(--nq-ed-line)]/80 bg-white p-4 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-[var(--nq-ed-muted)]">NQ</p>
+                <p className="mt-1 text-sm text-[var(--nq-ed-muted)]">
+                  When you&apos;re ready, open <strong className="font-semibold text-[var(--nq-ed-text)]">Your Phase</strong> and
                   check off one checklist item — small wins keep momentum.
                 </p>
               </div>
-              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-6 text-center">
+              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[var(--nq-ed-line)] bg-white/60 px-4 py-6 text-center">
                 <Envelope weight="duotone" className="h-7 w-7 text-slate-300" aria-hidden />
-                <p className="text-sm font-medium text-slate-500">No new messages</p>
-                <p className="text-xs text-slate-400">Lender updates, agent notes, and NQ tips will appear here as your journey progresses.</p>
+                <p className="text-sm font-medium text-[var(--nq-ed-muted)]">No new messages</p>
+                <p className="text-xs text-[var(--nq-ed-muted)]">Lender updates, agent notes, and NQ tips will appear here as your journey progresses.</p>
               </div>
             </div>
           </section>
 
           <Link
             href="/inbox"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-millennial-cta-primary to-millennial-cta-secondary px-5 py-3.5 text-base font-bold text-white shadow-md transition hover:shadow-lg sm:w-auto"
+            className="nq-ed-btn-primary w-full sm:w-auto"
           >
             Open full inbox
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
+            </div>
+            <aside className="nq-ed-quote hidden lg:flex" aria-label="Inbox briefing">
+              <div className="flex flex-col justify-between gap-6">
+                <div>
+                  <span className="nq-ed-eyebrow">Signals</span>
+                  <h3 className="mt-3 font-display text-xl font-semibold text-[var(--nq-ed-text)] sm:text-2xl">
+                    Attention without alarm-stack density.
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--nq-ed-muted)]">
+                    Suggested steps and lender asks stay actionable below; this column frames the inbox as concierge triage.
+                  </p>
+                </div>
+                <div className="nq-ed-row">
+                  <div className="nq-ed-chip">◆</div>
+                  <div className="min-w-0">
+                    <strong className="text-[var(--nq-ed-text)]">Open full inbox when ready</strong>
+                    <div className="text-sm text-[var(--nq-ed-muted)]">
+                      Deep history stays on the dedicated inbox route; this tab is the briefing snapshot.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
         </div>
       ) : null}
 
@@ -2941,28 +2733,59 @@ export default function NQGuidedRoadmap({
           role="tabpanel"
           id="journey-panel-upgrades"
           aria-labelledby="journey-tab-upgrades"
-          className="scroll-mt-28 space-y-6"
+          className="nq-journey-tab-panel"
         >
-          <div className="mx-4 mt-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 p-5 text-white">
-            <p className="mb-1 text-xs uppercase tracking-widest opacity-80">Limited time</p>
-            <h2 className="mb-1 text-xl font-bold">Try Momentum free for 7 days</h2>
-            <p className="mb-4 text-sm opacity-90">
-              Full access. No credit card required. Cancel anytime.
-            </p>
+          <JourneyTabHeroShell
+            eyebrow="Options"
+            title="Try Momentum free for 7 days"
+            description="Full access. No credit card required. Cancel anytime."
+            headingId="journey-upgrades-heading"
+          >
             <button
               type="button"
               onClick={() => void startMomentumTrialFromUi('upgrades_tab', router.push)}
-              className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-blue-700"
+              className="nq-ed-btn-primary w-full max-w-sm sm:w-auto"
             >
               Start my free 7-day trial →
             </button>
-            <p className="mt-2 text-center text-xs text-white/80">No credit card required · Cancel anytime</p>
+          </JourneyTabHeroShell>
+          <div className="nq-journey-tab-grid">
+            <div className="nq-journey-tab-stack min-w-0">
+          <div className="nq-ed-section-frame">
+            <p className="nq-ed-eyebrow">Compare plans</p>
+            <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">Preview features by tier — your checkout price may vary with promotions.</p>
+            <div className="mt-4">
+              <TierPreviewSwitcher
+                currentTier={userTier}
+                previewTier={previewTier}
+                onPreviewChange={setPreviewTier}
+              />
+            </div>
           </div>
-          <TierPreviewSwitcher
-            currentTier={userTier}
-            previewTier={previewTier}
-            onPreviewChange={setPreviewTier}
-          />
+            </div>
+            <aside className="nq-ed-quote hidden lg:flex" aria-label="Upgrades briefing">
+              <div className="flex flex-col justify-between gap-6">
+                <div>
+                  <span className="nq-ed-eyebrow">Partner tier</span>
+                  <h3 className="mt-3 font-display text-xl font-semibold text-[var(--nq-ed-text)] sm:text-2xl">
+                    Commerce sits in-frame; tone stays advisory.
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--nq-ed-muted)]">
+                    Trial and compare blocks remain primary actions in the main column — the rail explains why depth unlocks matter.
+                  </p>
+                </div>
+                <div className="nq-ed-row">
+                  <div className="nq-ed-chip">↑</div>
+                  <div className="min-w-0">
+                    <strong className="text-[var(--nq-ed-text)]">Preview features below</strong>
+                    <div className="text-sm text-[var(--nq-ed-muted)]">
+                      Use the tier switcher to see Navigator and Navigator+ contrast without leaving the journey shell.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
         </div>
       ) : null}
 
@@ -3002,10 +2825,10 @@ export default function NQGuidedRoadmap({
         >
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
             <Lock className="mx-auto mb-3 h-8 w-8 text-slate-300" aria-hidden />
-            <h3 id="phase-lock-trial-title" className="mb-1 text-base font-bold text-slate-900">
+            <h3 id="phase-lock-trial-title" className="mb-1 text-base font-bold text-[var(--nq-ed-text)]">
               This phase is part of Momentum
             </h3>
-            <p className="mb-4 text-sm text-slate-500">Try it free for 7 days. No credit card required.</p>
+            <p className="mb-4 text-sm text-[var(--nq-ed-muted)]">Try it free for 7 days. No credit card required.</p>
             <button
               type="button"
               onClick={handleStartTrialFromPhaseLock}
@@ -3013,16 +2836,37 @@ export default function NQGuidedRoadmap({
             >
               Start my free 7-day trial →
             </button>
-            <p className="mt-2 text-center text-xs text-slate-400">No credit card required · Cancel anytime</p>
+            <p className="mt-2 text-center text-xs text-[var(--nq-ed-muted)]">No credit card required · Cancel anytime</p>
             <button
               type="button"
               onClick={() => setPhaseLockModal(null)}
-              className="mt-3 w-full text-sm text-slate-500"
+              className="mt-3 w-full text-sm text-[var(--nq-ed-muted)]"
             >
               Not now
             </button>
           </div>
         </div>
+      ) : null}
+
+      {reengagementPhase != null ? (
+        <PhaseReengagementModal
+          phaseOrder={reengagementPhase}
+          onClose={() => {
+            setReengagementPhase(null)
+            if (pendingCertificatePhase != null) {
+              setCertificatePhase(pendingCertificatePhase)
+              setPendingCertificatePhase(null)
+            }
+          }}
+        />
+      ) : null}
+
+      {reengagementPhase == null && certificatePhase != null ? (
+        <PhaseCertificateModal
+          phaseOrder={certificatePhase}
+          userName={userFirstName}
+          onClose={() => setCertificatePhase(null)}
+        />
       ) : null}
 
       {phaseLockModal === 'hint' ? (
@@ -3032,7 +2876,7 @@ export default function NQGuidedRoadmap({
           aria-modal="true"
         >
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
-            <p className="text-sm text-slate-700">{phaseLockHintText}</p>
+            <p className="text-sm text-[var(--nq-ed-muted)]">{phaseLockHintText}</p>
             <button
               type="button"
               onClick={() => setPhaseLockModal(null)}

@@ -52,7 +52,7 @@ export function consumeMoveUpWizardJourneySync(apply: boolean): {
     for (let o = 1; o < po; o++) {
       for (const i of getNqGuidedIndicesForPhaseOrder(o)) completed.add(i)
     }
-    return { targetStepIndex, completedStepIndices: [...completed] }
+    return { targetStepIndex, completedStepIndices: Array.from(completed) }
   } catch {
     return null
   }

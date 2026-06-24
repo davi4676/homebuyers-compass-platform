@@ -22,7 +22,7 @@ function overlapScore(queryTokens: Set<string>, chunk: KnowledgeChunk): number {
   const chunkTokens = tokenize(`${chunk.text} ${chunk.keywords.join(' ')}`)
   if (chunkTokens.size === 0) return 0
   let matches = 0
-  for (const t of queryTokens) {
+  for (const t of Array.from(queryTokens)) {
     if (chunkTokens.has(t)) matches++
     // Also match keywords
     for (const k of chunk.keywords) {

@@ -1,5 +1,6 @@
 'use client'
 
+import type { LucideIcon } from 'lucide-react'
 import {
   Target,
   FileText,
@@ -33,7 +34,7 @@ export interface PlanYourJourneyStep {
   color: string
   borderColor: string
   phaseId: PlanYourJourneyPhaseId
-  icon: React.ComponentType<{ className?: string; size?: number }>
+  icon: LucideIcon
 }
 
 export const PLAN_YOUR_JOURNEY_STEPS: PlanYourJourneyStep[] = [

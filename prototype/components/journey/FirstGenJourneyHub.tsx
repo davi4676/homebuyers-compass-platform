@@ -71,7 +71,7 @@ export default function FirstGenJourneyHub({ goTab }: Props) {
           </button>
 
           <Link
-            href={journeyTabHref('assistance')}
+            href={journeyTabHref('money')}
             className="group rounded-2xl border border-slate-200/90 bg-gradient-to-br from-teal-50/80 to-white p-4 shadow-sm transition hover:border-teal-300 hover:shadow-md"
           >
             <p className="font-semibold text-slate-900">DPA matched to you</p>

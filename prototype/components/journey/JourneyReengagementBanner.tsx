@@ -1,34 +1,27 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { X } from '@phosphor-icons/react'
-import { NQ_LAST_VISIT_KEY, reengagementDismissedKey } from '@/lib/nq-journey-visit'
+import {
+  NQ_LAST_VISIT_KEY,
+  parseVisitTimestamp,
+  reengagementDismissedKey,
+} from '@/lib/nq-journey-visit'
 
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000
 
-function formatVisitDate(ts: number): string {
-  return new Date(ts).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
 export default function JourneyReengagementBanner() {
   const [visible, setVisible] = useState(false)
-  const [lastVisitTs, setLastVisitTs] = useState<number | null>(null)
+  const [hasValidPriorVisit, setHasValidPriorVisit] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     const now = Date.now()
+
     let prev: number | null = null
     try {
-      const raw = localStorage.getItem(NQ_LAST_VISIT_KEY)
-      if (raw) {
-        const n = parseInt(raw, 10)
-        if (Number.isFinite(n)) prev = n
-      }
+      prev = parseVisitTimestamp(localStorage.getItem(NQ_LAST_VISIT_KEY))
     } catch {
       /* ignore */
     }
@@ -53,14 +46,9 @@ export default function JourneyReengagementBanner() {
       /* ignore */
     }
 
-    setLastVisitTs(prev)
+    setHasValidPriorVisit(true)
     setVisible(inactive && !dismissed)
   }, [])
-
-  const lastVisitLabel = useMemo(
-    () => (lastVisitTs != null ? formatVisitDate(lastVisitTs) : ''),
-    [lastVisitTs]
-  )
 
   const dismiss = useCallback(() => {
     try {
@@ -71,33 +59,48 @@ export default function JourneyReengagementBanner() {
     setVisible(false)
   }, [])
 
-  if (!visible || !lastVisitLabel) return null
+  if (!visible) return null
+
+  const title = hasValidPriorVisit
+    ? "Welcome back — here's what changed since your last visit"
+    : 'Welcome back — here are your latest updates'
 
   return (
     <div
-      className="mb-6 flex flex-col gap-3 rounded-xl px-4 py-3 shadow-md sm:flex-row sm:items-center sm:justify-between"
-      style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+      className="flex flex-col gap-3 rounded-3xl border border-[var(--nq-ed-line)] bg-[var(--nq-ed-surface)] p-5 shadow-[0_14px_32px_rgba(29,23,17,0.05)] sm:flex-row sm:items-center sm:justify-between sm:px-6"
       role="region"
       aria-label="Welcome back"
     >
-      <p className="min-w-0 flex-1 text-sm font-medium sm:text-base">
-        Welcome back — here&apos;s what&apos;s changed since {lastVisitLabel}
-      </p>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span
+          className="mt-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-[var(--nq-ed-accent)]"
+          aria-hidden
+        />
+        <div className="min-w-0">
+          <p className="font-display text-base font-semibold tracking-tight text-[var(--nq-ed-text)] sm:text-lg">
+            {title}
+          </p>
+          <p className="mt-1 text-[14px] leading-relaxed text-[var(--nq-ed-muted)] sm:text-[15px]">
+            {hasValidPriorVisit
+              ? 'See updates to your programs, tasks, messages, and money plan.'
+              : 'See what changed in your programs, tasks, messages, and money plan since your last visit.'}
+          </p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2 self-stretch sm:self-auto">
         <Link
           href="/customized-journey?tab=learn"
-          className="nq-reengage-cta inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-bold text-[color:var(--primary)] shadow-sm"
-          style={{ background: '#fff' }}
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--nq-ed-accent)] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#0f6058]"
         >
-          See what&apos;s new →
+          See updates →
         </Link>
         <button
           type="button"
           onClick={dismiss}
-          className="rounded-lg p-2 text-white/90 hover:bg-white/10"
+          className="rounded-xl p-2 text-[var(--nq-ed-muted)] transition hover:bg-[var(--nq-ed-line-soft)] hover:text-[var(--nq-ed-text)]"
           aria-label="Dismiss"
         >
-          <X weight="duotone" size={20} className="text-white/90" aria-hidden />
+          <X weight="duotone" size={18} aria-hidden />
         </button>
       </div>
     </div>

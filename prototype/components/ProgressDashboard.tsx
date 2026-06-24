@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { getUserProgress, getUserTier } from '@/lib/user-tracking'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { BADGES, getXpProgress, getTotalXpForLevel } from '@/lib/gamification'
+import { BADGES, getXpProgress, getTotalXpForLevel, type UserProgress } from '@/lib/gamification'
 import { TIER_DEFINITIONS, type UserTier } from '@/lib/tiers'
 import { formatCurrency } from '@/lib/calculations'
 import { BadgeUnlockAnimation } from '@/components/BadgeUnlockAnimation'
@@ -36,10 +36,15 @@ interface ProgressDashboardProps {
 export function ProgressDashboard({ compact = false, title = 'My progress' }: ProgressDashboardProps) {
   const { isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('overview')
-  const [userProgress, setUserProgress] = useState(getUserProgress())
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
   const [userTier, setUserTier] = useState<UserTier>('foundations')
   const [showBadgeAnimation, setShowBadgeAnimation] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    setUserProgress(getUserProgress())
+    setUserTier(getUserTier())
+  }, [])
 
   useEffect(() => {
     const updateTier = () => {
@@ -56,13 +61,12 @@ export function ProgressDashboard({ compact = false, title = 'My progress' }: Pr
   }, [isAuthenticated])
 
   useEffect(() => {
-    if (!isAuthenticated) return
     const interval = setInterval(() => {
       setUserProgress(getUserProgress())
       setUserTier(getUserTier())
     }, 1000)
     return () => clearInterval(interval)
-  }, [isAuthenticated])
+  }, [])
 
   if (!userProgress) {
     return (

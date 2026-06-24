@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import type { MoneyTrackerTotals } from '@/lib/money-engine'
+import type { PersistedMoneyTrackers } from '@/lib/money-tracker-storage'
 import { formatCurrency } from '@/lib/calculations'
 
 type MoneyLayerBarProps = {
-  totals: MoneyTrackerTotals
+  totals: PersistedMoneyTrackers
   sticky?: boolean
 }
 
@@ -17,7 +17,7 @@ export default function MoneyLayerBar({ totals, sticky = true }: MoneyLayerBarPr
     () => ({
       savings: totals.savingsFoundSoFar > prev.current.savingsFoundSoFar,
       funds: totals.fundsFoundSoFar > prev.current.fundsFoundSoFar,
-      alt: totals.alternativeCount > prev.current.alternativeCount,
+      alt: totals.altSolutionsIdentified > prev.current.altSolutionsIdentified,
     }),
     [totals]
   )
@@ -52,7 +52,7 @@ export default function MoneyLayerBar({ totals, sticky = true }: MoneyLayerBarPr
             className="rounded-xl border border-violet-200/80 bg-violet-50/70 px-3 py-2"
           >
             <p className="text-[11px] font-bold uppercase tracking-wide text-violet-900">Alternative Solutions Identified</p>
-            <p className="mt-1 text-sm font-bold text-violet-950 tabular-nums">{totals.alternativeCount}</p>
+            <p className="mt-1 text-sm font-bold text-violet-950 tabular-nums">{totals.altSolutionsIdentified}</p>
           </motion.div>
         </div>
       </div>

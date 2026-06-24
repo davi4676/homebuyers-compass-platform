@@ -69,7 +69,7 @@ const GATE_COPY: Record<GateType, GateCopy> = {
     achievementLabel: "day streak achieved",
     headline: "You're not just curious. You're serious.",
     subtext:
-      "Buyers who stay consistent close 40% faster. Momentum gives you the full roadmap, lender matches, and DPA reports to match your commitment.",
+      "Momentum gives you the full roadmap, lender comparison tools, and DPA reports to match your commitment.",
     upgradeCta: "Get the full plan — Start free 7-day trial",
     dismissLabel: "Keep going on the free plan",
     accent: "#F59E0B",

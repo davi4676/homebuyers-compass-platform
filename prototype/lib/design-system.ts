@@ -73,8 +73,8 @@ export const COLORS = {
 
 export const TYPOGRAPHY = {
   fonts: {
-    header: 'Inter, system-ui, sans-serif',
-    body: 'Source Sans Pro, system-ui, sans-serif',
+    header: 'var(--font-nq-sans)',
+    body: 'var(--font-nq-sans)',
     numbers: 'Roboto Mono, monospace',
     legal: 'IBM Plex Sans, sans-serif',
   },
@@ -157,25 +157,60 @@ export const cardStyles = {
 }
 
 // Trust signal badges and certifications
-export const TRUST_BADGES = {
-  bbb: {
-    name: 'Better Business Bureau',
-    url: '#',
-    icon: '🏆',
+/** Tailwind class bundles for journey tab-system shells (cards, badges, actions). */
+export const PREMIUM_UI_TOKENS = {
+  patterns: {
+    appShell: 'flex min-h-0 flex-1 flex-col gap-4',
+    surfaceCard:
+      'rounded-2xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/90',
+    progressStrip: 'h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700',
+    sectionHeader: {
+      root: 'space-y-1',
+      eyebrow: 'text-xs font-semibold uppercase tracking-wide text-slate-500',
+      title: 'text-lg font-bold text-slate-900 dark:text-white sm:text-xl',
+      subtitle: 'text-sm text-slate-600 dark:text-slate-400',
+    },
+    statCard: {
+      container:
+        'rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900',
+      label: 'text-xs font-medium uppercase tracking-wide text-slate-500',
+      value: 'text-2xl font-bold tabular-nums text-slate-900 dark:text-white',
+      hint: 'mt-1 text-xs text-slate-500',
+    },
+    badge: {
+      subtle: 'rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700',
+      accent: 'rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-medium text-cyan-900',
+      success: 'rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-900',
+      warning: 'rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900',
+    },
+    action: {
+      primary:
+        'inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700',
+      secondary:
+        'inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100',
+    },
   },
-  soc2: {
-    name: 'SOC 2 Type II Certified',
-    url: '#',
-    icon: '🔒',
+} as const
+
+export const TRUST_BADGES = {
+  noReferralFees: {
+    name: 'No lender referral fees',
+    url: '/resources#phase-methodology',
+    icon: '🤝',
+  },
+  hudAligned: {
+    name: 'HUD-aligned resources',
+    url: 'https://www.hud.gov/counseling',
+    icon: '🏠',
+  },
+  cfpbInformed: {
+    name: 'CFPB-informed guidance',
+    url: 'https://www.consumerfinance.gov/owning-a-home/',
+    icon: '📘',
   },
   encrypted: {
-    name: '256-bit SSL Encryption',
+    name: 'Secure connection (SSL)',
     url: '#',
     icon: '🔐',
-  },
-  verified: {
-    name: 'Verified Reviews',
-    url: '#',
-    icon: '✓',
   },
 }

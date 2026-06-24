@@ -42,6 +42,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         title: 'Credit analysis',
         description: 'See where you stand and how to improve.',
         detailDescription: 'Understand your credit and how to improve it before lenders pull your file.',
+        link: '/resources#resource-credit-score-guide',
         tierRequired: 'momentum',
       },
       {
@@ -50,7 +51,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'A payment you can live with—not just the lender max.',
         detailDescription:
           'Sketch an affordable payment vs. the lender’s ceiling. Know your debt-to-income picture and realistic cash for closing plus reserves.',
-        link: '/results',
+        link: '/resources#resource-dti-deep-dive',
       },
       {
         id: 'down-payment-optimizer',
@@ -65,6 +66,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Equal treatment from lenders and agents.',
         detailDescription:
           'Protected classes and your right to equal professional service when working with lenders and agents.',
+        link: '/resources#resource-fair-housing-guide',
       },
       {
         id: 'document-checklist',
@@ -72,6 +74,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Taxes, pay stubs, banks, ID—ready to verify.',
         detailDescription:
           'Tax returns, pay stubs, bank statements, government ID—everything lenders typically verify in underwriting.',
+        link: '/resources#resource-doc-checklist',
       },
       {
         id: 'readiness-score',
@@ -104,6 +107,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         title: 'Rate comparison',
         description: 'Line up real quotes—not ads.',
         detailDescription: 'Compare quotes from multiple lenders with comparable assumptions.',
+        link: '/resources#resource-shop-lenders',
         tierRequired: 'momentum',
       },
       {
@@ -112,12 +116,14 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Loan types, APR vs rate, PMI, points vs credits.',
         detailDescription:
           'Conventional vs. government-backed loans, fixed vs. ARM, PMI/MIP, APR vs. note rate, discount points vs. lender credits.',
+        link: '/resources#resource-loan-program-comparison',
       },
       {
         id: 'pre-approval-guide',
         title: 'Pre-approval guide',
         description: 'Pre-approval vs pre-qual—what’s real.',
         detailDescription: 'Step-by-step: pre-approval vs. pre-qualification and what sellers expect.',
+        link: '/resources#resource-shop-lenders',
       },
     ],
   },
@@ -141,8 +147,29 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         id: 'agent-finder',
         title: 'Find an agent',
         description: 'Local experience in your target area.',
-        detailDescription: 'Get matched with an agent who knows your neighborhoods and offer norms.',
-        tierRequired: 'momentum',
+        detailDescription: 'Interview questions and red flags before you commit to a buyer\'s agent.',
+        link: '/resources#resource-choose-buyers-agent',
+      },
+      {
+        id: 'search-pacing',
+        title: 'Search without burnout',
+        description: 'Must-haves, tour limits, and comp research.',
+        detailDescription: 'Pace your search with clear priorities and research before you fall in love with a price.',
+        link: '/resources#resource-search-without-burnout',
+      },
+      {
+        id: 'listing-red-flags',
+        title: 'Listing red flags',
+        description: 'Price drops, photo gaps, and vague disclosures.',
+        detailDescription: 'Signals that deserve extra inspection and negotiation—not an automatic pass.',
+        link: '/resources#resource-listing-red-flags',
+      },
+      {
+        id: 'neighborhood-checklist',
+        title: 'Neighborhood checklist',
+        description: 'Commute, schools, flood risk before you offer.',
+        detailDescription: 'Visit at different times, check flood zones, and stress-test the commute before you commit.',
+        link: '/resources#resource-neighborhood-checklist',
       },
       {
         id: 'home-buying-team',
@@ -150,12 +177,14 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Who runs inspection, appraisal, and title.',
         detailDescription:
           'How your agent, lender, inspector, appraiser, and title/escrow coordinate—and what to expect when.',
+        link: '/learn#offers',
       },
       {
         id: 'offer-strategy',
         title: 'Offer strategy',
         description: 'Win without waiving everything that protects you.',
         detailDescription: 'Make competitive offers that still fit your risk tolerance.',
+        link: '/resources#resource-offer-guardrails',
         tierRequired: 'navigator',
       },
     ],
@@ -181,7 +210,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         title: 'Inspection guide',
         description: 'Find problems before they’re your problems.',
         detailDescription: 'Inspection window, red flags, and how to negotiate outcomes.',
-        tierRequired: 'momentum',
+        link: '/resources#resource-inspection-guide',
       },
       {
         id: 'appraisal-contingency',
@@ -189,12 +218,14 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Low value? Renegotiate, bridge, or exit.',
         detailDescription:
           'What a low appraisal means for price, bringing cash to close, or leaving under your contract terms.',
+        link: '/resources#resource-appraisal-low-guide',
       },
       {
         id: 'homeowners-insurance-timeline',
         title: 'Insurance before closing',
         description: 'Bind coverage early—underwriting needs proof.',
         detailDescription: 'Proof of homeowners insurance your lender requires; shopping early avoids closing delays.',
+        link: '/resources#resource-homeowners-insurance-primer',
       },
       {
         id: 'title-escrow-101',
@@ -202,12 +233,14 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Who clears liens and issues policies.',
         detailDescription:
           'Lender’s vs. owner’s title insurance, escrow’s role, and how to read the preliminary title report.',
+        link: '/resources#resource-title-insurance-explained',
       },
       {
         id: 'cost-negotiation',
         title: 'Closing cost negotiation',
         description: 'Trim lender and third-party fees where you can.',
         detailDescription: 'Reduce fees and save money at the closing table when the market allows.',
+        link: '/resources#resource-closing-cost-guide',
         tierRequired: 'momentum',
       },
     ],
@@ -226,6 +259,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         title: 'Document tracker',
         description: 'Every upload in one checklist.',
         detailDescription: 'Track all required documents and lender requests in one place.',
+        link: '/resources#resource-doc-checklist',
         tierRequired: 'momentum',
       },
       {
@@ -233,6 +267,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         title: 'Underwriting timeline',
         description: 'What happens week by week.',
         detailDescription: 'Know what to expect and when from processor and underwriter.',
+        link: '/resources#resource-underwriting-checklist',
         tierRequired: 'momentum',
       },
       {
@@ -240,6 +275,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         title: 'Final approval checklist',
         description: 'Last sign-offs before clear to close.',
         detailDescription: 'Ensure everything is ready for final approval and scheduling.',
+        link: '/resources#resource-underwriting-checklist',
       },
     ],
   },
@@ -264,6 +300,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         title: 'Final walk-through',
         description: 'Confirm fixes and condition match the contract.',
         detailDescription: 'Walk the home shortly before closing to confirm repairs and condition match the contract.',
+        link: '/resources#resource-closing-day-checklist',
       },
       {
         id: 'wire-fraud-safety',
@@ -271,18 +308,21 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Verify instructions by phone—never email alone.',
         detailDescription:
           'Always confirm wiring instructions by calling your closing agent on a number you trust—not links or email.',
+        link: '/resources#resource-closing-script',
       },
       {
         id: 'closing-day-guide',
         title: 'Closing day',
         description: 'ID, funds, signing—plan about two hours.',
         detailDescription: 'What to expect, what to bring, and how long signing usually takes.',
+        link: '/resources#resource-closing-day-checklist',
       },
       {
         id: 'move-in-checklist',
         title: 'Move-in checklist',
         description: 'First weeks after you own it.',
         detailDescription: 'Utilities, locks, smoke alarms, and the first tasks after closing.',
+        link: '/resources#resource-first-year-maintenance-budget',
         tierRequired: 'momentum',
       },
     ],
@@ -302,6 +342,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Plan for repairs and tax/insurance bills.',
         detailDescription:
           'Rule of thumb: set aside for ongoing upkeep and watch escrow/tax/insurance notices so nothing sneaks up on you.',
+        link: '/resources#resource-first-year-maintenance-budget',
       },
       {
         id: 'scam-predatory-red-flags',
@@ -309,6 +350,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'Too-good refis, equity theft, storm hustlers.',
         detailDescription:
           'Predatory pitches, equity-theft schemes, and pushy contractors—when to pause and verify before you sign or wire.',
+        link: '/resources#resource-homeowner-scams-and-help',
       },
       {
         id: 'hardship-help-early',
@@ -316,6 +358,7 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         description: 'HUD counseling and your servicer—before you miss pay.',
         detailDescription:
           'HUD-approved housing counseling (hud.gov) and your loan servicer’s loss-mitigation options—earlier is better.',
+        link: '/resources#resource-homeowner-scams-and-help',
       },
       {
         id: 'lifecycle-dashboard',
@@ -354,16 +397,19 @@ export const JOURNEY_PHASES_DATA: PhaseData[] = [
         id: 'refinance-monitor',
         title: 'Refinance Monitor',
         description: 'Alerts when rates could save you $200+/month on your loan profile.',
+        link: '/refinance-optimizer',
       },
       {
         id: 'equity-tracker',
         title: 'Equity Tracker',
         description: 'Estimated equity from purchase price and market trends.',
+        link: '/results',
       },
       {
         id: 'refer-a-friend',
         title: 'Refer a Friend',
         description: 'Share your link — you both save on your next plan.',
+        link: '/profile',
       },
     ],
   },

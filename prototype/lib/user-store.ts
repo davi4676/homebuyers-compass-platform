@@ -41,6 +41,7 @@ export interface StoredUser {
   emailSequences?: {
     onboarding?: { startedAt: string; stepsSent: number[] }
     reengagement?: { sent: number }
+    weeklyLesson?: { lastWeekSent: number }
   }
   /** 7-day Momentum trial (no card) — cron sends day-5 email, day-7 downgrade if unpaid */
   momentumTrial?: {

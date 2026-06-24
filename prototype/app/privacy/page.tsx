@@ -31,15 +31,24 @@ export default function PrivacyPage() {
           <p>
             For questions about this policy or to request changes to your data, contact us through the support options
             in the app. We may update this page as the product evolves; the date at the top of your session reflects
-            the current prototype.
+            the current prototype. See also our{' '}
+            <Link href="/terms" className="font-semibold text-[#0d9488] hover:underline">
+              Terms of Service
+            </Link>
+            .
           </p>
         </div>
-        <Link
-          href="/"
-          className="mt-8 inline-block text-sm font-semibold text-[#0d9488] hover:underline"
-        >
-          ← Back to home
-        </Link>
+        <div className="mt-8 flex flex-wrap gap-4 text-sm">
+          <Link href="/terms" className="font-semibold text-[#0d9488] hover:underline">
+            Terms of Service
+          </Link>
+          <Link href="/glossary" className="font-semibold text-[#0d9488] hover:underline">
+            Glossary
+          </Link>
+          <Link href="/" className="inline-block font-semibold text-[#0d9488] hover:underline">
+            ← Back to home
+          </Link>
+        </div>
       </div>
     </div>
   )

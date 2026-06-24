@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, X, Bot, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { isCustomizedJourneyPath } from '@/lib/journey-nav-tabs'
 import { useChatSession } from './useChatSession'
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
@@ -16,11 +18,18 @@ const OPENING_GREETING: { role: 'assistant'; content: string } = {
 }
 
 export function HomebuyerChatbotWidget() {
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { messages, isLoading, sendMessage } = useChatSession(isAuthenticated ?? false)
+
+  /** Logged-in journey uses Compass; results has its own assistant. */
+  const hidden =
+    (isCustomizedJourneyPath(pathname) && isAuthenticated) ||
+    pathname === '/results' ||
+    pathname.startsWith('/results/')
 
   useEffect(() => {
     setMounted(true)
@@ -40,6 +49,8 @@ export function HomebuyerChatbotWidget() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [displayMessages, isLoading])
+
+  if (hidden) return null
 
   return (
     <>

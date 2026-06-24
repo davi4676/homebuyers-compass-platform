@@ -266,7 +266,6 @@ export function CompassPanel({ compass, currentPhase, rawJourneyTab }: CompassPa
                       onClick={() => onChip(c)}
                       disabled={isTyping}
                       className="rounded-full border-[1.5px] border-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-[var(--primary)] transition hover:bg-[var(--primary)] hover:text-white disabled:opacity-50"
-                      style={{ fontFamily: 'var(--font-dm-sans), DM Sans, system-ui, sans-serif' }}
                     >
                       {c}
                     </button>

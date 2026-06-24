@@ -302,7 +302,7 @@ function ResultsPageLayout({
   onRemoveNotification?: (id: string) => void
 }) {
   return (
-    <div className="app-page-shell">
+    <div className="app-page-shell nq-ed-page-wash">
       <NotificationSystem
         notifications={notifications}
         onRemove={onRemoveNotification ?? (() => {})}
@@ -500,7 +500,7 @@ function ResultsPageContent() {
       if (!cancelled) {
         cancelled = true
         setLoading(false)
-        setResults((prev) => prev ?? { type: 'error', error: 'Calculation timed out. Please try again.', transactionType })
+        setResults((prev: unknown) => prev ?? { type: 'error', error: 'Calculation timed out. Please try again.', transactionType })
       }
     }, 25000)
 
@@ -1103,31 +1103,41 @@ function ResultsPageContent() {
     resultsRecord.type === 'first-time'
 
   if (!isAuthenticated && isFirstTimeResults) {
-    return React.createElement(ResultsPageStateContext.Provider, { value: state },
-      React.createElement(ResultsPageLayout, {
-        topBar: resultsTopBar,
-        notifications,
-        onRemoveNotification: removeNotification,
-      },
-        React.createElement(UserJourneyTracker),
-        React.createElement('div', { className: 'bg-white border-b border-slate-200 shadow-sm' },
-          React.createElement('div', { className: 'max-w-7xl mx-auto' }, React.createElement(TrustSignals))),
-        React.createElement(GuestResultsPreview, { results: resultsRecord })
-      )
+    return (
+      <ResultsPageStateContext.Provider value={state}>
+        <ResultsPageLayout
+          topBar={resultsTopBar}
+          notifications={notifications}
+          onRemoveNotification={removeNotification}
+        >
+          <UserJourneyTracker />
+          <div className="bg-white border-b border-slate-200 shadow-sm">
+            <div className="max-w-7xl mx-auto">
+              <TrustSignals />
+            </div>
+          </div>
+          <GuestResultsPreview results={resultsRecord} />
+        </ResultsPageLayout>
+      </ResultsPageStateContext.Provider>
     )
   }
 
-  return React.createElement(ResultsPageStateContext.Provider, { value: state },
-    React.createElement(ResultsPageLayout, {
-      topBar: resultsTopBar,
-      notifications,
-      onRemoveNotification: removeNotification,
-    },
-      React.createElement(UserJourneyTracker),
-      React.createElement('div', { className: 'bg-white border-b border-slate-200 shadow-sm' },
-        React.createElement('div', { className: 'max-w-7xl mx-auto' }, React.createElement(TrustSignals))),
-      React.createElement(ResultsPageBody)
-    )
+  return (
+    <ResultsPageStateContext.Provider value={state}>
+      <ResultsPageLayout
+        topBar={resultsTopBar}
+        notifications={notifications}
+        onRemoveNotification={removeNotification}
+      >
+        <UserJourneyTracker />
+        <div className="bg-white border-b border-slate-200 shadow-sm">
+          <div className="max-w-7xl mx-auto">
+            <TrustSignals />
+          </div>
+        </div>
+        <ResultsPageBody />
+      </ResultsPageLayout>
+    </ResultsPageStateContext.Provider>
   )
 }
 

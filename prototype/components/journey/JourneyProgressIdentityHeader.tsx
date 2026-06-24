@@ -47,25 +47,23 @@ export default function JourneyProgressIdentityHeader({ user, snapshot, classNam
     () => resolveJourneyStartIso(user, guestStart),
     [user, guestStart]
   )
-  const dayN = useMemo(() => getJourneyDayNumber(startIso), [startIso])
+  const dayN = useMemo(
+    () => (startIso ? getJourneyDayNumber(startIso) : 1),
+    [startIso]
+  )
   const firstName = user?.firstName?.trim() || 'friend'
   const confetti = isJourneyConfettiMilestoneDay(dayN)
   const { current, goal } = resolveSavingsProgress(user, snapshot)
 
   return (
     <div className={`relative space-y-4 ${className}`}>
-      <div className="relative px-1">
+      <div className="relative">
         {confetti ? <JourneyConfettiBurst active burstKey={dayN} /> : null}
-        <p
-          className="relative z-10 text-[22px] leading-snug"
-          style={{
-            fontFamily: 'var(--font-dm-serif), "DM Serif Display", Georgia, serif',
-            color: 'var(--primary)',
-            fontWeight: 400,
-          }}
+        <h1
+          className="relative z-10 font-display text-[clamp(1.5rem,3.2vw,2.1rem)] font-semibold leading-[1.15] tracking-tight text-[var(--nq-ed-text)]"
         >
           Day {dayN} of your homebuying journey, {firstName}
-        </p>
+        </h1>
       </div>
       <SavingsMomentumBar current={current} goal={goal} />
     </div>

@@ -136,12 +136,26 @@ let cachedRates: FreddieMacRateData | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
+/** Withheld until after hydration so sync reads match SSR fallback rates. */
+let syncRatesEnabled = false;
+
+/** Call once after mount before sync rate reads may use the live PMMS cache. */
+export function enableLiveRatesForSyncRead(): void {
+  syncRatesEnabled = true;
+}
+
 /**
  * Sync snapshot getter for callers that cannot await.
  * Returns cached PMMS data if available, otherwise fallback PMMS values.
+ *
+ * SSR and the first client paint always use fallback rates so budget UI
+ * hydrates deterministically; live PMMS loads async via getCachedFreddieMacRates.
  */
 export function getFreddieMacRatesSnapshot(): FreddieMacRateData {
-  return cachedRates ?? getFallbackRates();
+  if (typeof window === 'undefined' || !syncRatesEnabled) {
+    return getFallbackRates()
+  }
+  return cachedRates ?? getFallbackRates()
 }
 
 export async function getCachedFreddieMacRates(): Promise<FreddieMacRateData> {

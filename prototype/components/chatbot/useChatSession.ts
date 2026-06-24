@@ -67,7 +67,8 @@ export function useChatSession(authenticated: boolean) {
                   const parsed = JSON.parse(data)
                   if (parsed.type === 'text' && parsed.delta) {
                     streamAccumRef.current += parsed.delta
-                    const id = assistantIdRef.current || `assistant-${Date.now()}`
+                    const existingAssistantId = assistantIdRef.current
+                    const id: string = existingAssistantId || `assistant-${Date.now()}`
                     assistantIdRef.current = id
                     setMessages((prev) => {
                       const existingIdx = prev.findIndex((m) => m.id === id)

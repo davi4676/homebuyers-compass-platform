@@ -28,7 +28,7 @@ export type DailyInsight = {
 export const DAILY_INSIGHTS: DailyInsight[] = [
   {
     icon: 'TrendingUp',
-    stat: 'Buyers who compare 3+ lenders save an average of $3,200',
+    stat: 'Comparing 3+ lenders within a 14-day window may save $1,500–$3,500 in the first year (varies by market)',
     explanation: 'Rate shopping within a 45-day window typically counts as one credit inquiry.',
   },
   {

@@ -10,7 +10,7 @@ export default function VisitStreakBadge() {
 
   return (
     <div
-      className="flex items-center gap-1"
+      className="flex items-center gap-2"
       style={{ color: 'var(--accent)', fontSize: 13 }}
       title={`${streak}-day activity streak`}
     >

@@ -7,6 +7,13 @@ import { getProductivitySummary } from '@/lib/db/activity'
 import { ONBOARDING_STEP_DAYS, sendOnboardingStep } from '@/lib/email-sequences/onboarding'
 import { sendReengagementStep } from '@/lib/email-sequences/reengagement'
 import { sendMomentumTrialEndingEmail } from '@/lib/email-sequences/momentum-trial'
+import { sendWeeklyLessonEmail } from '@/lib/email-sequences/weekly-lesson'
+import { sendPhaseReminderEmail } from '@/lib/email-sequences/phase-reminder'
+import {
+  listDuePhaseReminders,
+  markPhaseReminderSent,
+} from '@/lib/db/phase-reminder-subscriptions'
+import { getIsoWeekNumber } from '@/lib/weekly-lessons'
 
 const MS_DAY = 86_400_000
 
@@ -139,16 +146,62 @@ export async function processMomentumTrialDue(user: StoredUser): Promise<{
   return {}
 }
 
+/** Monday weekly lesson — once per ISO week for opted-in users. */
+export async function processWeeklyLessonDue(user: StoredUser): Promise<{ sent: boolean }> {
+  if (!user.marketingEmailsOptIn) return { sent: false }
+  const week = getIsoWeekNumber()
+  const lastWeek = user.emailSequences?.weeklyLesson?.lastWeekSent
+  if (lastWeek === week) return { sent: false }
+  // Send on Mondays (UTC) to avoid daily spam
+  if (new Date().getUTCDay() !== 1) return { sent: false }
+
+  const r = await sendWeeklyLessonEmail(user.email, user.firstName)
+  if (!r.ok) {
+    console.warn('[email] weekly lesson failed', user.id, r.message)
+    return { sent: false }
+  }
+  updateUser(user.id, {
+    emailSequences: {
+      ...user.emailSequences,
+      weeklyLesson: { lastWeekSent: week },
+    },
+  })
+  return { sent: true }
+}
+
+export async function processPhaseReminderEmails(): Promise<number> {
+  const due = listDuePhaseReminders()
+  let sent = 0
+  for (const reminder of due) {
+    const r = await sendPhaseReminderEmail({
+      to: reminder.email,
+      title: reminder.title,
+      message: reminder.message,
+      actionUrl: reminder.actionUrl,
+    })
+    if (r.ok) {
+      markPhaseReminderSent(reminder.id)
+      sent++
+    } else {
+      console.warn('[email] phase reminder failed', reminder.id, r.message)
+    }
+  }
+  return sent
+}
+
 export async function runAllEmailSequenceJobs(users: StoredUser[]): Promise<{
   onboarding: number
   reengagement: number
   momentumTrialEmails: number
   momentumTrialDowngrades: number
+  weeklyLessons: number
+  phaseReminders: number
 }> {
   let onboarding = 0
   let reengagement = 0
   let momentumTrialEmails = 0
   let momentumTrialDowngrades = 0
+  let weeklyLessons = 0
   for (const u of users) {
     const o = await processOnboardingDue(u)
     if (o.sent) onboarding++
@@ -159,6 +212,10 @@ export async function runAllEmailSequenceJobs(users: StoredUser[]): Promise<{
     const m = await processMomentumTrialDue(fresh)
     if (m.sent === 'trial_ending') momentumTrialEmails++
     if (m.downgraded) momentumTrialDowngrades++
+    fresh = findUserById(u.id) ?? fresh
+    const w = await processWeeklyLessonDue(fresh)
+    if (w.sent) weeklyLessons++
   }
-  return { onboarding, reengagement, momentumTrialEmails, momentumTrialDowngrades }
+  const phaseReminders = await processPhaseReminderEmails()
+  return { onboarding, reengagement, momentumTrialEmails, momentumTrialDowngrades, weeklyLessons, phaseReminders }
 }

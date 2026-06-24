@@ -1,8 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Compass, Sparkle, X } from '@phosphor-icons/react'
 import type { UseCompassReturn } from '@/lib/ai/useCompass'
+import { isCustomizedJourneyPath } from '@/lib/journey-nav-tabs'
 
 export type CompassWidgetProps = {
   compass: UseCompassReturn
@@ -32,6 +34,15 @@ export function CompassWidget({ compass }: CompassWidgetProps) {
     if (isOpen) close()
     else open()
   }, [isOpen, close, open])
+
+  useEffect(() => {
+    const onOpen = () => open()
+    window.addEventListener('nestquest-open-compass', onOpen)
+    return () => window.removeEventListener('nestquest-open-compass', onOpen)
+  }, [open])
+
+  const pathname = usePathname()
+  const onJourneyPage = isCustomizedJourneyPath(pathname)
 
   const onAskCompass = useCallback(() => {
     setBannerVisible(false)
@@ -85,7 +96,11 @@ export function CompassWidget({ compass }: CompassWidgetProps) {
         </div>
       ) : null}
 
-      <div className="pointer-events-auto fixed bottom-6 right-6 z-[1000]">
+      <div
+        className={`pointer-events-auto fixed z-[1000] ${
+          onJourneyPage ? 'bottom-20 right-4 sm:bottom-6 sm:right-6' : 'bottom-6 right-6'
+        }`}
+      >
         {showPulse ? (
           <span
             className="nq-compass-pulse-ring pulseRing pointer-events-none absolute -inset-1 rounded-full"

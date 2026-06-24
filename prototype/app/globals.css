@@ -1,21 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Display headlines (Gen Z / Millennial): Plus Jakarta Sans */
+/* NestQuest type — Manrope everywhere (matches landing hero via --font-nq-body) */
 @layer base {
+  :root {
+    --font-nq-sans: var(--font-nq-body), 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-nq-sans);
+  }
+
   h1 {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     font-weight: 800;
   }
+
   h2 {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     font-weight: 700;
   }
+
   h3 {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     font-weight: 600;
   }
 }
@@ -28,29 +38,29 @@ button,
 input,
 select,
 textarea {
-  font-family: var(--font-dm-sans), 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-nq-sans);
   font-weight: 400;
 }
 
-/* Light mode default — brand cream/forest; dark: class overrides below */
-/* Omio-style palette: navy, light blue, white, coral accent */
+/* Light mode default — unified editorial palette (cream + teal + warm gold) */
 :root {
-  --navy: 15, 23, 42;
-  --navy-dark: 30, 58, 95;
-  /* Soft teal wash (NestQuest / millennial shell — replaces legacy sky tints) */
-  --millennial-tint-light: 240, 253, 250;
-  --millennial-tint-mid: 204, 251, 241;
+  /* Deep ink for "navy" footer/header roles — warm near-black aligned with --foreground-rgb */
+  --navy: 23, 23, 23;
+  --navy-dark: 31, 31, 31;
+  /* Soft teal wash (replaces legacy sky tints) */
+  --millennial-tint-light: 227, 241, 238; /* #E3F1EE */
+  --millennial-tint-mid: 200, 226, 220;   /* derived */
   --coral: 225, 29, 72;
   --coral-hover: 244, 63, 94;
-  --foreground-rgb: 28, 25, 23;
-  --background-rgb: 250, 250, 245;
+  --foreground-rgb: 19, 78, 74;
+  --background-rgb: 255, 255, 255;
   --card-bg: 30, 41, 59;
   --muted-bg: 51, 65, 85;
-  --border: 71, 85, 105;
-  --accent: 34, 211, 238;
-  --accent-foreground: 15, 23, 42;
-  --text-dark: 28, 25, 23;
-  --text-muted: 100, 116, 139;
+  --border: 227, 220, 207; /* #E3DCCF */
+  --accent: 15, 118, 110;
+  --accent-foreground: 23, 23, 23;
+  --text-dark: 23, 23, 23;
+  --text-muted: 95, 90, 81; /* #5F5A51 */
   /* Omio-style type scale — bumped for readability across the app */
   --text-nav: 1.0625rem;   /* ~17px - nav links */
   --text-nav-weight: 500;
@@ -61,30 +71,30 @@ textarea {
   --text-hero: clamp(2.5rem, 5vw, 4.25rem);
   --text-hero-sub: clamp(1.25rem, 2vw, 1.625rem);
 
-  /* Revenue channel colors */
-  --revenue-primary: #0d9488; /* Teal 600 — primary CTA */
-  --revenue-primary-hover: #0f766e; /* Teal 700 — hover state */
-  --revenue-accent: #f59e0b; /* Amber 400 — highlight/badge */
-  --revenue-partner-bg: #f0fdfa; /* Teal 50 — partner card background */
-  --revenue-partner-border: #99f6e4; /* Teal 200 — partner card border */
-  --revenue-muted: #6b7280; /* Gray 500 — secondary text */
-  --revenue-success: #10b981; /* Emerald 500 — confirmation states */
+  /* Revenue channel colors (aligned to editorial palette) */
+  --revenue-primary: #147c72;        /* brand teal — primary CTA */
+  --revenue-primary-hover: #0f6058;  /* darker teal — hover */
+  --revenue-accent: #b68a3a;         /* warm gold — highlight/badge */
+  --revenue-partner-bg: #e3f1ee;     /* soft teal tint — partner card bg */
+  --revenue-partner-border: #b8ddd6; /* lighter teal — partner card border */
+  --revenue-muted: #5f5a51;          /* secondary text */
+  --revenue-success: #10b981;        /* semantic — kept */
 
-  /* Journey progress identity (customized journey) */
-  --primary: #2d6a4f;
-  --accent: #f4a261;
-  --surface: #f9f7f4;
-  --muted: #b7c9c0;
+  /* Journey progress identity (customized journey) — aligned */
+  --primary: #0f766e;
+  --accent: #b68a3a;
+  --surface: #fbf8f1;
+  --muted: #a8a89e;
   --success: #52b788;
-  --text: #1a2e25;
+  --text: #171717;
   --radius: 16px;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.1);
-  --primary-light: #40916c;
-  --accent-light: #ffd166;
-  --surface-2: #f0ede8;
-  --text-soft: #4a6358;
-  --warning: #f4a261;
+  --primary-light: #1f9489;
+  --accent-light: #d9b265;
+  --surface-2: #f3f0e8;
+  --text-soft: #5f5a51;
+  --warning: #b68a3a;
   --white: #ffffff;
   --radius-sm: 8px;
   --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.14);
@@ -120,13 +130,17 @@ body {
    * Use on route root divs so main tabs and tools share one visual language.
    */
   .app-page-shell {
-    @apply min-h-screen bg-gradient-to-b from-millennial-bg via-millennial-bg to-[#f0f4f0] text-millennial-text font-sans antialiased;
+    @apply min-h-screen text-millennial-text font-sans antialiased;
+    background: radial-gradient(circle at 88% 0%, rgba(3, 105, 161, 0.06), transparent 28%),
+      radial-gradient(circle at 6% 14%, rgba(15, 118, 110, 0.08), transparent 24%),
+      linear-gradient(180deg, #ffffff, #f0fdfa);
+    color: var(--nq-ed-text, #134e4a);
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-nq-sans);
   }
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -196,14 +210,14 @@ body {
   animation: nq-flame-pulse 5s ease-in-out infinite;
 }
 
-/* Journey timeline — current phase node pulse ring */
+/* Journey timeline — current phase node pulse ring (brand teal) */
 @keyframes journey-pulse-ring {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.4);
+    box-shadow: 0 0 0 0 rgba(20, 124, 114, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(45, 106, 79, 0);
+    box-shadow: 0 0 0 10px rgba(20, 124, 114, 0);
   }
 }
 
@@ -214,7 +228,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .journey-timeline-node--current {
     animation: none;
-    box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.25);
+    box-shadow: 0 0 0 2px rgba(20, 124, 114, 0.25);
   }
 }
 
@@ -247,19 +261,19 @@ body {
   }
 }
 
-/* ── Phase 5 — Customized Journey tab design system (scoped) ── */
+/* ── Phase 5 — Customized Journey tab design system (scoped, aligned to editorial palette) ── */
 .nq-journey-ds {
-  --primary: #2d6a4f;
-  --primary-light: #40916c;
-  --accent: #f4a261;
-  --accent-light: #ffd166;
-  --surface: #f9f7f4;
-  --surface-2: #f0ede8;
-  --muted: #b7c9c0;
-  --text: #1a2e25;
-  --text-soft: #4a6358;
+  --primary: #0f766e;
+  --primary-light: #1f9489;
+  --accent: #b68a3a;
+  --accent-light: #d9b265;
+  --surface: #fbf8f1;
+  --surface-2: #f3f0e8;
+  --muted: #a8a89e;
+  --text: #171717;
+  --text-soft: #5f5a51;
   --success: #52b788;
-  --warning: #f4a261;
+  --warning: #b68a3a;
   --white: #ffffff;
   --radius: 16px;
   --radius-sm: 8px;
@@ -276,6 +290,13 @@ body {
   background: var(--surface) !important;
 }
 
+/* Mobile bottom journey nav: fragment / anchor scroll lands above the fixed tab bar */
+@media (max-width: 767px) {
+  html:has(.nq-ed-surface.nq-journey-ds.app-page-shell) {
+    scroll-padding-bottom: max(5.25rem, calc(env(safe-area-inset-bottom, 0px) + 4.5rem));
+  }
+}
+
 .nq-journey-ds::before {
   content: '';
   position: fixed;
@@ -286,16 +307,11 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.nq-journey-ds h1,
-.nq-journey-ds h2,
-.nq-journey-ds .display {
-  font-family: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
-  font-weight: 400;
+/* Journey-shell heading defaults — Manrope (same as landing hero) */
+.nq-journey-ds :where(h1, h2, h3, .display) {
+  font-family: var(--font-nq-sans);
+  font-weight: 700;
   letter-spacing: -0.02em;
-}
-
-.nq-journey-ds h3 {
-  font-family: var(--font-dm-sans), 'DM Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 .nq-journey-ds .label,
@@ -355,10 +371,10 @@ body {
 @keyframes nq-cta-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.4);
+    box-shadow: 0 0 0 0 rgba(20, 124, 114, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(45, 106, 79, 0);
+    box-shadow: 0 0 0 12px rgba(20, 124, 114, 0);
   }
 }
 
@@ -373,6 +389,20 @@ body {
   transition:
     opacity 500ms var(--transition),
     transform 500ms var(--transition);
+}
+
+/* Tab panels swap dynamically — never hide roadmap / tab content behind reveal animation */
+.nq-journey-ds .nq-journey-roadmap-root,
+.nq-journey-ds .nq-journey-roadmap-root .nq-card,
+.nq-journey-ds .nq-journey-roadmap-root .nq-section,
+.nq-journey-ds .nq-journey-roadmap-root .nq-ed-soft-card,
+.nq-journey-ds .nq-journey-roadmap-root .nq-hub-panel,
+.nq-journey-ds .nq-journey-main,
+.nq-journey-ds .nq-journey-main .nq-card,
+.nq-journey-ds .nq-journey-main .nq-ed-soft-card,
+.nq-journey-ds .nq-journey-main .nq-hub-panel {
+  opacity: 1;
+  transform: none;
 }
 
 .nq-journey-ds .nq-card.nq-reveal,
@@ -411,10 +441,10 @@ body {
 @keyframes pulseRing {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(244, 162, 97, 0.55);
+    box-shadow: 0 0 0 0 rgba(182, 138, 58, 0.55);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(244, 162, 97, 0);
+    box-shadow: 0 0 0 12px rgba(182, 138, 58, 0);
   }
 }
 

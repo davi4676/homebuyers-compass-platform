@@ -1,8 +1,9 @@
-/** Plain-English glossary for GlossaryTooltip and future “plain English mode”. */
+/** Plain-English glossary for GlossaryTooltip and /glossary page. */
 export const GLOSSARY = {
   DTI: 'Debt-to-income: how much of your monthly income goes to all debt payments, including the new mortgage.',
   LTV: 'Loan-to-value: your loan size divided by the home price. Higher LTV often means PMI and higher rates.',
   PMI: 'Private mortgage insurance: protects the lender when you put down less than 20%. It is usually removable later.',
+  MIP: 'Mortgage insurance premium: FHA’s version of PMI. It includes an upfront fee and monthly payments on many FHA loans.',
   APR: 'Annual percentage rate: the yearly cost of credit including some fees — not the same as the note rate alone.',
   Escrow: 'A holding account for taxes and insurance collected with your payment so they are paid when due.',
   'Closing Costs': 'One-time fees at closing: lender fees, title, recording, prepaid items, and more.',
@@ -15,6 +16,32 @@ export const GLOSSARY = {
   HOA: 'Homeowners association: fees and rules for shared communities.',
   AMI: 'Area median income: a local benchmark many down-payment and affordable-housing programs use for income limits.',
   DPA: 'Down payment assistance: grants or secondary loans that help cover your down payment or sometimes closing costs.',
+  'Funding Fee': 'A one-time VA loan fee that helps fund the program. Some veterans are exempt.',
+  ARM: 'Adjustable-rate mortgage: the interest rate can change after an initial fixed period.',
+  'Fixed Rate': 'A mortgage rate that stays the same for the life of the loan (or until you refinance).',
+  'Discount Points': 'Optional upfront fees you pay at closing to lower your interest rate.',
+  'Lender Credits': 'Money the lender gives you at closing to offset fees — often in exchange for a slightly higher rate.',
+  'Loan Estimate': 'A standardized form lenders must give you within three business days of applying — shows rate, fees, and cash to close.',
+  'Closing Disclosure': 'The final loan terms and closing costs form you get at least three business days before signing.',
+  Title: 'Legal proof of who owns a property and whether anyone else has a claim on it.',
+  Deed: 'The document that transfers ownership of the home to you at closing.',
+  Lien: 'A legal claim on the property — usually the mortgage — until the debt is paid off.',
+  Comps: 'Comparable recent sales of similar homes nearby — used to judge fair price and appraisals.',
+  Underwriting: 'The lender’s final review of your finances, the property, and the loan before they approve funding.',
+  PITI: 'Principal, interest, taxes, and insurance — the core pieces of many monthly mortgage payments.',
+  'Gift Letter': 'A signed statement from someone giving you money for your down payment, required by most lenders.',
+  'Rate Lock': 'A lender promise to hold a quoted interest rate for a set number of days while you close.',
+  'Front-End DTI': 'Housing payment divided by gross monthly income — how much of your pay goes to the home itself.',
+  'Back-End DTI': 'All monthly debt payments plus housing divided by gross income — the number lenders watch closely.',
+  Servicer: 'The company that collects your monthly payment after closing — not always the same as your original lender.',
+  'Conventional Loan': 'A mortgage not insured by FHA, VA, or USDA — often requires higher credit and down payment than FHA.',
+  'FHA Loan': 'A government-backed loan with flexible credit rules and down payments as low as 3.5% for many buyers.',
+  'VA Loan': 'A benefit for eligible veterans and service members — often no down payment and no monthly PMI.',
+  'USDA Loan': 'A zero-down loan for eligible buyers in qualifying rural and suburban areas, with income limits.',
+  "Buyer's Agent": 'A real estate agent who represents you — not the seller — in the purchase.',
+  'Listing Agent': 'The agent hired by the seller to market and sell the home.',
+  Origination: 'Lender charges for processing and setting up your loan — often negotiable on the Loan Estimate.',
+  Utilization: 'How much of your available credit card limit you are using — high utilization can lower your credit score.',
 } as const
 
 /** Short inline label when Plain English mode replaces the jargon link text. */
@@ -22,6 +49,7 @@ export const GLOSSARY_PLAIN_LABEL: { [K in keyof typeof GLOSSARY]: string } = {
   DTI: 'Debt vs. income',
   LTV: 'Loan vs. home price',
   PMI: 'Mortgage insurance (if under 20% down)',
+  MIP: 'FHA mortgage insurance',
   APR: 'Full loan cost per year',
   Escrow: 'Tax & insurance account',
   'Closing Costs': 'Fees at closing',
@@ -34,6 +62,39 @@ export const GLOSSARY_PLAIN_LABEL: { [K in keyof typeof GLOSSARY]: string } = {
   HOA: 'Community fees & rules',
   AMI: 'Typical local income level',
   DPA: 'Help with your down payment',
+  'Funding Fee': 'VA loan fee',
+  ARM: 'Rate can change later',
+  'Fixed Rate': 'Rate stays the same',
+  'Discount Points': 'Pay upfront for lower rate',
+  'Lender Credits': 'Lender pays some closing costs',
+  'Loan Estimate': 'Lender fee disclosure form',
+  'Closing Disclosure': 'Final closing cost form',
+  Title: 'Ownership record',
+  Deed: 'Ownership transfer document',
+  Lien: 'Claim on the property',
+  Comps: 'Similar recent sales',
+  Underwriting: 'Final lender review',
+  PITI: 'Payment + tax + insurance',
+  'Gift Letter': 'Down payment gift proof',
+  'Rate Lock': 'Hold your quoted rate',
+  'Front-End DTI': 'Housing-only debt ratio',
+  'Back-End DTI': 'All debt ratio',
+  Servicer: 'Payment collector after closing',
+  'Conventional Loan': 'Standard non-government loan',
+  'FHA Loan': 'Government-backed flexible loan',
+  'VA Loan': 'Veteran benefit loan',
+  'USDA Loan': 'Rural zero-down loan',
+  "Buyer's Agent": 'Agent who works for you',
+  'Listing Agent': 'Seller’s agent',
+  Origination: 'Loan setup fees',
+  Utilization: 'Credit card balance vs. limit',
 }
 
 export type GlossaryTermId = keyof typeof GLOSSARY
+
+/** Sorted term ids for the glossary page. */
+export function getGlossaryTermIds(): GlossaryTermId[] {
+  return (Object.keys(GLOSSARY) as GlossaryTermId[]).sort((a, b) =>
+    GLOSSARY_PLAIN_LABEL[a].localeCompare(GLOSSARY_PLAIN_LABEL[b])
+  )
+}

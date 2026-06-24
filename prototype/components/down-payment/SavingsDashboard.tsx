@@ -80,8 +80,7 @@ export default function SavingsDashboard({
                   Upgrade to Premium to unlock personalized optimization
                 </div>
                 <div className="text-sm text-gray-400 mb-3">
-                  Premium users save an average of 2.5x more on down payment and closing costs
-                  through personalized strategies and negotiation tools.
+                  Momentum adds lender comparison workflows and scripts — typical savings opportunities often fall in the $8k–$15k range.
                 </div>
                 <button
                   onClick={() => (window.location.href = '/upgrade?tier=momentum&feature=downPaymentOptimizer')}
@@ -104,7 +103,7 @@ export default function SavingsDashboard({
                 </div>
                 <div className="text-sm text-gray-400 mb-3">
                   Pro users get AI-powered down payment source blending, automated closing cost
-                  negotiation, and document automation—saving an average of $15,000+.
+                  negotiation, and document automation — typical savings opportunities often fall in the $8k–$15k range.
                 </div>
                 <button
                   onClick={() => (window.location.href = '/upgrade?tier=navigator&feature=downPaymentOptimizer')}

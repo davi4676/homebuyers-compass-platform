@@ -377,7 +377,7 @@ export default function DPADiscoveryEngine({
                 </h4>
                 <p className="text-sm text-gray-300 mb-4">
                   Premium users get address-level program matching, stacking optimization, and
-                  application success prediction. Average Premium user discovers $8,420 more in DPA.
+                  application guidance. Program amounts vary — verify each opportunity with the administrator.
                 </p>
                 <button
                   onClick={() => (window.location.href = '/upgrade?tier=momentum&feature=downPaymentOptimizer')}

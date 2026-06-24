@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowRight, CaretRight } from '@phosphor-icons/react'
@@ -49,6 +49,10 @@ type JourneyOnboardingWizardProps = {
   reduceMotion?: boolean
   /** From stored quiz; used for solo-specific Navigator upgrade copy. */
   quizIcpType?: string | null
+  /** Step 1: merged Today checklist — one card instead of two stacked panels. */
+  todayChecklist?: ReactNode
+  /** Phase progress row — rendered inside the same card shell. */
+  statusStrip?: ReactNode
 }
 
 export default function JourneyOnboardingWizard({
@@ -65,6 +69,8 @@ export default function JourneyOnboardingWizard({
   onComplete,
   reduceMotion = false,
   quizIcpType = null,
+  todayChecklist = null,
+  statusStrip = null,
 }: JourneyOnboardingWizardProps) {
   const [step, setStep] = useState(1)
   const def = TIER_DEFINITIONS[effectiveTier]
@@ -176,31 +182,48 @@ export default function JourneyOnboardingWizard({
   )
 
   return (
-    <div className="mb-8 overflow-hidden rounded-3xl border-2 border-teal-200/70 bg-gradient-to-br from-white via-teal-50/40 to-teal-50/30 p-5 shadow-xl shadow-teal-900/10 sm:p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800/90">
-          Welcome · step {step} of {STEPS}
-        </p>
-        <MindsetTag mindset={def.mindset} className="border-teal-100 bg-white/90" />
-      </div>
+    <div className="relative overflow-hidden rounded-3xl border border-[var(--nq-ed-line)] bg-[var(--nq-ed-surface)] shadow-[0_14px_32px_rgba(29,23,17,0.05)]">
+        <span
+          className="pointer-events-none absolute left-6 top-0 z-[1] h-[2px] w-9 rounded-b bg-[var(--nq-ed-accent)] sm:left-7"
+          aria-hidden
+        />
 
-      {step === 1 ? (
+        {statusStrip ? <div className="px-5 pt-5 sm:px-6 sm:pt-6">{statusStrip}</div> : null}
+
+        <div className="p-5 sm:p-6">
+        {step === 1 && todayChecklist ? null : (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--nq-ed-muted)]">
+            Tour · step {step} of {STEPS}
+          </p>
+          <MindsetTag mindset={def.mindset} className="max-w-[min(100%,20rem)]" />
+        </div>
+        )}
+
+      {step === 1 && todayChecklist ? (
+        <motion.div
+          initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {todayChecklist}
+        </motion.div>
+      ) : step === 1 ? (
         <motion.div
           initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          <TierBadge tier={effectiveTier} className="max-w-md border-teal-100 bg-white/95" />
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Welcome to your NestQuest journey</h2>
-          <p className="text-slate-700 sm:text-lg">{welcomeCopy}</p>
-          <div className="rounded-2xl border border-emerald-200/70 bg-white/95 p-4 shadow-sm sm:p-5">
-            <p className="text-sm font-bold text-slate-900">Three money pillars</p>
-            <p className="mt-1 text-sm text-slate-600">
-              NestQuest helps you <span className="font-semibold text-emerald-800">save money</span>,{' '}
-              <span className="font-semibold text-teal-800">find money</span>, and{' '}
-              <span className="font-semibold text-violet-800">unlock creative solutions</span> — without the noise.
+          <TierBadge tier={effectiveTier} className="max-w-md" />
+          <h2 className="font-display text-xl font-semibold tracking-tight text-[var(--nq-ed-text)] sm:text-2xl">
+            Welcome to your NestQuest journey
+          </h2>
+          <p className="text-[15px] leading-relaxed text-[var(--nq-ed-muted)] sm:text-base">{welcomeCopy}</p>
+          <div className="rounded-2xl border border-[var(--nq-ed-line)] bg-[#fffdf8] p-4 sm:p-5">
+            <p className="text-sm font-bold text-[var(--nq-ed-text)]">Three money pillars</p>
+            <p className="mt-1 text-sm text-[var(--nq-ed-muted)]">
+              NestQuest helps you save money, find money, and unlock creative solutions — without the noise.
             </p>
-            <ul className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-3">
+            <ul className="mt-3 grid gap-2 text-sm text-[var(--nq-ed-muted)] sm:grid-cols-3">
               <li className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2">
                 <span className="font-bold text-emerald-900">Save</span> — lower payments, fees, and lifetime cost.
               </li>
@@ -441,25 +464,34 @@ export default function JourneyOnboardingWizard({
       ) : null}
 
       {step < STEPS ? (
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-teal-100/90 pt-6">
+        <div
+          className={`flex flex-wrap items-center justify-between gap-3 border-t border-[var(--nq-ed-line)] pt-5 ${
+            step === 1 && todayChecklist ? 'mt-0' : 'mt-8'
+          }`}
+        >
           <button
             type="button"
             disabled={step <= 1}
             onClick={() => setStep((s) => Math.max(1, s - 1))}
-            className="text-sm font-semibold text-slate-600 disabled:opacity-40"
+            className="text-sm font-semibold text-[var(--nq-ed-muted)] disabled:opacity-40"
           >
             Back
           </button>
           <button
             type="button"
             onClick={() => setStep((s) => Math.min(STEPS, s + 1))}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-md"
+            className={
+              step === 1 && todayChecklist
+                ? 'text-sm font-semibold text-[var(--nq-ed-accent)] underline decoration-[var(--nq-ed-accent)]/40 underline-offset-2 hover:text-[#0f6058]'
+                : 'inline-flex items-center gap-2 rounded-xl bg-[var(--nq-ed-accent)] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#0f6058]'
+            }
           >
-            Continue
-            <CaretRight weight="duotone" size={20} aria-hidden />
+            {step === 1 && todayChecklist ? 'Continue tour' : 'Continue'}
+            {step === 1 && todayChecklist ? null : <CaretRight weight="duotone" size={20} aria-hidden />}
           </button>
         </div>
       ) : null}
+        </div>
     </div>
   )
 }

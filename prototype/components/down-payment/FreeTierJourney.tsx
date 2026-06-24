@@ -285,7 +285,7 @@ export default function FreeTierJourney({
                       <p className="text-sm text-gray-300 mb-4">
                         Upgrade to Premium to unlock AI-driven down payment source matching,
                         closing cost comparison by lender, and automated savings plan generation.
-                        Premium users save an average of $8,420 more.
+                        Premium plans add structured tools to compare lenders and programs — typical savings opportunities: $8k–$15k.
                       </p>
                       <button
                         onClick={onUpgrade}

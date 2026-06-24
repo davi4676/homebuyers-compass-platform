@@ -36,12 +36,10 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      { source: '/dashboard', destination: '/customized-journey', permanent: true },
       { source: '/journey', destination: '/customized-journey', permanent: true },
       { source: '/action-plan', destination: '/customized-journey', permanent: true },
       { source: '/quiz-starter', destination: '/quiz', permanent: true },
       { source: '/homebuyer', destination: '/', permanent: true },
-      { source: '/marketplace', destination: '/resources', permanent: false },
     ]
   },
   async headers() {

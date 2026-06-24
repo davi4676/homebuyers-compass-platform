@@ -9,23 +9,23 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        body: ['var(--font-dm-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        sans: ['var(--font-dm-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--font-nq-sans)'],
+        body: ['var(--font-nq-sans)'],
+        sans: ['var(--font-nq-sans)'],
       },
       keyframes: {
         savingsPulse: {
           '0%': {
             transform: 'scale(1)',
-            boxShadow: '0 0 0 0 rgba(13, 148, 136, 0.4)',
+            boxShadow: '0 0 0 0 rgba(20, 124, 114, 0.4)',
           },
           '70%': {
             transform: 'scale(1.02)',
-            boxShadow: '0 0 0 20px rgba(13, 148, 136, 0)',
+            boxShadow: '0 0 0 20px rgba(20, 124, 114, 0)',
           },
           '100%': {
             transform: 'scale(1)',
-            boxShadow: '0 0 0 0 rgba(13, 148, 136, 0)',
+            boxShadow: '0 0 0 0 rgba(20, 124, 114, 0)',
           },
         },
       },
@@ -38,45 +38,49 @@ module.exports = {
         'logo-md': ['1.5rem', { lineHeight: '1.75rem', fontWeight: '700' }],
       },
       colors: {
-        /** Phase 2 “Millennial Sweet Spot” tokens (use as bg-millennial-* / text-millennial-*) */
+        /**
+         * Unified editorial palette (Phase 2 "Millennial Sweet Spot" namespace retained for backward compat).
+         * Page bg #F3F0E8 · Surface #FBF8F1 · Border #E3DCCF · Ink #171717 · Muted #5F5A51
+         * Brand teal #147C72 · Soft teal #E3F1EE · Warm gold #B68A3A
+         */
         millennial: {
-          bg: '#fafaf5',
-          surface: '#ffffff',
-          border: '#e7e5e4',
-          primary: '#0d9488',
-          'primary-hover': '#0b7a72',
-          'primary-light': '#ccfbf1',
-          accent: '#c0622a',
-          'accent-light': '#fed7aa',
-          text: '#1c1917',
-          'text-muted': '#57534e',
-          'text-subtle': '#a8a29e',
-          'cta-primary': '#0d9488',
-          'cta-hover': '#0b7a72',
-          'cta-secondary': '#1a6b3c',
-          'cta-gold': '#d4a017',
+          bg: '#f3f0e8',
+          surface: '#fbf8f1',
+          border: '#e3dccf',
+          primary: '#147c72',
+          'primary-hover': '#0f6058',
+          'primary-light': '#e3f1ee',
+          accent: '#b68a3a',
+          'accent-light': '#f2e5c7',
+          text: '#171717',
+          'text-muted': '#5f5a51',
+          'text-subtle': '#9c9588',
+          'cta-primary': '#147c72',
+          'cta-hover': '#0f6058',
+          'cta-secondary': '#147c72',
+          'cta-gold': '#b68a3a',
         },
         brand: {
-          cream: '#FAF7F2',
-          forest: '#1B4332',
-          sage: '#52796F',
-          terracotta: '#C1440E',
-          gold: '#D4A017',
-          charcoal: '#2D2D2D',
-          mist: '#EAF0EC',
+          cream: '#fbf8f1',
+          forest: '#147c72',
+          sage: '#3e867f',
+          terracotta: '#b68a3a',
+          gold: '#b68a3a',
+          charcoal: '#171717',
+          mist: '#e3f1ee',
         },
-        /** Unified design system tokens */
+        /** Unified design system tokens (aligned to editorial palette) */
         unified: {
-          bg: '#fafaf9',
-          surface: '#ffffff',
-          primary: '#1a6b3c',
-          'primary-hover': '#155c33',
-          accent: '#0d9488',
-          highlight: '#c0622a',
-          'text-primary': '#1c1917',
-          'text-secondary': '#57534e',
-          'text-muted': '#a8a29e',
-          border: '#e7e5e4',
+          bg: '#f3f0e8',
+          surface: '#fbf8f1',
+          primary: '#147c72',
+          'primary-hover': '#0f6058',
+          accent: '#147c72',
+          highlight: '#b68a3a',
+          'text-primary': '#171717',
+          'text-secondary': '#5f5a51',
+          'text-muted': '#9c9588',
+          border: '#e3dccf',
           success: '#16a34a',
           warning: '#d97706',
         },

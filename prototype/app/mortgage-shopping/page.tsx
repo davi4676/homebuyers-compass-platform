@@ -233,7 +233,7 @@ export default function MortgageShoppingPage() {
                 </h1>
                 <p className="text-lg text-[#57534e] max-w-2xl mx-auto">
                   A step-by-step journey to maximize your savings while shopping for the best
-                  mortgage rate. Most users save $15,000-$50,000 with our proven strategy.
+                  mortgage rate. Typical savings opportunities often fall in the $8k–$15k range when you compare lenders and fees.
                 </p>
               </div>
 

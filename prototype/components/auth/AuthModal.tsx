@@ -536,9 +536,9 @@ function SignUpForm({
             />
             <label htmlFor="terms" className="text-sm text-gray-600">
               I agree to the{' '}
-              <a href="/legal/terms" className="text-teal-600 hover:underline">Terms of Service</a>
+              <a href="/terms" className="text-teal-600 hover:underline">Terms of Service</a>
               {' '}and{' '}
-              <a href="/legal/privacy" className="text-teal-600 hover:underline">Privacy Policy</a>
+              <a href="/privacy" className="text-teal-600 hover:underline">Privacy Policy</a>
             </label>
           </div>
 

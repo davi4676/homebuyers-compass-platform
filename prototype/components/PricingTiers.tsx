@@ -72,7 +72,7 @@ export default function PricingTiers({
       ],
       cta: 'Choose Momentum',
       popular: true,
-      savings: 'Save $2,000-$10,000+',
+      savings: 'Typical opportunities vary by deal',
     },
     navigator: {
       name: TIER_DEFINITIONS.navigator.name,
@@ -95,7 +95,7 @@ export default function PricingTiers({
       limitations: [],
       cta: 'Choose Navigator+',
       popular: false,
-      savings: 'Save $5,000-$15,000+',
+      savings: 'Typical opportunities vary by deal',
     },
     navigator_plus: {
       name: TIER_DEFINITIONS.navigator_plus.name,

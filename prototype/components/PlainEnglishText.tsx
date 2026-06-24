@@ -11,7 +11,7 @@ export default function PlainEnglishText({
 }: {
   text: string
   className?: string
-  as?: 'span' | 'p' | 'h2' | 'h3' | 'div' | 'label'
+  as?: 'span' | 'p' | 'h1' | 'h2' | 'h3' | 'div' | 'label'
 }) {
   const plain = usePlainEnglish()
   const out = applyPlainEnglishCopy(text, plain)

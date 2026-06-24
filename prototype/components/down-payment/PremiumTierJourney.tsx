@@ -348,8 +348,8 @@ export default function PremiumTierJourney({
                       </h4>
                       <p className="text-sm text-gray-300 mb-4">
                         Upgrade to Pro for AI-powered down payment source blending, automated closing
-                        cost negotiation emails, and document automation. Pro users save an average of
-                        $15,000+.
+                        cost negotiation emails, and document automation. Typical savings opportunities often fall in the
+                        $8k–$15k range depending on your deal.
                       </p>
                       <button
                         onClick={onUpgrade}

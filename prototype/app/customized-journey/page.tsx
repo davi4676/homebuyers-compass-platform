@@ -9,9 +9,11 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useSafeSearchParams } from '@/lib/use-safe-search-params'
 import { useAuth } from '@/lib/hooks/useAuth'
 import UserJourneyTracker from '@/components/analytics/UserJourneyTracker'
+import JourneyValuePillars from '@/components/journey/JourneyValuePillars'
+import JourneyHubHero from '@/components/journey/JourneyHubHero'
+import NqMarqueeTicker from '@/components/landing/NqMarqueeTicker'
 import { useExperiment } from '@/lib/hooks/useExperiment'
 import NQGuidedRoadmap from '@/components/NQGuidedRoadmap'
-import PlainEnglishText from '@/components/PlainEnglishText'
 import {
   PLAIN_ENGLISH_LS_KEY,
   PLAIN_ENGLISH_JOURNEY_CALLOUT_DISMISSED_KEY,
@@ -32,16 +34,12 @@ import {
 import { REFERRED_BY_LS_KEY, getOrCreateReferralCode } from '@/lib/referral-program'
 import { referralSlugFromUser } from '@/lib/referral-slug'
 import { getTrialEndingSoonBanner } from '@/lib/user-tracking'
-import JourneyTodayHero from '@/components/journey/JourneyTodayHero'
-import JourneyPhaseProgressRing from '@/components/journey/JourneyPhaseProgressRing'
-import JourneyProgressIdentityHeader from '@/components/journey/JourneyProgressIdentityHeader'
+import JourneyTabReveal from '@/components/journey/JourneyTabReveal'
 import SessionWinsBanner from '@/components/journey/SessionWinsBanner'
 import JourneyReengagementBanner from '@/components/journey/JourneyReengagementBanner'
-import JourneyTabReveal from '@/components/journey/JourneyTabReveal'
 import { buildUserSnapshot, loadQuizDataFromLocalStorage } from '@/lib/user-snapshot'
 import type { UserSnapshot } from '@/lib/user-snapshot'
 import { useJourneyPhaseRingProgress } from '@/hooks/use-journey-phase-ring'
-import { calculateMomentumScore, getMomentumColor } from '@/lib/momentum-score'
 import { useMomentumFactors } from '@/hooks/use-momentum-factors'
 import { track } from '@/lib/analytics'
 import { useCompass } from '@/lib/ai/useCompass'
@@ -55,6 +53,7 @@ const CompassPanel = dynamic(
 
 const CERT_PURCHASE_TRACKED_SS = 'nq_certificate_purchased_tracked_session'
 const JOURNEY_ENTERED_TRACKED_SS = 'nq_journey_entered_posthog'
+const ONBOARDING_LS = 'nq_customized_onboarding_v1'
 
 export default function CustomizedJourneyPage() {
   const searchParams = useSafeSearchParams()
@@ -71,6 +70,7 @@ export default function CustomizedJourneyPage() {
   const [showRefLandingBanner, setShowRefLandingBanner] = useState(false)
   const [identitySnapshot, setIdentitySnapshot] = useState<UserSnapshot | null>(null)
   const [compassLsTick, setCompassLsTick] = useState(0)
+  const [onboardingDone, setOnboardingDone] = useState(true)
 
   const plainEnglishTooltip =
     'Plain English Mode replaces financial jargon with simple explanations. Perfect if this is your first time buying a home.'
@@ -108,9 +108,8 @@ export default function CustomizedJourneyPage() {
     () => parseJourneyTabParam(new URLSearchParams(journeySearchKey).get('tab')),
     [journeySearchKey]
   )
-  const overviewMobileCompact = activeJourneyTab === 'today'
+  const isTodayTab = activeJourneyTab === 'today'
   const momentumFactors = useMomentumFactors()
-  const heroRingAccent = getMomentumColor(calculateMomentumScore(momentumFactors))
   const heroPhaseProgress = useJourneyPhaseRingProgress()
 
   useEffect(() => {
@@ -128,6 +127,24 @@ export default function CustomizedJourneyPage() {
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
   }, [user?.firstName])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const read = () => {
+      try {
+        setOnboardingDone(localStorage.getItem(ONBOARDING_LS) === '1')
+      } catch {
+        setOnboardingDone(false)
+      }
+    }
+    read()
+    window.addEventListener('storage', read)
+    window.addEventListener('nq-onboarding-complete', read)
+    return () => {
+      window.removeEventListener('storage', read)
+      window.removeEventListener('nq-onboarding-complete', read)
+    }
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -302,73 +319,20 @@ export default function CustomizedJourneyPage() {
   }
 
   return (
-    <div className="nq-journey-ds app-page-shell ml-0 pb-20 text-base leading-relaxed sm:ml-52 sm:pb-0 md:text-lg">
+    <div className="nq-ed-surface nq-journey-ds app-page-shell nq-ed-page-wash ml-0 pb-20 text-base leading-relaxed sm:ml-[300px] sm:pb-0 md:text-lg">
       <JourneyTabReveal />
-      {/* Bottom (mobile) + left sidebar (desktop) nav: <JourneyNav /> in TopNav */}
       <UserJourneyTracker />
 
-      <div
-        className={`nq-section mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${overviewMobileCompact ? 'pt-2 max-md:pt-2 md:pt-4' : 'pt-4'}`}
-      >
-        <div
-          className={`nq-card relative overflow-hidden rounded-2xl border border-millennial-border bg-white shadow-xl ${
-            overviewMobileCompact ? 'max-md:shadow-md' : ''
-          }`}
-        >
-          <div
-            className={`relative flex items-center overflow-hidden ${
-              overviewMobileCompact
-                ? 'min-h-0 max-md:min-h-[4.25rem] sm:min-h-[9.5rem]'
-                : 'min-h-[8.5rem] sm:min-h-[9.5rem]'
-            }`}
-          >
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage:
-                  'linear-gradient(to top, rgba(250,250,245,0.96) 0%, rgba(250,250,245,0.4) 50%, transparent 100%), url(https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80)',
-              }}
-            />
-            <div
-              className={`relative z-10 flex w-full flex-col justify-center sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-10 ${
-                overviewMobileCompact ? 'gap-3 px-4 py-3 sm:py-5' : 'gap-4 px-6 py-5'
-              }`}
-            >
-              <div className="min-w-0 flex-1 text-center sm:text-left">
-                <div
-                  className="rounded-xl px-1 py-1"
-                  style={{
-                    background: 'var(--surface)',
-                    boxShadow: 'var(--shadow-sm)',
-                    borderRadius: 'var(--radius)',
-                  }}
-                >
-                  <JourneyProgressIdentityHeader user={user ?? null} snapshot={identitySnapshot} />
-                </div>
-                <PlainEnglishText
-                  as="p"
-                  className={`mt-3 text-base font-medium text-millennial-text-muted sm:text-lg ${
-                    overviewMobileCompact ? 'max-md:hidden' : ''
-                  }`}
-                  text="Start with Today below — then use the other tabs anytime for learn, library, programs, inbox, and upgrades."
-                />
-              </div>
-              <div
-                className={`flex shrink-0 justify-center ${
-                  overviewMobileCompact ? 'scale-90 sm:scale-100' : ''
-                }`}
-              >
-                <JourneyPhaseProgressRing
-                  pct={heroPhaseProgress.pct}
-                  size={overviewMobileCompact ? 'md' : 'lg'}
-                  accentColor={heroRingAccent}
-                  className={overviewMobileCompact ? 'sm:mr-1' : ''}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+      <NqMarqueeTicker />
+      <JourneyHubHero
+        phaseCompleted={heroPhaseProgress.completed}
+        phaseTotal={heroPhaseProgress.total}
+        phasePct={heroPhaseProgress.pct}
+        searchKey={journeySearchKey}
+        activeTab={activeJourneyTab}
+      />
 
+      <main className="mx-auto max-w-6xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8 md:py-5">
         {trialEndingBanner ? (
           <motion.div
             initial={{ opacity: 0, y: -6 }}
@@ -393,14 +357,14 @@ export default function CustomizedJourneyPage() {
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="nq-card mt-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-950 shadow-sm"
+            className="nq-ed-soft-card mt-4 rounded-xl border border-[var(--nq-ed-line)] bg-[var(--nq-ed-accent-soft)] px-4 py-3 text-sm text-[var(--nq-ed-text)] shadow-sm"
             role="status"
           >
             You were referred by a friend — sign up today and get $50 off your first plan.
             <button
               type="button"
               onClick={() => setShowRefLandingBanner(false)}
-              className="ml-2 font-semibold text-teal-800 underline"
+              className="ml-2 font-semibold text-[var(--nq-ed-accent)] underline"
             >
               Dismiss
             </button>
@@ -411,14 +375,14 @@ export default function CustomizedJourneyPage() {
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="nq-card mt-4 rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-md"
+            className="nq-ed-soft-card mt-4 rounded-xl border border-[var(--nq-ed-line)] px-4 py-4 shadow-sm"
             role="region"
             aria-label="Journey notification"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="font-bold text-slate-900">{onboardingNotify.title}</p>
-                <p className="mt-1 text-sm text-slate-600">{onboardingNotify.body}</p>
+                <p className="font-bold text-[var(--nq-ed-text)]">{onboardingNotify.title}</p>
+                <p className="mt-1 text-sm text-[var(--nq-ed-muted)]">{onboardingNotify.body}</p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
                 <button
@@ -429,13 +393,13 @@ export default function CustomizedJourneyPage() {
                       setReferralModalKick((k) => k + 1)
                     } else if ('href' in cta) {
                       router.push(cta.href)
-                    } else {
+                    } else if ('tab' in cta) {
                       router.push(
                         journeyTabHrefPreservingSearch(JOURNEY_PAGE_PATH, journeySearchKey, cta.tab)
                       )
                     }
                   }}
-                  className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+                  className="rounded-2xl bg-[var(--nq-ed-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f6058]"
                 >
                   {onboardingNotify.cta.label}
                 </button>
@@ -445,7 +409,7 @@ export default function CustomizedJourneyPage() {
                     dismissOnboardingNotification(onboardingNotify.id)
                     setOnboardingNotify(getActiveOnboardingNotification())
                   }}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--nq-ed-muted)] hover:bg-[var(--nq-ed-accent-soft)]"
                 >
                   Dismiss
                 </button>
@@ -453,106 +417,30 @@ export default function CustomizedJourneyPage() {
             </div>
           </motion.div>
         ) : null}
-      </div>
 
-      <main
-        className={`nq-section mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${
-          overviewMobileCompact ? 'py-4 max-md:py-3 md:py-14' : 'py-10 md:py-14'
-        }`}
-      >
-        <div className="min-w-0 flex-1">
-          <JourneyReengagementBanner />
-          <div className={overviewMobileCompact ? 'max-md:hidden' : undefined}>
-            <SessionWinsBanner />
-            <JourneyTodayHero searchKey={journeySearchKey} activeJourneyTab={activeJourneyTab} />
-          </div>
-          <div className="mb-6 space-y-3">
-            {showPlainEnglishCallout ? (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="nq-card flex flex-col gap-3 rounded-xl border border-amber-200/90 bg-gradient-to-r from-amber-50 to-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                role="region"
-                aria-label="Plain English suggestion"
-              >
-                <p className="min-w-0 flex-1 text-sm font-medium text-slate-800 sm:text-base">
-                  <span aria-hidden>💡</span> New to homebuying? Turn on Plain English Mode for jargon-free guidance.
-                </p>
-                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                  <button
-                    type="button"
-                    onClick={turnOnPlainEnglish}
-                    className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700"
-                  >
-                    Turn On
-                  </button>
-                  <button
-                    type="button"
-                    onClick={dismissPlainEnglishCallout}
-                    className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-                    aria-label="Dismiss Plain English suggestion"
-                  >
-                    <X weight="duotone" size={20} className="text-[var(--muted)]" aria-hidden />
-                  </button>
-                </div>
-              </motion.div>
-            ) : null}
-
-            <div className="nq-card flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-teal-200/80 bg-gradient-to-br from-white via-teal-50/40 to-white px-4 py-3.5 shadow-md sm:px-5 sm:py-4">
-              <label
-                className="flex cursor-pointer flex-wrap items-center gap-3 text-base font-semibold text-millennial-text"
-                title={plainEnglishTooltip}
-              >
-                <span>Plain English mode</span>
-                {getStoredQuizTransactionMeta().icpType === 'first-gen' ? (
-                  <span
-                    className="max-w-[min(100%,14rem)] rounded-full bg-teal-100 px-2 py-1 text-center text-[11px] font-semibold leading-snug text-teal-900 sm:max-w-none sm:text-xs"
-                    title={
-                      plainEnglish
-                        ? 'Plain English is on — recommended for first-time buyers'
-                        : 'Turn on Plain English for jargon-free guidance'
-                    }
-                  >
-                    {plainEnglish
-                      ? 'On — recommended for first-time buyers'
-                      : 'Turn on for jargon-free guidance'}
-                  </span>
-                ) : null}
-                <span id="plain-english-mode-tip" className="sr-only">
-                  {plainEnglishTooltip}
-                </span>
-                <input
-                  type="checkbox"
-                  className="h-6 w-6 shrink-0 accent-[#0d9488]"
-                  checked={plainEnglish}
-                  onChange={(e) => {
-                    const on = e.target.checked
-                    try {
-                      localStorage.setItem(PLAIN_ENGLISH_LS_KEY, on ? '1' : '0')
-                      window.dispatchEvent(new Event('nq-plain-english-changed'))
-                    } catch {
-                      /* ignore */
-                    }
-                  }}
-                  aria-describedby="plain-english-mode-tip"
-                />
-              </label>
-            </div>
-          </div>
+        <div className="nq-journey-main min-w-0 flex-1">
+          {isTodayTab && onboardingDone ? (
+            <>
+              <JourneyReengagementBanner />
+              <JourneyValuePillars />
+            </>
+          ) : isTodayTab ? (
+            <JourneyReengagementBanner />
+          ) : null}
 
           {showReturnBanner ? (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="nq-card mb-6 flex items-center justify-between gap-3 rounded-xl border border-millennial-primary-light bg-millennial-primary-light/30 px-4 py-3"
+              className="nq-hub-panel flex items-center justify-between gap-3 px-4 py-3"
             >
-              <p className="text-sm font-medium text-millennial-text md:text-base">
+              <p className="text-sm font-medium text-[var(--nq-ed-text)] md:text-base">
                 Welcome back — pick up where you left off.
               </p>
               <button
                 type="button"
                 onClick={() => setShowReturnBanner(false)}
-                className="shrink-0 text-sm font-semibold text-millennial-cta-primary hover:text-millennial-cta-hover md:text-base"
+                className="shrink-0 text-sm font-semibold text-[var(--nq-ed-accent)] hover:underline md:text-base"
                 aria-label="Dismiss"
               >
                 Dismiss
@@ -560,38 +448,19 @@ export default function CustomizedJourneyPage() {
             </motion.div>
           ) : null}
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="nq-section mb-10 text-center md:mb-14"
-          >
-            <PlainEnglishText
-              as="h1"
-              className="display mb-3 text-3xl font-normal tracking-tight text-millennial-text sm:text-4xl md:text-[2.75rem] md:leading-tight"
-              text="Your customized NestQuest journey"
-            />
-            <PlainEnglishText
-              as="p"
-              className="mx-auto max-w-2xl text-sm text-millennial-text-muted md:text-lg"
-              text="Use the tabs above to move between your snapshot, phase work, budget sketch, learning, library, inbox, and upgrade options — keyboard-friendly and saved between visits."
-            />
-          </motion.div>
-
           <Suspense
             fallback={
               <div
-                className="min-h-[24rem] space-y-4 rounded-3xl border border-millennial-border/80 bg-gradient-to-br from-millennial-primary-light/20 to-white p-6 md:p-8"
+                className="nq-hub-panel min-h-[24rem] animate-pulse space-y-4 p-6 md:p-8"
                 aria-busy
                 aria-label="Loading roadmap"
               >
-                <div className="mb-2 h-10 max-w-md animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
-                <div className="h-6 w-2/3 max-w-lg animate-pulse rounded-lg bg-brand-mist dark:bg-gray-800" />
+                <div className="h-10 max-w-md rounded-xl bg-[var(--nq-ed-line-soft)]" />
+                <div className="h-6 w-2/3 max-w-lg rounded-lg bg-[var(--nq-ed-line-soft)]" />
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="h-40 animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
-                  <div className="h-40 animate-pulse rounded-xl bg-brand-mist dark:bg-gray-800" />
+                  <div className="h-40 rounded-xl bg-[var(--nq-ed-line-soft)]" />
+                  <div className="h-40 rounded-xl bg-[var(--nq-ed-line-soft)]" />
                 </div>
-                <div className="h-32 animate-pulse rounded-xl bg-brand-mist/80 dark:bg-gray-800" />
               </div>
             }
           >
@@ -604,40 +473,92 @@ export default function CustomizedJourneyPage() {
             />
           </Suspense>
 
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="nq-card relative mt-14 overflow-hidden rounded-2xl border border-millennial-border bg-gradient-to-br from-white via-millennial-primary-light/15 to-white p-6 shadow-lg shadow-teal-900/5 ring-1 ring-white sm:mt-16 sm:p-8"
-          >
-            <div
-              className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-millennial-primary-light/40 blur-2xl"
-              aria-hidden
-            />
-            <p className="relative mb-4 text-center text-sm font-medium text-millennial-text-muted md:text-base">
-              Prefer the full site pages? They&apos;re still here — tabs above are the new home base.
-            </p>
-            <div className="relative flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-              <Link
-                href="/customized-journey?tab=library"
-                className="group inline-flex items-center gap-2.5 rounded-xl border-2 border-millennial-border bg-white px-5 py-3 text-sm font-semibold text-millennial-text shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-millennial-cta-primary hover:bg-millennial-primary-light/25 hover:shadow-md md:text-base"
+          {isTodayTab ? <SessionWinsBanner /> : null}
+
+          <div className="nq-hub-panel nq-journey-footer-panel space-y-3">
+            {showPlainEnglishCallout ? (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col gap-3 rounded-xl border border-[var(--nq-ed-line)] bg-[var(--nq-ed-accent-soft)]/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                role="region"
+                aria-label="Plain English suggestion"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-millennial-primary-light/70 text-millennial-cta-primary transition-colors group-hover:bg-millennial-primary-light">
-                  <BookOpen weight="duotone" size={20} className="text-[var(--primary)]" aria-hidden />
+                <p className="min-w-0 flex-1 text-sm font-medium text-[var(--nq-ed-text)]">
+                  <span aria-hidden>💡</span> New to homebuying? Turn on Plain English for simpler wording.
+                </p>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={turnOnPlainEnglish}
+                    className="rounded-2xl bg-[var(--nq-ed-accent)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0f6058]"
+                  >
+                    Turn On
+                  </button>
+                  <button
+                    type="button"
+                    onClick={dismissPlainEnglishCallout}
+                    className="rounded-lg p-2 text-[var(--nq-ed-muted)] transition hover:bg-white/80"
+                    aria-label="Dismiss Plain English suggestion"
+                  >
+                    <X weight="duotone" size={20} aria-hidden />
+                  </button>
+                </div>
+              </motion.div>
+            ) : null}
+
+            <label
+              className="flex cursor-pointer flex-wrap items-center justify-center gap-3 text-sm font-medium text-[var(--nq-ed-muted)]"
+              title={plainEnglishTooltip}
+            >
+              <span>Plain English mode</span>
+              {getStoredQuizTransactionMeta().icpType === 'first-gen' ? (
+                <span className="rounded-full bg-[var(--nq-ed-accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--nq-ed-accent)]">
+                  {plainEnglish ? 'On — recommended' : 'Recommended for first-gen'}
                 </span>
-                Library tab
+              ) : null}
+              <span id="plain-english-mode-tip" className="sr-only">
+                {plainEnglishTooltip}
+              </span>
+              <input
+                type="checkbox"
+                className="h-4 w-4 shrink-0 accent-[var(--nq-ed-accent)]"
+                checked={plainEnglish}
+                onChange={(e) => {
+                  const on = e.target.checked
+                  try {
+                    localStorage.setItem(PLAIN_ENGLISH_LS_KEY, on ? '1' : '0')
+                    window.dispatchEvent(new Event('nq-plain-english-changed'))
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+                aria-describedby="plain-english-mode-tip"
+              />
+            </label>
+
+            <p className="text-center text-sm font-medium text-[var(--nq-ed-muted)]">
+              More in your journey index — library scripts and inbox reminders.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href={journeyTabHrefPreservingSearch(JOURNEY_PAGE_PATH, journeySearchKey, 'library')}
+                scroll={false}
+                className="nq-ed-btn-outline inline-flex items-center gap-2 !rounded-xl !px-4 !py-2.5 text-sm"
+              >
+                <BookOpen weight="duotone" size={18} aria-hidden />
+                Library
               </Link>
               <Link
-                href="/customized-journey?tab=inbox"
-                className="group inline-flex items-center gap-2.5 rounded-xl border-2 border-millennial-border bg-white px-5 py-3 text-sm font-semibold text-millennial-text shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-millennial-cta-secondary hover:bg-brand-mist/80 hover:shadow-md md:text-base"
+                href={journeyTabHrefPreservingSearch(JOURNEY_PAGE_PATH, journeySearchKey, 'inbox')}
+                scroll={false}
+                className="nq-ed-btn-outline inline-flex items-center gap-2 !rounded-xl !px-4 !py-2.5 text-sm"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-mist text-brand-forest transition-colors group-hover:bg-brand-mist">
-                  <Bell weight="duotone" size={20} className="text-[var(--muted)]" aria-hidden />
-                </span>
-                Inbox tab
+                <Bell weight="duotone" size={18} aria-hidden />
+                Inbox
               </Link>
             </div>
-          </motion.div>
+          </div>
         </div>
       </main>
 

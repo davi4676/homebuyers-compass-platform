@@ -15,9 +15,9 @@ type Props = {
  */
 export default function PaidWelcomePanel({ tier }: Props) {
   const def = TIER_DEFINITIONS[tier]
-  const journeyPhase = journeyTabHref('phase')
-  const journeyBudget = journeyTabHref('budget')
-  const journeyAssistance = journeyTabHref('assistance')
+  const journeyPhase = journeyTabHref('plan')
+  const journeyBudget = journeyTabHref('plan')
+  const journeyAssistance = journeyTabHref('money')
 
   const steps =
     tier === 'foundations'

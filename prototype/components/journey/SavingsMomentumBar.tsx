@@ -31,33 +31,33 @@ export default function SavingsMomentumBar({ current, goal, className = '' }: Pr
   }, [pct, reduceMotion])
 
   const remaining = Math.max(0, goal - current)
+  const hasReliableRemaining = goal > 0 && remaining > 0
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      <p className="text-[15px] leading-snug" style={{ color: 'var(--text)' }}>
-        You&apos;ve saved <span className="font-semibold">${formatUsd(current)}</span>
-        {' — '}
-        <span className="font-semibold">${formatUsd(remaining)}</span> to go for your goal
+    <div className={`space-y-3 ${className}`}>
+      <p className="text-[15px] leading-relaxed text-[var(--nq-ed-muted)]">
+        You are tracking toward your target home price. NestQuest is helping you compare savings opportunities,
+        programs, and next steps along the way.
       </p>
       <div
-        className="h-3 w-full overflow-hidden rounded-full"
-        style={{
-          background: 'var(--muted)',
-          opacity: 0.45,
-          borderRadius: 'var(--radius)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
+        className="h-2 w-full overflow-hidden rounded-full bg-[var(--nq-ed-line-soft)]"
+        aria-hidden
       >
         <div
-          className="h-full rounded-full"
+          className="h-full rounded-full bg-[var(--nq-ed-accent)]"
           style={{
             width: `${widthPct}%`,
-            background: 'linear-gradient(90deg, #2D6A4F 0%, #52B788 100%)',
             transition: reduceMotion ? undefined : 'width 900ms ease-out',
-            borderRadius: 'var(--radius)',
           }}
         />
       </div>
+      {hasReliableRemaining ? (
+        <p className="text-[12px] leading-relaxed text-[var(--nq-ed-muted)]">
+          Estimated remaining savings target:{' '}
+          <span className="font-semibold text-[var(--nq-ed-text)]">${formatUsd(remaining)}</span> — depends on
+          programs, lender terms, and closing costs.
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
+import NqHubTabLayout from '@/components/hub/NqHubTabLayout'
 import { markDpaOptimizerVisited } from '@/lib/dpa-optimizer-visit'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { tierHasCalculator } from '@/lib/tiers'
@@ -43,8 +44,8 @@ export default function DownPaymentOptimizerPage() {
   }, [homePrice])
 
   const gapFha = Math.max(0, scenarios.fha - savings)
-  const gap5 = Math.max(0, scenarios.conv5 - savings)
-  const gap20 = Math.max(0, scenarios.conv20 - savings)
+  const _gap5 = Math.max(0, scenarios.conv5 - savings)
+  const _gap20 = Math.max(0, scenarios.conv20 - savings)
 
   const monthsToFha = monthly > 0 ? Math.ceil(gapFha / monthly) : gapFha > 0 ? Infinity : 0
 
@@ -55,39 +56,40 @@ export default function DownPaymentOptimizerPage() {
   const dpaCover = Math.min(gapFha, Math.round(gapFha * 0.35))
 
   return (
-    <div className="app-page-shell">
-      <header className="sticky top-0 z-10 border-b border-[#e7e5e4] bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center px-4 py-3">
-          <BackToMyJourneyLink />
+    <NqHubTabLayout
+      tab="find-funds"
+      backLink={<BackToMyJourneyLink />}
+      maxWidth="3xl"
+      glassCard={
+        <div className="nq-glass nq-savings-glass">
+          <p className="nq-savings-glass-label">Programs that may apply</p>
+          <p className="nq-savings-glass-amount tabular-nums">~{dpaCount}</p>
+          <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">
+            Up to {formatMoney(dpaCover)} in potential DPA coverage toward your FHA gap.
+          </p>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl px-4 py-10">
-        <h1 className="font-display text-3xl font-bold text-[#1c1917]">Down Payment Optimizer</h1>
-        <p className="mt-2 text-[#57534e]">
-          Estimate how much you need to save for common loan types and how long it could take at your current pace.
-        </p>
-
+      }
+    >
         {isLoading ? (
-          <p className="mt-8 text-sm text-[#78716c]">Loading…</p>
+          <p className="text-sm text-[var(--nq-ed-muted)]">Loading…</p>
         ) : null}
 
         {!isLoading && !canUseOptimizer ? (
-          <div className="mt-8 rounded-xl border border-amber-200/90 bg-amber-50/90 p-6 text-center shadow-sm sm:p-8">
-            <h2 className="font-display text-xl font-bold text-[#1c1917]">Included with Momentum</h2>
-            <p className="mt-2 text-sm text-[#57534e]">
+          <div className="nq-hub-panel p-6 text-center sm:p-8">
+            <h2 className="font-display text-xl font-bold text-[var(--nq-ed-text)]">Included with Momentum</h2>
+            <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">
               Foundations includes the affordability calculator on your results snapshot and in My Journey. Upgrade
               to unlock this down payment optimizer and the rest of the calculator suite.
             </p>
             <Link
               href="/upgrade?source=down-payment-optimizer&tier=momentum"
-              className="mt-5 inline-flex items-center justify-center rounded-lg bg-[#0d9488] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#0f766e]"
+              className="nq-ed-btn-primary mt-5 inline-flex"
             >
               Upgrade to Momentum
             </Link>
             <Link
               href="/results"
-              className="mt-4 block text-sm font-semibold text-[#0d9488] hover:underline"
+              className="mt-4 block text-sm font-semibold text-[var(--nq-ed-accent)] hover:underline"
             >
               Open your free affordability snapshot →
             </Link>
@@ -96,8 +98,8 @@ export default function DownPaymentOptimizerPage() {
 
         {!isLoading && canUseOptimizer ? (
           <>
-        <div className="mt-8 rounded-xl border border-[#e7e5e4] bg-white p-6 shadow-sm">
-          <label className="block text-sm font-semibold text-[#57534e]">
+        <div className="nq-hub-panel p-6">
+          <label className="block text-sm font-semibold text-[var(--nq-ed-muted)]">
             Home price target: {formatMoney(homePrice)}
             <input
               type="range"
@@ -106,106 +108,74 @@ export default function DownPaymentOptimizerPage() {
               step={5000}
               value={homePrice}
               onChange={(e) => setHomePrice(Number(e.target.value))}
-              className="mt-2 w-full accent-[#1a6b3c]"
+              className="mt-2 w-full cursor-pointer accent-[var(--nq-ed-accent)]"
             />
-            <span className="mt-1 block text-xs text-[#78716c]">$100K – $800K</span>
+            <span className="mt-1 block text-xs text-[var(--nq-ed-faint)]">$100K – $800K</span>
           </label>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-semibold text-[#57534e]">
+            <label className="block text-sm font-semibold text-[var(--nq-ed-muted)]">
               Current savings
               <input
                 type="number"
                 min={0}
                 value={savings || ''}
                 onChange={(e) => setSavings(Number(e.target.value) || 0)}
-                className="mt-1 w-full rounded-lg border border-[#e7e5e4] px-3 py-2 text-[#1c1917] outline-none focus:ring-2 focus:ring-[#0d9488]/40"
+                className="mt-1 w-full cursor-text rounded-xl border border-[var(--nq-ed-line)] bg-white/90 px-3 py-2 text-[var(--nq-ed-text)] focus:border-[var(--nq-ed-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--nq-ed-accent-soft)]"
               />
             </label>
-            <label className="block text-sm font-semibold text-[#57534e]">
-              Monthly savings capacity
+            <label className="block text-sm font-semibold text-[var(--nq-ed-muted)]">
+              Monthly savings goal
               <input
                 type="number"
                 min={0}
                 value={monthly || ''}
                 onChange={(e) => setMonthly(Number(e.target.value) || 0)}
-                className="mt-1 w-full rounded-lg border border-[#e7e5e4] px-3 py-2 text-[#1c1917] outline-none focus:ring-2 focus:ring-[#0d9488]/40"
+                className="mt-1 w-full cursor-text rounded-xl border border-[var(--nq-ed-line)] bg-white/90 px-3 py-2 text-[var(--nq-ed-text)] focus:border-[var(--nq-ed-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--nq-ed-accent-soft)]"
               />
             </label>
           </div>
 
-          <label className="mt-6 block text-sm font-semibold text-[#57534e]">
-            Target move-in timeline
+          <label className="mt-6 block text-sm font-semibold text-[var(--nq-ed-muted)]">
+            Timeline
             <select
               value={timeline}
               onChange={(e) => setTimeline(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#e7e5e4] bg-white px-3 py-2.5 text-[#1c1917] outline-none focus:ring-2 focus:ring-[#0d9488]/40 sm:max-w-xs"
+              className="mt-1 w-full cursor-pointer rounded-xl border border-[var(--nq-ed-line)] bg-white/90 px-3 py-2 text-[var(--nq-ed-text)] focus:border-[var(--nq-ed-accent)] focus:outline-none"
             >
               <option value="6">6 months</option>
-              <option value="12">1 year</option>
-              <option value="24">2 years</option>
-              <option value="36">3+ years</option>
+              <option value="12">12 months</option>
+              <option value="24">24 months</option>
+              <option value="36">36 months</option>
             </select>
           </label>
         </div>
 
-        <div className="mt-8 rounded-xl border border-[#e7e5e4] bg-white p-6 shadow-sm">
-          <h2 className="font-display text-xl font-bold text-[#1c1917]">Down payment targets</h2>
-          <ul className="mt-4 space-y-4">
-            {[
-              { label: '3.5% (FHA)', amount: scenarios.fha, gap: gapFha },
-              { label: '5% conventional', amount: scenarios.conv5, gap: gap5 },
-              { label: '20% conventional', amount: scenarios.conv20, gap: gap20 },
-            ].map((row) => (
-              <li key={row.label}>
-                <div className="flex flex-wrap justify-between gap-2 text-sm">
-                  <span className="font-semibold text-[#1c1917]">{row.label}</span>
-                  <span className="text-[#57534e]">Need {formatMoney(row.amount)}</span>
-                </div>
-                <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[#f5f5f4]">
-                  <div
-                    className="h-full rounded-full bg-[#1a6b3c]"
-                    style={{ width: `${Math.min(100, (savings / row.amount) * 100)}%` }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-[#78716c]">
-                  Gap: {formatMoney(row.gap)} vs. current savings
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mt-8 rounded-xl border border-[#e7e5e4] bg-white p-6 shadow-sm">
-          <h2 className="font-display text-xl font-bold text-[#1c1917]">Timeline insights</h2>
-          <p className="mt-3 text-sm text-[#57534e]">
-            At <strong>{formatMoney(monthly)}/mo</strong>, reaching a <strong>3.5% FHA</strong> down payment from your
-            current gap would take about{' '}
-            <strong>{monthsToFha === Infinity ? '—' : `${monthsToFha} months`}</strong>
-            {monthsToFha === Infinity ? ' (add monthly savings).' : '.'}
-          </p>
-          <p className="mt-3 text-sm text-[#57534e]">
-            Over your selected <strong>{months} months</strong>, projected savings reach{' '}
-            <strong>{formatMoney(projected)}</strong>. Remaining gap to a <strong>5% conventional</strong> target:{' '}
-            <strong>{formatMoney(gapAfterTimeline)}</strong>.
-          </p>
-        </div>
-
-        <div className="mt-8 rounded-xl border border-[#0d9488]/25 bg-[#ecfdf5] p-6 shadow-sm">
-          <p className="text-sm font-semibold text-[#1a6b3c]">
-            You may qualify for <strong>{dpaCount}</strong> down payment assistance programs that could cover up to{' '}
-            <strong>{formatMoney(dpaCover)}</strong> of your gap (illustrative).
-          </p>
-          <Link
-            href="/customized-journey?tab=assistance"
-            className="mt-3 inline-flex text-sm font-bold text-[#0d9488] hover:underline"
-          >
-            Open Assistance tab in My Journey →
-          </Link>
+        <div className="nq-bento-grid mt-6">
+          <div className="nq-bento-card">
+            <span className="nq-ed-eyebrow">FHA 3.5%</span>
+            <h3>{formatMoney(scenarios.fha)}</h3>
+            <p>Gap: {formatMoney(gapFha)} · ~{monthsToFha === Infinity ? '—' : `${monthsToFha} mo`} at current pace</p>
+          </div>
+          <div className="nq-bento-card">
+            <span className="nq-ed-eyebrow">Conventional 5%</span>
+            <h3>{formatMoney(scenarios.conv5)}</h3>
+            <p>Gap after {months} mo: {formatMoney(gapAfterTimeline)}</p>
+          </div>
+          <div className="nq-bento-card nq-bento-card--span-2">
+            <span className="nq-ed-eyebrow">Programs</span>
+            <h3>~{dpaCount} assistance programs may apply</h3>
+            <p>Potential DPA coverage up to {formatMoney(dpaCover)} toward your FHA gap.</p>
+            <Link
+              href="/customized-journey?tab=money"
+              className="mt-4 inline-flex cursor-pointer text-sm font-semibold text-[var(--nq-ed-accent)] hover:underline"
+            >
+              Open Assistance tab in My Journey →
+            </Link>
+          </div>
         </div>
           </>
         ) : null}
-      </main>
-    </div>
+    </NqHubTabLayout>
   )
 }

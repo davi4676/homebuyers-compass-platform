@@ -255,7 +255,7 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
       'No AI assistant access',
     ],
     upgradePrompts: [
-      'Buyers who unlock the full roadmap before pre-approval save an average of $2,400 more — get your weekly plan and scripts now. [See My Roadmap →]',
+      'Unlock the full roadmap before pre-approval to compare lenders and programs with a plan — typical savings opportunities: $8k–$15k. [See My Roadmap →]',
       'Stop guessing which step matters this week — Momentum prioritizes your inbox and nudges so you don’t miss deadlines that cost real money. [Get My Plan →]',
     ],
   },
@@ -367,7 +367,7 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     ],
     upgradePrompts: [
       'A real person will review your finances and tell you exactly what to fix — most buyers improve their offer strength by $8,000–$15,000. [Get Expert Review →]',
-      'Fix your credit score before applying — buyers who improve 50+ points save an average of $4,200 in interest. [Get My Credit Plan →]',
+      'Improving credit before applying may unlock better rates — even small rate differences add up over 30 years. [Get My Credit Plan →]',
     ],
   },
   navigator: {
@@ -491,7 +491,7 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     limitations: [],
     upgradePrompts: [
       'Most buyers who add expert review before offers improve their position by $8,000–$15,000. [Get Expert Review →]',
-      'Investment property refinancing can generate $10,000–$100,000 in returns when structured correctly. [Unlock Investment Tools →]',
+      'Investment property refinancing outcomes vary widely by market and structure — explore scenarios with a qualified advisor. [Unlock Investment Tools →]',
     ],
   },
   navigator_plus: {
@@ -616,7 +616,7 @@ export const TIER_DEFINITIONS: Record<UserTier, TierDefinition> = {
     },
     limitations: [],
     upgradePrompts: [
-      'Your dedicated home buying partner — available every step of the way. Concierge+ buyers close an average of 23% faster. [Get My Partner →]',
+      'Concierge+ includes dedicated partner support through closing — structured check-ins help you stay on timeline. [Get My Partner →]',
     ],
   },
 }
@@ -698,7 +698,7 @@ export function getUpgradePrompt(tier: UserTier, feature: string): string | null
 /** Momentum → Navigator+ pitch; solo and first-gen buyers get ICP-specific copy. */
 export function getMomentumToNavigatorUpgradeCopy(icpType: string | null | undefined): string {
   if (icpType === 'solo') {
-    return 'Have an expert check your offer before you submit it — solo buyers who use expert review save an average of $4,200 more.'
+    return 'Have an expert review your offer before you submit — especially helpful when you are buying solo. [Get Expert Review →]'
   }
   if (icpType === 'first-gen') {
     return 'Talk to a real person who will review your finances and tell you exactly what to fix — no jargon, no judgment.'

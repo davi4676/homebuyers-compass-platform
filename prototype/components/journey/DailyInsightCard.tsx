@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState, useEffect } from 'react'
 import {
   X,
-  TrendingUp,
+  TrendUp,
   Percent,
   PiggyBank,
   Bank,
@@ -21,8 +21,8 @@ import {
 } from '@phosphor-icons/react'
 import { DAILY_INSIGHTS, getDailyInsightIndex, type DailyInsightIconId } from '@/lib/nq-daily-insights'
 
-const ICON_MAP: Record<DailyInsightIconId, typeof TrendingUp> = {
-  TrendingUp,
+const ICON_MAP: Record<DailyInsightIconId, typeof TrendUp> = {
+  TrendingUp: TrendUp,
   Percent,
   PiggyBank,
   Landmark: Bank,
@@ -54,7 +54,7 @@ export default function DailyInsightCard() {
     return DAILY_INSIGHTS[i] ?? DAILY_INSIGHTS[0]
   }, [])
 
-  const Icon = ICON_MAP[insight.icon] ?? TrendingUp
+  const Icon = ICON_MAP[insight.icon] ?? TrendUp
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -102,7 +102,6 @@ export default function DailyInsightCard() {
           <p
             id="daily-insight-stat"
             className="text-[18px] leading-snug text-[color:var(--text)]"
-            style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", ui-serif, Georgia, serif' }}
           >
             {insight.stat}
           </p>

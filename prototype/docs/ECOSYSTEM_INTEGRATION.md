@@ -114,7 +114,7 @@ This document outlines the comprehensive mortgage lifecycle platform with three 
 - **Savings Thermometer**: Interactive progress visualization
 - **Rate Comparison Matrix**: 3-column card layout (Good/Better/Best)
 - **Document Dashboard**: Visual filing cabinet with progress rings
-- **Trust Signals**: BBB, SOC 2, SSL, Verified Reviews badges
+- **Trust Signals**: No referral fees, HUD-aligned resources, CFPB-informed guidance, SSL (see `components/trust/TrustSignals.tsx`)
 
 ## Analytics & Tracking
 
@@ -147,10 +147,10 @@ This document outlines the comprehensive mortgage lifecycle platform with three 
 ## Trust & Security Features
 
 ### Trust Signals Component
-- BBB Accreditation
-- SOC 2 Type II Certification
-- 256-bit SSL Encryption
-- Verified Reviews
+- No lender referral fees
+- HUD-aligned educational resources
+- CFPB-informed guidance
+- 256-bit SSL Encryption (when deployed with HTTPS)
 
 ### Security Infrastructure (Planned)
 - End-to-end encryption

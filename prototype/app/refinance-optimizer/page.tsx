@@ -12,7 +12,6 @@ import {
   Calculator,
   Bell,
   Lock,
-  Sparkles,
   BarChart3,
   Target,
 } from 'lucide-react'
@@ -28,6 +27,8 @@ import InvestmentRefinanceSuite from '@/components/refinance/InvestmentRefinance
 import { ProgressDashboard } from '@/components/ProgressDashboard'
 import { LifecycleDashboard } from '@/components/LifecycleDashboard'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
+import NqHubTabLayout from '@/components/hub/NqHubTabLayout'
+import NqHubStatCard from '@/components/hub/NqHubStatCard'
 
 type Phase = 'overview' | 'progress' | 'lifecycle' | 'rate-radar' | 'cash-out' | 'analyzer' | 'investment'
 
@@ -114,31 +115,24 @@ export default function RefinanceOptimizerPage() {
   const currentEquity = refinanceData.homeValue - refinanceData.currentBalance
   const equityPercent = (currentEquity / refinanceData.homeValue) * 100
 
-  return (
-    <div className="app-page-shell">
-      {/* Header */}
-      <header className="border-b border-[#e7e5e4] sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-3 text-left sm:px-6 lg:px-8">
-          <BackToMyJourneyLink />
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-[#1a6b3c]">
-              🏠 NestQuest
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/results"
-                className="text-[#57534e] hover:text-[#1c1917] transition-colors text-sm"
-              >
-                Back to Results
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+  const onOverview = currentPhase === 'overview'
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  return (
+    <NqHubTabLayout
+      tab="refinance"
+      backLink={<BackToMyJourneyLink />}
+      maxWidth="6xl"
+      showHero={onOverview}
+      showTrustBar={onOverview}
+      showFunnel={onOverview}
+      glassCard={
+        <div className="nq-glass nq-savings-glass">
+          <p className="nq-savings-glass-label">Available equity</p>
+          <p className="nq-savings-glass-amount tabular-nums">{formatCurrency(currentEquity)}</p>
+          <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">{equityPercent.toFixed(1)}% of home value</p>
+        </div>
+      }
+    >
         <AnimatePresence mode="wait">
           {currentPhase === 'overview' && (
             <motion.div
@@ -148,78 +142,47 @@ export default function RefinanceOptimizerPage() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-8"
             >
-              {/* Hero Section */}
-              <div className="text-center space-y-4">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20"
-                >
-                  <Sparkles className="w-4 h-4 text-[#0d9488]" />
-                  <span className="text-sm font-medium text-[#0d9488]">Refinance & Equity Optimization Engine</span>
-                </motion.div>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1c1917]">
-                  Optimize Your{' '}
-                  <span className="text-[#1a6b3c]">
-                    {formatCurrency(currentEquity)}
-                  </span>{' '}
-                  in Equity
-                </h1>
-                <p className="text-lg text-[#57534e] max-w-2xl mx-auto">
-                  Monitor rates, optimize cash-out strategies, and make smarter refinance decisions
-                  with intelligent analysis.
-                </p>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <NqHubStatCard
+                  label="Current rate"
+                  value={`${refinanceData.currentRate.toFixed(2)}%`}
+                  hint="Your loan rate today"
+                />
+                <NqHubStatCard
+                  label="Loan balance"
+                  value={formatCurrency(refinanceData.currentBalance)}
+                  hint="Outstanding principal"
+                />
+                <NqHubStatCard
+                  label="Home value"
+                  value={formatCurrency(refinanceData.homeValue)}
+                  hint="Estimated market value"
+                />
+                <NqHubStatCard
+                  label="Equity"
+                  value={formatCurrency(currentEquity)}
+                  hint={`${equityPercent.toFixed(1)}% of value`}
+                />
               </div>
 
-              {/* Quick Stats */}
-              <div className="grid md:grid-cols-4 gap-6">
-                <div className="bg-white rounded-xl border border-[#e7e5e4] shadow-sm p-6">
-                  <div className="text-sm text-[#57534e] mb-2">Current Rate</div>
-                  <div className="text-3xl font-bold text-[#0d9488]">
-                    {refinanceData.currentRate.toFixed(2)}%
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl border border-[#e7e5e4] shadow-sm p-6">
-                  <div className="text-sm text-[#57534e] mb-2">Loan Balance</div>
-                  <div className="text-3xl font-bold text-[#57534e]">
-                    {formatCurrency(refinanceData.currentBalance)}
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl border border-[#e7e5e4] shadow-sm p-6">
-                  <div className="text-sm text-[#57534e] mb-2">Home Value</div>
-                  <div className="text-3xl font-bold text-[#1c1917]">
-                    {formatCurrency(refinanceData.homeValue)}
-                  </div>
-                </div>
-                <div className="bg-[#1a6b3c]/5 rounded-xl border border-[#1a6b3c]/20 shadow-sm p-6">
-                  <div className="text-sm text-[#57534e] mb-2">Available Equity</div>
-                  <div className="text-3xl font-bold text-[#1a6b3c]">
-                    {formatCurrency(currentEquity)}
-                  </div>
-                  <div className="text-xs text-[#a8a29e] mt-1">{equityPercent.toFixed(1)}%</div>
-                </div>
-              </div>
-
-              {/* Personalized journey tabs */}
-              <div className="mt-8">
-                <h2 className="text-xl font-bold mb-4 text-[#1c1917]">Personalized journey</h2>
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="mt-4">
+                <h2 className="nq-sl-section-title">Personalized journey</h2>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="p-6 rounded-xl border-2 border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer transition-all"
+                    className="nq-hub-panel cursor-pointer p-6 transition hover:-translate-y-0.5 hover:shadow-md"
                     onClick={() => setCurrentPhase('progress')}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-[#1a6b3c]/10">
-                        <Target className="w-6 h-6 text-[#1a6b3c]" />
+                      <div className="p-3 rounded-lg bg-[var(--nq-ed-accent-soft)]">
+                        <Target className="w-6 h-6 text-[var(--nq-ed-accent)]" />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-bold text-[#1c1917]">My progress</h3>
-                        <p className="text-[#57534e] text-sm">Level, badges, streak & savings</p>
-                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
+                        <h3 className="font-display text-xl font-bold text-[var(--nq-ed-text)]">My progress</h3>
+                        <p className="text-sm text-[var(--nq-ed-muted)]">Level, badges, streak & savings</p>
+                        <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-[var(--nq-ed-accent)]">
                           View progress <ArrowRight className="w-4 h-4" />
                         </div>
                       </div>
@@ -229,17 +192,17 @@ export default function RefinanceOptimizerPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
-                    className="p-6 rounded-xl border-2 border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer transition-all"
+                    className="nq-hub-panel cursor-pointer p-6 transition hover:-translate-y-0.5 hover:shadow-md"
                     onClick={() => setCurrentPhase('lifecycle')}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-[#1a6b3c]/10">
-                        <BarChart3 className="w-6 h-6 text-[#1a6b3c]" />
+                      <div className="p-3 rounded-lg bg-[var(--nq-ed-accent-soft)]">
+                        <BarChart3 className="w-6 h-6 text-[var(--nq-ed-accent)]" />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-bold text-[#1c1917]">Mortgage lifecycle</h3>
-                        <p className="text-[#57534e] text-sm">Health score & homeownership journey</p>
-                        <div className="mt-4 flex items-center gap-2 text-[#1a6b3c] text-sm font-medium">
+                        <h3 className="font-display text-xl font-bold text-[var(--nq-ed-text)]">Mortgage lifecycle</h3>
+                        <p className="text-sm text-[var(--nq-ed-muted)]">Health score & homeownership journey</p>
+                        <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-[var(--nq-ed-accent)]">
                           View lifecycle <ArrowRight className="w-4 h-4" />
                         </div>
                       </div>
@@ -248,19 +211,18 @@ export default function RefinanceOptimizerPage() {
                 </div>
               </div>
 
-              {/* Refinance tools */}
-              <h2 className="text-xl font-bold mb-1 text-[#1c1917]">Refinance tools</h2>
-              <p className="mb-4 text-sm text-[#57534e] max-w-2xl">
+              <h2 className="nq-sl-section-title">Refinance tools</h2>
+              <p className="nq-sl-section-lede mb-4 max-w-2xl">
                 Ready to execute?{' '}
                 <Link
                   href="/homebuyer/refinance-journey"
-                  className="font-semibold text-[#1a6b3c] underline-offset-2 hover:underline"
+                  className="font-semibold text-[var(--nq-ed-accent)] hover:underline"
                 >
                   Open the refinance roadmap wizard
                 </Link>{' '}
                 for lender comparison prep, a document checklist, and appraisal timeline.
               </p>
-              <div className="grid md:grid-cols-2 gap-6 mt-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 {PHASES.map((phase, index) => {
                   const isLocked = !canAccessPhase(phase)
                   const nextTier =
@@ -272,10 +234,10 @@ export default function RefinanceOptimizerPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 + index * 0.1 }}
-                      className={`relative p-6 rounded-xl border-2 transition-all ${
+                      className={`nq-hub-panel relative p-6 transition ${
                         isLocked
-                          ? 'border-[#e7e5e4] bg-[#f5f5f4] opacity-60'
-                          : 'border-[#e7e5e4] bg-white hover:border-[#1a6b3c]/50 hover:shadow-md cursor-pointer'
+                          ? 'opacity-60'
+                          : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md'
                       }`}
                       onClick={() => {
                         if (!isLocked) setCurrentPhase(phase.id)
@@ -450,7 +412,6 @@ export default function RefinanceOptimizerPage() {
           {currentPhase === 'investment' && (
             <InvestmentRefinanceSuite
               userTier={userTier}
-              refinanceData={refinanceData}
               onBack={() => setCurrentPhase('overview')}
               onUpgrade={handleUpgrade}
             />
@@ -458,10 +419,10 @@ export default function RefinanceOptimizerPage() {
         </AnimatePresence>
 
         <section
-          className="mt-8 border-t border-[#e7e5e4] pt-4 text-xs text-[#a8a29e] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          className="mt-8 border-t border-[var(--nq-ed-line-soft)] pt-4 text-xs text-[var(--nq-ed-muted)]"
           aria-label="Sources and methodology"
         >
-          <h2 className="mb-2 font-semibold text-[#78716c]">Sources &amp; Methodology</h2>
+          <h2 className="mb-2 font-semibold text-[var(--nq-ed-text)]">Sources &amp; Methodology</h2>
           <ul className="space-y-2">
             <li>
               <sup className="mr-1">¹</sup>
@@ -473,7 +434,6 @@ export default function RefinanceOptimizerPage() {
             </li>
           </ul>
         </section>
-      </main>
-    </div>
+    </NqHubTabLayout>
   )
 }

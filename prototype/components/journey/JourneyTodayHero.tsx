@@ -18,8 +18,6 @@ type Props = { searchKey: string; activeJourneyTab?: JourneyTab }
 const LS_HERO_VISIT_PHASE = 'nq_hero_last_visit_phase'
 const LS_HERO_VISIT_BUDGET = 'nq_hero_last_visit_budget'
 
-const HERO_GRADIENT = 'linear-gradient(135deg, #2D6A4F 0%, #52B788 60%, #F4A261 100%)'
-
 const EASE = [0.22, 1, 0.36, 1] as const
 
 type Primary = 'phase' | 'budget'
@@ -74,7 +72,7 @@ const PHASE_TAB = 'phase' as JourneyTab
 const BUDGET_TAB = 'budget' as JourneyTab
 
 /**
- * Primary “Today” loop: phase work + money work. Other tabs are secondary (see journey page copy).
+ * Primary “Today” loop: phase work + money work. Other journey sections live in the index (see journey page copy).
  */
 export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props) {
   const factors = useMomentumFactors()
@@ -111,13 +109,19 @@ export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props)
   const phaseMeta = useMemo(
     () => ({
       kind: 'phase' as Primary,
-      title: 'Your Phase',
-      description: 'See exactly what to do this week — no guesswork',
+      title: 'Your current phase',
+      description:
+        'See this week’s tasks, what to compare, and what to finish before the next step.',
       href: phaseHref,
       win: 'Opened Your Phase from Today' as const,
-      cta: 'Go to Your Phase',
-      supportingCta: 'Go to phase →',
+      cta: 'Review my phase',
+      // When phase is primary, the secondary nudge is the budget tool.
+      supportingLabel: 'Check your money picture',
+      supportingDesc:
+        'Confirm your numbers and compare program tradeoffs before your next lender step.',
+      supportingCta: 'Open budget →',
       Icon: MapPin,
+      timeLabel: 'About 4 minutes',
     }),
     [phaseHref]
   )
@@ -125,13 +129,19 @@ export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props)
   const budgetMeta = useMemo(
     () => ({
       kind: 'budget' as Primary,
-      title: 'Budget Sketch',
-      description: 'Know your number before you fall in love with a house',
+      title: 'Sketch your budget',
+      description:
+        'Lock in a payment you can afford — then compare programs and lender offers with confidence.',
       href: budgetHref,
       win: 'Opened Budget Sketch from Today' as const,
-      cta: 'Open Budget Sketch',
-      supportingCta: 'Open budget →',
+      cta: 'Open budget sketch',
+      // When budget is primary, the secondary nudge is phase details (per spec copy).
+      supportingLabel: 'Check your phase details',
+      supportingDesc:
+        'Review your next tasks, reminders, and documents before moving forward.',
+      supportingCta: 'Open details →',
       Icon: Calculator,
+      timeLabel: 'About 5 minutes',
     }),
     [budgetHref]
   )
@@ -141,22 +151,32 @@ export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props)
 
   return (
     <section
-      className="mb-8 rounded-2xl border-2 border-teal-200/80 bg-gradient-to-br from-teal-50/90 via-white to-emerald-50/40 p-5 shadow-md ring-1 ring-teal-100/60 sm:p-6"
+      className="nq-glass relative overflow-hidden rounded-3xl border border-[var(--nq-ed-line-soft)] p-6 sm:p-8"
       aria-labelledby="journey-today-heading"
     >
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800/90">Today</p>
-      <h2 id="journey-today-heading" className="mt-1 font-display text-xl font-extrabold text-millennial-text sm:text-2xl">
-        Two moves that move the needle
+      <span
+        className="pointer-events-none absolute left-7 top-0 h-[2px] w-9 rounded-b bg-[var(--nq-ed-accent)] sm:left-8"
+        aria-hidden
+      />
+
+      <span className="nq-ed-eyebrow">Today</span>
+      <h2
+        id="journey-today-heading"
+        className="mt-3 font-display text-[clamp(1.5rem,3.2vw,2.1rem)] font-semibold leading-[1.15] tracking-tight text-[var(--nq-ed-text)]"
+      >
+        Do this next
       </h2>
-      <p className="mt-1 text-sm text-millennial-text-muted">
-        Start here most visits. Use the other tabs anytime for library, inbox, programs, and upgrades.
+      <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-[var(--nq-ed-muted)] sm:text-base">
+        One primary action below — usually under five minutes. Everything else can wait.
       </p>
 
-      <div className="mt-4 flex flex-col gap-3 md:gap-4">
+      <div className="nq-journey-bento mt-7">
+        {/* Primary "Your move for today" card — visually dominant */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: EASE }}
+          transition={{ duration: 0.45, delay: 0.05, ease: EASE }}
+          className="nq-journey-bento-primary"
         >
           <Link
             href={hero.href}
@@ -165,49 +185,49 @@ export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props)
               recordHeroVisit(hero.kind)
               recordSessionWin(hero.win)
             }}
-            className="group relative block w-full overflow-hidden rounded-2xl p-5 text-white shadow-lg ring-1 ring-white/20 transition-[transform,box-shadow] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.03] hover:shadow-2xl sm:p-6"
-            style={{ background: HERO_GRADIENT }}
+            className="nq-ed-card-primary group relative flex h-full cursor-pointer flex-col overflow-hidden p-6 sm:p-7"
           >
-            <span className="absolute right-4 top-4 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[var(--primary)]">
-              ⚡ Start here
-            </span>
-            <div className="flex items-start gap-3 pr-24">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white">
-                <hero.Icon weight="duotone" size={20} className="text-white" aria-hidden />
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--nq-ed-muted)]">
+                Your move for today
               </span>
-              <div className="min-w-0 flex-1">
-                <p
-                  className="text-[26px] leading-tight text-white"
-                  style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", ui-serif, Georgia, serif' }}
-                >
-                  Your move for today
-                </p>
-                <p className="mt-1 font-[family-name:var(--font-dm-sans)] text-lg font-semibold leading-snug text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--nq-ed-accent-soft)] px-3 py-1 text-[11px] font-bold text-[var(--nq-ed-accent)] ring-1 ring-inset ring-[var(--nq-ed-accent)]/20">
+                <Clock weight="duotone" size={12} aria-hidden />
+                {hero.timeLabel}
+              </span>
+            </div>
+
+            <div className="mt-5 flex items-start gap-3.5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--nq-ed-accent-soft)] text-[var(--nq-ed-accent)] ring-1 ring-inset ring-[var(--nq-ed-accent)]/15">
+                <hero.Icon weight="duotone" size={22} aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="font-display text-[1.4rem] font-semibold leading-snug tracking-tight text-[var(--nq-ed-text)] sm:text-2xl">
                   {hero.title}
                 </p>
-                <p className="mt-2 max-w-xl font-[family-name:var(--font-dm-sans)] text-sm font-normal leading-relaxed text-white/85">
+                <p className="mt-2.5 text-[15px] leading-relaxed text-[var(--nq-ed-muted)] sm:text-base">
                   {hero.description}
                 </p>
-                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white">
-                  <Clock weight="duotone" size={14} className="shrink-0 opacity-90" aria-hidden />
-                  ~4 min
-                </p>
-                <div className="mt-4">
-                  <span className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-[var(--primary)] shadow-sm">
-                    {hero.cta}
-                  </span>
-                </div>
-                <p className="mt-3 text-xs italic text-white/70">Most users complete this in one visit</p>
               </div>
+            </div>
+
+            <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-[var(--nq-ed-accent)] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition group-hover:bg-[#0f6058]">
+                {hero.cta} →
+              </span>
+              <span className="text-xs italic text-[var(--nq-ed-muted)]">
+                Most buyers can complete this in one visit.
+              </span>
             </div>
           </Link>
         </motion.div>
 
+        {/* Supporting card — visually secondary: smaller padding, no tinted background, no large CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.22, ease: EASE }}
-          className="w-full md:inline-block md:w-[48%] md:max-w-full"
+          transition={{ duration: 0.45, delay: 0.18, ease: EASE }}
+          className="nq-journey-bento-secondary"
         >
           <Link
             href={supporting.href}
@@ -216,11 +236,20 @@ export default function JourneyTodayHero({ searchKey, activeJourneyTab }: Props)
               recordHeroVisit(supporting.kind)
               recordSessionWin(supporting.win)
             }}
-            className="group block rounded-2xl border border-[rgba(45,106,79,0.12)] bg-white p-4 shadow-sm transition hover:border-[rgba(45,106,79,0.22)] hover:shadow-md sm:p-5"
+            className="nq-ed-card-secondary group flex h-full cursor-pointer flex-col p-5"
           >
-            <p className="text-lg font-semibold text-millennial-text">{supporting.title}</p>
-            <p className="mt-1 text-[13px] leading-snug text-[var(--muted)]">{supporting.description}</p>
-            <span className="mt-3 inline-flex items-center text-sm font-semibold text-[var(--primary)] group-hover:underline">
+            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--nq-ed-muted)]">
+              Also worth doing
+            </span>
+            <div className="mt-3 min-w-0">
+              <p className="font-display text-base font-semibold leading-snug text-[var(--nq-ed-text)] sm:text-lg">
+                {supporting.supportingLabel}
+              </p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--nq-ed-muted)] sm:text-sm">
+                {supporting.supportingDesc}
+              </p>
+            </div>
+            <span className="mt-auto inline-flex items-center pt-4 text-sm font-semibold text-[var(--nq-ed-accent)] transition-transform duration-200 group-hover:translate-x-1">
               {supporting.supportingCta}
             </span>
           </Link>

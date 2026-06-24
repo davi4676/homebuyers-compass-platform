@@ -96,7 +96,7 @@ export default function JourneyPhaseProgressRing({
           cy={dim / 2}
           r={r}
           fill="none"
-          stroke="#e2e8f0"
+          stroke="var(--nq-ed-line, #e2e8f0)"
           strokeWidth={stroke}
         />
         <circle
@@ -119,11 +119,11 @@ export default function JourneyPhaseProgressRing({
           size === 'sm' ? 'max-w-[78%] px-0.5' : 'max-w-[85%] px-1'
         }`}
       >
-        <span className={`shrink-0 font-bold tabular-nums text-slate-900 ${pctClass}`}>
+        <span className={`shrink-0 font-bold tabular-nums text-[var(--nq-ed-text)] ${pctClass}`}>
           {displayPct}%
         </span>
         <span
-          className={`mt-0.5 line-clamp-2 min-h-0 font-semibold text-slate-600 ${labelClass} ${
+          className={`mt-0.5 line-clamp-2 min-h-0 font-semibold text-[var(--nq-ed-muted)] ${labelClass} ${
             size === 'lg' ? 'max-w-[7rem]' : size === 'sm' ? 'max-w-[5.5rem]' : 'max-w-[3.35rem]'
           }`}
         >

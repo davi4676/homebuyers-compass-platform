@@ -250,11 +250,14 @@ export function ConversationalIcpQuiz({ entry }: Props) {
       </div>
 
       {!showResults && (
-        <div className="mb-6 h-2 overflow-hidden rounded-full bg-slate-200">
-          <div
-            className="h-full rounded-full bg-brand-forest transition-[width] duration-300 ease-out"
-            style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
-          />
+        <div className="nq-quiz-steps mb-6" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={totalSteps}>
+          {Array.from({ length: totalSteps }, (_, i) => (
+            <div
+              key={i}
+              className={`nq-quiz-step${i < step ? ' is-complete' : ''}${i === step ? ' is-active' : ''}`}
+              aria-hidden={i !== step}
+            />
+          ))}
         </div>
       )}
 

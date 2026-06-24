@@ -63,7 +63,7 @@ function DeveloperTierSwitcherInner() {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center gap-2 group"
+        className="fixed bottom-4 left-4 z-50 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center gap-2 group"
         title="Developer Tier Switcher (Ctrl+Shift+T)"
       >
         <Zap size={20} className="group-hover:rotate-12 transition-transform" />
@@ -91,7 +91,7 @@ function DeveloperTierSwitcherInner() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 400, scale: 0.9 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed right-4 bottom-20 z-50 bg-gray-900 border-2 border-purple-500/50 rounded-xl p-6 shadow-2xl w-80 max-w-[calc(100vw-2rem)]"
+              className="fixed left-4 bottom-20 z-50 bg-gray-900 border-2 border-purple-500/50 rounded-xl p-6 shadow-2xl w-80 max-w-[calc(100vw-2rem)]"
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">

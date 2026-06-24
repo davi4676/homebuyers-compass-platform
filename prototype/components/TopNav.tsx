@@ -11,28 +11,19 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
 import { parseJourneyTabParam, JOURNEY_PAGE_PATH, isCustomizedJourneyPath } from '@/lib/journey-nav-tabs'
 import JourneyNav from '@/components/journey/JourneyNav'
-import { MomentumScoreHeader } from '@/components/journey/MomentumScoreHeader'
 import VisitStreakBadge from '@/components/journey/VisitStreakBadge'
-import TierBadge from '@/components/TierBadge'
-import MindsetTag from '@/components/journey/MindsetTag'
-import MoneyTracker from '@/components/journey/MoneyTracker'
 import { SIGNUP_DISABLED } from '@/lib/auth-flags'
-import { getUserTier } from '@/lib/user-tracking'
-import type { UserTier } from '@/lib/tiers'
-import { TIER_DEFINITIONS } from '@/lib/tiers'
 
 export default function TopNav() {
   const pathname = usePathname()
   const searchParams = useSafeSearchParams()
-  /** Landing → Playbooks should show “Back to Home” on `/resources`. */
+  /** Landing → Guides should show “Back to Home” on `/resources`. */
   const resourcesNavHref = pathname === '/' ? '/resources?from=home' : '/resources'
   const { isAuthenticated } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [journeyHeaderTier, setJourneyHeaderTier] = useState<UserTier>('foundations')
-  const { chrome, resetJourneyNavChrome } = useJourneyNavChrome()
+  const { resetJourneyNavChrome } = useJourneyNavChrome()
 
   const isJourneyPage = isCustomizedJourneyPath(pathname)
-  const journeySearchKey = searchParams.toString()
   const activeJourneyTab = parseJourneyTabParam(searchParams.get('tab'))
 
   useEffect(() => {
@@ -41,25 +32,32 @@ export default function TopNav() {
     }
   }, [isJourneyPage, resetJourneyNavChrome])
 
-  useEffect(() => {
-    if (!isJourneyPage || typeof window === 'undefined') return
-    setJourneyHeaderTier(getUserTier())
-    const onTier = (e: Event) => {
-      const t = (e as CustomEvent<{ tier?: UserTier }>).detail?.tier
-      if (t && t in TIER_DEFINITIONS) setJourneyHeaderTier(t)
-    }
-    window.addEventListener('tierChanged', onTier)
-    return () => window.removeEventListener('tierChanged', onTier)
-  }, [isJourneyPage])
+  const menuTabClass = (active: boolean) =>
+    `inline-flex shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border px-2.5 py-1.5 text-nav font-medium transition-all duration-200 lg:px-3 ${
+      active
+        ? 'border-[color-mix(in_srgb,var(--nq-ed-accent)_35%,transparent)] bg-[var(--nq-ed-accent-soft)] font-semibold text-[var(--nq-ed-accent)]'
+        : 'border-transparent text-[var(--nq-ed-muted)] hover:border-[var(--nq-ed-line)] hover:bg-white/70 hover:text-[var(--nq-ed-accent)]'
+    }`
+
+  const mobileMenuTabClass = (active: boolean) =>
+    `block cursor-pointer rounded-xl px-4 py-2.5 text-lg font-medium transition-colors ${
+      active
+        ? 'border border-[color-mix(in_srgb,var(--nq-ed-accent)_35%,transparent)] bg-[var(--nq-ed-accent-soft)] font-semibold text-[var(--nq-ed-accent)]'
+        : 'text-[var(--nq-ed-text)] hover:bg-[var(--nq-ed-accent-soft)]/40'
+    }`
 
   return (
     <>
-    <header className="sticky top-0 z-[100] w-full border-b border-millennial-border bg-white/95 shadow-sm backdrop-blur">
+    <header
+      className={`sticky top-0 z-[100] w-full border-b border-[var(--nq-ed-line-soft)] bg-white/95 shadow-sm backdrop-blur${
+        isJourneyPage ? ' nq-ed-chrome-header' : ' nq-glass-nav'
+      }`}
+    >
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-14 items-center justify-between gap-2 md:h-16">
+        <div className="flex h-14 items-center justify-between gap-4 md:h-16 md:gap-8 lg:gap-10">
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-2 text-millennial-text transition-colors hover:text-millennial-cta-primary dark:text-cyan-400 dark:hover:text-cyan-300"
+            className="flex shrink-0 items-center gap-2.5 text-millennial-text transition-colors hover:text-millennial-cta-primary dark:text-cyan-400 dark:hover:text-cyan-300 md:min-w-[10.75rem] lg:min-w-[11.75rem]"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-millennial-cta-primary text-white md:h-10 md:w-10 dark:bg-cyan-600">
               <svg
@@ -88,96 +86,52 @@ export default function TopNav() {
             </span>
           </Link>
 
-          {isJourneyPage ? (
-            <div className="hidden min-w-0 flex-1 items-center justify-center gap-2 px-2 md:flex md:flex-wrap">
-              <p
-                className="rounded-full border border-[rgba(45,106,79,0.14)] bg-[linear-gradient(135deg,rgba(45,106,79,0.08)_0%,rgba(82,183,136,0.06)_60%,rgba(244,162,97,0.05)_100%)] px-3 py-1 text-sm font-semibold tracking-tight text-[var(--primary)] shadow-sm"
-                style={{ fontFamily: 'var(--font-dm-serif), "DM Serif Display", ui-serif, Georgia, serif' }}
-              >
-                Customized Journey
-              </p>
-              <TierBadge tier={journeyHeaderTier} compact className="hidden max-w-[200px] scale-[0.92] lg:flex" />
-              <MindsetTag
-                compact
-                className="hidden max-w-[min(100%,280px)] xl:flex"
-                mindset={TIER_DEFINITIONS[journeyHeaderTier].mindset}
-              />
-            </div>
-          ) : isAuthenticated ? (
-            <div className="hidden md:flex md:flex-1 md:items-center md:justify-center md:gap-6 lg:gap-8">
-              <Link
-                href="/dashboard"
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/dashboard'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
+          {isAuthenticated ? (
+            // Canonical authenticated top nav — shown on every authenticated route,
+            // including the customized-journey page. Journey sub-navigation continues
+            // to live in the left sidebar (<JourneyNav />), not in the top bar.
+            // `flex-nowrap` + `whitespace-nowrap` on each item keep every label on
+            // a single line even on narrower desktop viewports.
+            <div className="hidden min-w-0 md:flex md:flex-1 md:flex-nowrap md:items-center md:justify-center md:gap-3 md:pl-6 md:pr-4 lg:gap-5 lg:pl-10 lg:pr-6 xl:pl-14">
+              <Link href="/dashboard" className={menuTabClass(pathname === '/dashboard')}>
                 Dashboard
               </Link>
-              <Link
-                href="/customized-journey"
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/customized-journey'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
-              >
+              <Link href="/customized-journey?tab=today" className={menuTabClass(isJourneyPage)}>
                 My Journey
               </Link>
               <Link
                 href={resourcesNavHref}
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/resources'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
+                className={menuTabClass(pathname === '/resources')}
               >
-                Playbooks
+                Guides
               </Link>
               <Link
                 href="/down-payment-optimizer"
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/down-payment-optimizer'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
+                className={menuTabClass(pathname === '/down-payment-optimizer')}
               >
                 Find Funds
               </Link>
               <Link
                 href="/marketplace"
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/marketplace'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
+                className={menuTabClass(pathname === '/marketplace')}
               >
-                Marketplace
+                Tools &amp; Partners
               </Link>
               <Link
                 href="/inbox"
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/inbox'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
+                className={menuTabClass(pathname === '/inbox')}
               >
                 Inbox
               </Link>
               <Link
                 href="/for-professionals"
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/for-professionals'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
+                className={menuTabClass(pathname === '/for-professionals')}
               >
                 For organizations
               </Link>
             </div>
           ) : (
-            <div className="hidden md:flex md:flex-1 md:items-center md:justify-center md:gap-8">
+            <div className="hidden min-w-0 md:flex md:flex-1 md:items-center md:justify-center md:gap-8 lg:gap-10">
               <Link
                 href="/how-it-works"
                 className={`text-nav font-medium transition-colors ${
@@ -190,21 +144,13 @@ export default function TopNav() {
               </Link>
               <Link
                 href={resourcesNavHref}
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/resources'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
+                className={menuTabClass(pathname === '/resources')}
               >
-                Playbooks
+                Guides
               </Link>
               <Link
                 href="/for-professionals"
-                className={`text-nav font-medium transition-colors ${
-                  pathname === '/for-professionals'
-                    ? 'font-semibold text-millennial-cta-primary dark:text-white'
-                    : 'text-millennial-text-muted hover:text-millennial-cta-primary dark:text-slate-300 dark:hover:text-white'
-                }`}
+                className={menuTabClass(pathname === '/for-professionals')}
               >
                 For organizations
               </Link>
@@ -217,7 +163,7 @@ export default function TopNav() {
             </div>
           )}
 
-          <div className="flex shrink-0 items-center gap-2 md:gap-3">
+          <div className="flex shrink-0 items-center gap-3 md:gap-4">
             <Link
               href="/search"
               className={`inline-flex rounded-lg p-2 text-millennial-text-muted transition-colors hover:bg-millennial-primary-light/30 hover:text-millennial-text dark:hover:bg-slate-800 ${
@@ -232,8 +178,13 @@ export default function TopNav() {
             ) : null}
             {isAuthenticated ? (
               <ErrorBoundary fallback={null}>
-                <div className="flex items-center gap-2">
-                  {isJourneyPage ? <VisitStreakBadge /> : null}
+                <div className="flex items-center gap-3 md:gap-4">
+                  {/* Streak badge hidden on md to keep the menu on one line; visible from lg up. */}
+                  {isJourneyPage ? (
+                    <div className="hidden lg:block ml-3 border-l border-[var(--nq-ed-line-soft)] pl-3">
+                      <VisitStreakBadge />
+                    </div>
+                  ) : null}
                   <UserMenu className="hidden md:block" />
                 </div>
               </ErrorBoundary>
@@ -258,23 +209,6 @@ export default function TopNav() {
           </div>
         </div>
 
-        {isJourneyPage ? (
-          <>
-            {activeJourneyTab !== 'overview' ? <MomentumScoreHeader /> : null}
-            <div className="h-1 w-full overflow-hidden bg-millennial-border/50" aria-hidden>
-              <div
-                className="h-full bg-gradient-to-r from-millennial-cta-primary via-teal-400 to-millennial-cta-secondary transition-[width] duration-[550ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-                style={{ width: `${Math.max(0, Math.min(100, chrome.phaseProgressPct))}%` }}
-              />
-            </div>
-            {chrome.moneyTotals ? (
-              <div className="border-t border-millennial-border/60 bg-white/95 px-3 py-2 sm:px-4">
-                <MoneyTracker compact totals={chrome.moneyTotals} />
-              </div>
-            ) : null}
-          </>
-        ) : null}
-
         <div
           className={`relative z-[120] overflow-hidden bg-white md:hidden transition-[max-height,opacity] duration-200 ease-out ${
             mobileOpen
@@ -295,121 +229,54 @@ export default function TopNav() {
                   <MagnifyingGlass weight="duotone" size={20} className="shrink-0 opacity-80" aria-hidden />
                   Search
                 </Link>
-                {isJourneyPage ? (
-                  <>
-                    <p className="px-4 text-xs font-bold uppercase tracking-wide text-slate-500">Also on NestQuest</p>
-                    <Link
-                      href="/"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
-                    >
-                      Home
-                    </Link>
-                    <Link
-                      href="/customized-journey?tab=overview"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
-                    >
-                      Overview &amp; snapshot
-                    </Link>
-                    <Link
-                      href="/results"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-base font-medium italic text-millennial-text-muted hover:bg-millennial-primary-light/25"
-                    >
-                      Edit full snapshot (results)
-                    </Link>
-                    <Link
-                      href="/customized-journey?tab=inbox"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
-                    >
-                      Inbox
-                    </Link>
-                    <Link
-                      href="/customized-journey?tab=learn"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
-                    >
-                      Learn
-                    </Link>
-                    <Link
-                      href="/customized-journey?tab=assistance"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
-                    >
-                      Assistance
-                    </Link>
-                    <Link
-                      href="/customized-journey?tab=library"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
-                    >
-                      Library
-                    </Link>
-                    <Link
-                      href="/customized-journey?tab=upgrades"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
-                    >
-                      Upgrades
-                    </Link>
-                    <Link
-                      href={resourcesNavHref}
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
-                    >
-                      Playbooks
-                    </Link>
-                  </>
-                ) : isAuthenticated ? (
+                {isAuthenticated ? (
                   <>
                     <Link
                       href="/dashboard"
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={mobileMenuTabClass(pathname === '/dashboard')}
                     >
                       Dashboard
                     </Link>
                     <Link
-                      href="/customized-journey"
+                      href="/customized-journey?tab=today"
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={mobileMenuTabClass(isJourneyPage)}
                     >
                       My Journey
                     </Link>
                     <Link
                       href={resourcesNavHref}
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={mobileMenuTabClass(pathname === '/resources')}
                     >
-                      Playbooks
+                      Guides
                     </Link>
                     <Link
                       href="/down-payment-optimizer"
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={mobileMenuTabClass(pathname === '/down-payment-optimizer')}
                     >
                       Find Funds
                     </Link>
                     <Link
                       href="/marketplace"
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={mobileMenuTabClass(pathname === '/marketplace')}
                     >
-                      Marketplace
+                      Tools &amp; Partners
                     </Link>
                     <Link
                       href="/inbox"
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={mobileMenuTabClass(pathname === '/inbox')}
                     >
                       Inbox
                     </Link>
                     <Link
                       href="/for-professionals"
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={mobileMenuTabClass(pathname === '/for-professionals')}
                     >
                       For organizations
                     </Link>
@@ -444,16 +311,14 @@ export default function TopNav() {
                     <Link
                       href={resourcesNavHref}
                       onClick={() => setMobileOpen(false)}
-                      className="block rounded-lg px-4 py-2.5 text-lg font-medium text-millennial-text hover:bg-millennial-primary-light/25"
+                      className={mobileMenuTabClass(pathname === '/resources')}
                     >
-                      Playbooks
+                      Guides
                     </Link>
                     <Link
                       href="/for-professionals"
                       onClick={() => setMobileOpen(false)}
-                      className={`block rounded-lg px-4 py-2.5 text-lg font-medium hover:bg-millennial-primary-light/25 ${
-                        pathname === '/for-professionals' ? 'font-semibold text-millennial-cta-primary' : 'text-millennial-text'
-                      }`}
+                      className={mobileMenuTabClass(pathname === '/for-professionals')}
                     >
                       For organizations
                     </Link>
@@ -466,9 +331,8 @@ export default function TopNav() {
                     </Link>
                   </>
                 )}
-                {!isJourneyPage && (
-                <div className="mt-3 space-y-2 border-t border-millennial-border px-4 pt-3">
-                  {isAuthenticated ? null : (
+                {isAuthenticated ? null : (
+                  <div className="mt-3 space-y-2 border-t border-millennial-border px-4 pt-3">
                     <Link
                       href="/auth?mode=signin"
                       onClick={() => setMobileOpen(false)}
@@ -476,8 +340,7 @@ export default function TopNav() {
                     >
                       Sign In
                     </Link>
-                  )}
-                </div>
+                  </div>
                 )}
               </div>
           ) : null}

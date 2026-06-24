@@ -1,8 +1,27 @@
 /** Shared journey tab ids for `/customized-journey` (header + roadmap panels). */
 
-export type JourneyTab = 'today' | 'plan' | 'money' | 'learn'
+export type JourneyTab =
+  | 'today'
+  | 'plan'
+  | 'money'
+  | 'learn'
+  | 'library'
+  | 'inbox'
+  | 'upgrades'
 
+/** Primary tabs shown in the journey rail (sidebar / mobile bottom nav / tab bar). */
 export const JOURNEY_TAB_IDS: JourneyTab[] = ['today', 'plan', 'money', 'learn']
+
+/** Every valid first-class `?tab=` value (includes hub panels linked from TopNav). */
+export const JOURNEY_URL_TAB_IDS: JourneyTab[] = [
+  'today',
+  'plan',
+  'money',
+  'learn',
+  'library',
+  'inbox',
+  'upgrades',
+]
 
 /** Microcopy for tab tooltips (`title` / accessible descriptions). */
 export const JOURNEY_TAB_TOOLTIPS: Record<JourneyTab, string> = {
@@ -10,6 +29,9 @@ export const JOURNEY_TAB_TOOLTIPS: Record<JourneyTab, string> = {
   plan: 'Phase progress, milestones, and your budget sketch.',
   money: 'DPA programs, savings, funding — everything financial in one place.',
   learn: 'Concepts for your current step plus the full script and guide library.',
+  library: 'Scripts, guides, and checklists — curated for your journey.',
+  inbox: 'Alerts, tasks, and messages that need your attention.',
+  upgrades: 'Compare tiers and unlock more guidance and tools.',
 }
 
 /** Deep-link aliases for `?tab=` (e.g. marketing links or old bookmarks). */
@@ -19,16 +41,13 @@ const LEGACY_TAB_MAP: Record<string, JourneyTab> = {
   budget: 'plan',
   timeline: 'plan',
   assistance: 'money',
-  library: 'learn',
   checklist: 'learn',
-  inbox: 'today',
   action: 'today',
-  upgrades: 'today',
   firstgen: 'learn',
 }
 
 export function isJourneyTab(v: string): v is JourneyTab {
-  return (JOURNEY_TAB_IDS as string[]).includes(v)
+  return (JOURNEY_URL_TAB_IDS as string[]).includes(v)
 }
 
 export function parseJourneyTabParam(v: string | null | undefined): JourneyTab {

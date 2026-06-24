@@ -71,9 +71,9 @@ export function getNextStepSuggestions(input: NextStepEngineInput): NextStepEngi
     steps.push({
       id: 'snapshot',
       label: input.snapshotExists ? 'Review your snapshot' : 'Run your savings snapshot',
-      tab: 'overview',
+      tab: 'today',
     })
-    steps.push({ id: 'budget', label: 'Edit your budget sketch', tab: 'budget' })
+    steps.push({ id: 'budget', label: 'Edit your budget sketch', tab: 'plan' })
     steps.push({ id: 'learn', label: 'Learn the basics', tab: 'learn' })
     return {
       steps: steps.slice(0, 3),
@@ -83,14 +83,14 @@ export function getNextStepSuggestions(input: NextStepEngineInput): NextStepEngi
 
   if (t === 'momentum') {
     if (hasJourneyFeature(t, 'weekly_action_plan')) {
-      steps.push({ id: 'weekly', label: 'Complete your weekly action plan', tab: 'phase' })
+      steps.push({ id: 'weekly', label: 'Complete your weekly action plan', tab: 'plan' })
     }
     steps.push({ id: 'scripts', label: 'Review scripts for your current phase', tab: 'library' })
     if (hasJourneyFeature(t, 'smart_nudges')) {
       steps.push({ id: 'nudges', label: 'Check your smart nudges', tab: 'inbox' })
     }
     if (steps.length < 2) {
-      steps.push({ id: 'phase', label: 'Advance your current phase', tab: 'phase' })
+      steps.push({ id: 'phase', label: 'Advance your current phase', tab: 'plan' })
     }
     return {
       steps: steps.slice(0, 3),
@@ -101,7 +101,7 @@ export function getNextStepSuggestions(input: NextStepEngineInput): NextStepEngi
   if (t === 'navigator') {
     steps.push({ id: 'onboarding', label: 'Schedule your onboarding call', tab: 'upgrades' })
     steps.push({ id: 'docs', label: 'Upload documents for review', tab: 'inbox' })
-    steps.push({ id: 'afford', label: 'Get your affordability analysis', tab: 'budget' })
+    steps.push({ id: 'afford', label: 'Get your affordability analysis', tab: 'plan' })
     return {
       steps: steps.slice(0, 3),
       upsell: tierLine('navigator'),

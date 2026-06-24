@@ -150,7 +150,7 @@ export default function JourneyTimeline({
                 />
                 <span
                   className="mt-0.5 text-[10px] font-semibold leading-none"
-                  style={{ color: 'var(--accent)', fontFamily: 'var(--font-dm-sans), "DM Sans", sans-serif' }}
+                  style={{ color: 'var(--accent)' }}
                 >
                   You are here
                 </span>
@@ -195,13 +195,11 @@ export default function JourneyTimeline({
               'mt-2 max-w-[9rem] text-center text-[13px] font-medium leading-tight',
               state === 'future' ? 'text-[color:var(--muted)]' : 'text-[color:var(--text)]'
             )}
-            style={{ fontFamily: 'var(--font-dm-sans), "DM Sans", sans-serif' }}
           >
             {title}
           </p>
           <p
             className="mt-0.5 text-[11px] italic leading-snug text-[color:var(--muted)]"
-            style={{ fontFamily: 'var(--font-dm-sans), "DM Sans", sans-serif' }}
           >
             {weekLine}
           </p>
@@ -339,7 +337,7 @@ export default function JourneyTimeline({
                       <div className="mb-1 flex flex-col items-center" aria-hidden>
                         <span
                           className="text-[10px] font-semibold leading-none"
-                          style={{ color: 'var(--accent)', fontFamily: 'var(--font-dm-sans), "DM Sans", sans-serif' }}
+                          style={{ color: 'var(--accent)' }}
                         >
                           You are here
                         </span>
@@ -433,7 +431,7 @@ export default function JourneyTimeline({
             'mx-auto max-w-xl rounded-full px-4 py-2 text-center text-[13px] font-semibold text-white transition-opacity duration-500',
             badgeVisible ? 'opacity-100' : 'opacity-0'
           )}
-          style={{ background: 'var(--success)', fontFamily: 'var(--font-dm-sans), "DM Sans", sans-serif' }}
+          style={{ background: 'var(--success)' }}
           role="status"
         >
           You&apos;re ahead of {percentile}% of NestQuest users at your savings level

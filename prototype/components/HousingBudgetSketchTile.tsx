@@ -19,6 +19,10 @@ import type { UserSnapshot } from '@/lib/user-snapshot'
 import { updateMomentumFactor } from '@/hooks/use-momentum-factors'
 import { useICP } from '@/lib/icp-context'
 import { hexToRgba } from '@/lib/icp-skin-utils'
+import {
+  enableLiveRatesForSyncRead,
+  getCachedFreddieMacRates,
+} from '@/lib/freddie-mac-rates'
 
 const STORAGE_KEY = 'nq_budget_sketch_v1'
 
@@ -40,6 +44,12 @@ type LineState = {
   pmiMonthly: number
   hoaMonthly: number
   maintenanceReserveMonthly: number
+}
+
+/** Stable SSR + first-client-paint lines (fallback quiz + fallback PMMS only). */
+function createStableSketchLines(): LineState {
+  const aff = calculateAffordability(FALLBACK_QUIZ)
+  return linesFromDefaults(getComfortMonthlyBudgetLines(FALLBACK_QUIZ, aff))
 }
 
 type StoredSketch = {
@@ -179,8 +189,14 @@ export default function HousingBudgetSketchTile({
 }) {
   const { content, icpType, quizData, hasPersistedQuizState } = useICP()
   const [clientQuiz, setClientQuiz] = useState<QuizData | null>(null)
+  const [liveRatesReady, setLiveRatesReady] = useState(false)
   const [currentHomeValue, setCurrentHomeValue] = useState('')
   const [remainingMortgage, setRemainingMortgage] = useState('')
+
+  useEffect(() => {
+    enableLiveRatesForSyncRead()
+    void getCachedFreddieMacRates().finally(() => setLiveRatesReady(true))
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -438,12 +454,15 @@ export default function HousingBudgetSketchTile({
     [defaults.homePriceBasis, quiz.downPayment, defaults.mortgageRateAnnual, acsHoaPrefill?.geoKey]
   )
 
-  const defaultLines = useMemo(() => linesFromDefaults(defaultsWithAcsHoa), [defaultsWithAcsHoa])
+  const defaultLines = useMemo(
+    () => linesFromDefaults(defaultsWithAcsHoa),
+    [defaultsWithAcsHoa, liveRatesReady]
+  )
 
-  const [lines, setLines] = useState<LineState>(defaultLines)
+  const [lines, setLines] = useState<LineState>(createStableSketchLines)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (!liveRatesReady || typeof window === 'undefined') return
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
@@ -464,7 +483,7 @@ export default function HousingBudgetSketchTile({
       // ignore
     }
     setLines(defaultLines)
-  }, [basisKey, defaultLines])
+  }, [basisKey, defaultLines, liveRatesReady])
 
   useEffect(() => {
     setLines((prev) => {
@@ -501,9 +520,11 @@ export default function HousingBudgetSketchTile({
 
   const total = sumLines(lines)
   const reduceMotion = useReducedMotion() ?? false
-  const [displayTotal, setDisplayTotal] = useState(total)
+  const stableInitialTotal = useMemo(() => sumLines(createStableSketchLines()), [])
+  const [displayTotal, setDisplayTotal] = useState(stableInitialTotal)
 
   useEffect(() => {
+    if (!liveRatesReady) return
     if (reduceMotion) {
       setDisplayTotal(total)
       return
@@ -520,7 +541,7 @@ export default function HousingBudgetSketchTile({
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [total, reduceMotion])
+  }, [total, reduceMotion, liveRatesReady])
 
   const editableKeys = useMemo(() => {
     const n = Math.max(0, Math.min(maxEditableLineItems, BUDGET_LINE_ORDER.length))

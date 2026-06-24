@@ -1,23 +1,19 @@
 import type { Metadata } from 'next'
-import { DM_Sans, DM_Serif_Display } from 'next/font/google'
+import { Manrope } from 'next/font/google'
 import './globals.css'
+import './nq-editorial-theme.css'
 import ClientLayout from '@/components/ClientLayout'
 
-const dmSans = DM_Sans({
+const nqBody = Manrope({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-dm-sans',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-nq-body',
+  display: 'swap',
 })
 
-const dmSerifDisplay = DM_Serif_Display({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-dm-serif',
-})
-
-const siteTitle = 'NestQuest — Save $10,000–$15,000 on Your Home Purchase'
+const siteTitle = 'NestQuest — Typical savings opportunities of $8k–$15k'
 const siteDescription =
-  'NestQuest is your home buying advocate — finding grants, programs, and savings opportunities that save first-time buyers $10,000–$15,000. No affiliate kickbacks. No hidden agendas.'
+  'NestQuest is your home buying advocate — finding grants, programs, and savings opportunities that first-time buyers typically surface in the $8k–$15k range. No affiliate kickbacks. No hidden agendas.'
 
 export const metadata: Metadata = {
   title: { default: siteTitle, template: '%s | NestQuest' },
@@ -41,25 +37,19 @@ export default function RootLayout({
   const themeInit = `(function(){try{document.documentElement.classList.remove('dark');}catch(e){}})()`
 
   return (
-    <html lang="en" className="min-h-full" suppressHydrationWarning>
+    <html lang="en" className={`min-h-full ${nqBody.variable}`} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body
-        className={`${dmSans.variable} ${dmSerifDisplay.variable} font-body min-h-full antialiased bg-millennial-bg text-millennial-text font-normal`}
+        className={`${nqBody.className} font-body min-h-full antialiased bg-millennial-bg text-millennial-text font-normal`}
       >
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
         <ClientLayout>{children}</ClientLayout>
         <noscript>
-          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', padding: '2rem', background: '#f8fafc', color: '#0f172a', fontFamily: 'sans-serif', textAlign: 'center' }}>
+          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', padding: '2rem', background: '#f8fafc', color: '#0f172a', fontFamily: 'Manrope, system-ui, sans-serif', textAlign: 'center' }}>
             <p style={{ fontSize: '1.25rem' }}>JavaScript is required to run this app.</p>
             <a href="/quiz" style={{ color: '#06b6d4', textDecoration: 'underline' }}>Start assessment →</a>
           </div>
@@ -68,4 +58,3 @@ export default function RootLayout({
     </html>
   )
 }
-

@@ -12,7 +12,8 @@ type CountUpNumberProps = {
   startOnMount?: boolean
 }
 
-const DEFAULT_FALLBACK = 5593
+/** Mid-range illustrative savings when no home price is entered ($8k–$15k typical band). */
+const DEFAULT_FALLBACK = 12000
 
 export default function CountUpNumber({
   end,

@@ -84,7 +84,7 @@ export function getSavingsOpportunities(userTier: UserTier): MoneyOpportunity[] 
 
 export function getFundingOpportunities(userTier: UserTier): MoneyOpportunity[] {
   const d = tierDepth(userTier)
-  return [
+  const all: MoneyOpportunity[] = [
     {
       id: 'grants',
       title: 'Grants & down payment assistance',
@@ -123,12 +123,13 @@ export function getFundingOpportunities(userTier: UserTier): MoneyOpportunity[] 
       estimatedValue: Math.round(1_500 + d * 1_000),
       minTier: 'momentum',
     },
-  ].filter((o) => !o.minTier || tierAtLeast(userTier, o.minTier))
+  ]
+  return all.filter((o) => !o.minTier || tierAtLeast(userTier, o.minTier))
 }
 
 export function getAlternativeSolutions(userTier: UserTier): MoneyOpportunity[] {
   const d = tierDepth(userTier)
-  return [
+  const all: MoneyOpportunity[] = [
     {
       id: 'buydown',
       title: 'Permanent rate buydown',
@@ -182,7 +183,8 @@ export function getAlternativeSolutions(userTier: UserTier): MoneyOpportunity[] 
       estimatedValue: Math.round(3_000 + d * 1_500),
       minTier: 'navigator',
     },
-  ].filter((o) => !o.minTier || tierAtLeast(userTier, o.minTier))
+  ]
+  return all.filter((o) => !o.minTier || tierAtLeast(userTier, o.minTier))
 }
 
 export function aggregateCategoryTotals(userTier: UserTier): Record<

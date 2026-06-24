@@ -662,11 +662,10 @@ export default function QuizPage() {
     setIsLoading(false)
   }
 
-  const handlePlanEmailSubmit = (e: React.FormEvent) => {
+  const handlePlanEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!resultEmail.trim()) return
     const trimmed = resultEmail.trim()
-    console.log('[quiz results] email capture:', trimmed)
     try {
       localStorage.setItem('quizLeadEmail', trimmed)
       localStorage.setItem('quizLeadEmailCapturedAt', new Date().toISOString())
@@ -677,6 +676,19 @@ export default function QuizPage() {
       tool: 'quiz_result_email_capture',
       email_length: trimmed.length,
     })
+    try {
+      await fetch('/api/leads/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: trimmed,
+          template: 'quiz-results-teaser',
+          source: 'quiz',
+        }),
+      })
+    } catch {
+      /* still reveal plan — email is optional for UX */
+    }
     setResultEmailSaved(true)
     setResultPlanRevealed(true)
   }
@@ -1158,7 +1170,10 @@ export default function QuizPage() {
                 </p>
               </div>
               <p className="text-sm text-[#57534e]">
-                Join 6,303 buyers who&apos;ve already found their savings
+                Join buyers using NestQuest to surface typical savings opportunities of $8k–$15k —{' '}
+                <Link href="/resources#phase-methodology" className="font-semibold text-[#0d9488] hover:underline">
+                  see methodology
+                </Link>
               </p>
             </div>
           )}

@@ -56,14 +56,14 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         <TopNav />
       </Suspense>
       {children ?? <EmptyFallback />}
-      <JourneyProfilePanel />
+      {process.env.NODE_ENV === 'development' ? <JourneyProfilePanel /> : null}
     </>
   )
 
   return (
     <div
       id="main-content"
-      className={clsx('app-page-shell', reserveMobileStickyCta && 'pb-24 md:pb-0')}
+      className={clsx('app-page-shell', 'nq-ed-app', reserveMobileStickyCta && 'pb-24 md:pb-0')}
       tabIndex={-1}
     >
       <ErrorBoundary

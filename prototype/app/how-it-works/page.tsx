@@ -21,14 +21,15 @@ const steps = [
     icon: '💰',
     title: 'See Your Personalized Savings Number',
     body:
-      "We calculate exactly how much you could save based on your buyer type, location, and timeline. Most buyers discover $8,000–$15,000 in savings they didn't know existed.",
+      'We estimate savings opportunities from your buyer type, location, and timeline — typical ranges often fall in the $8,000–$15,000 band depending on eligibility and deal details, not a guaranteed amount for every buyer.',
+    methodology: true,
   },
   {
     n: 3,
     icon: '🔍',
     title: 'Explore Your Matched DPA Programs',
     body:
-      'We search the largest database of down payment assistance programs in the country — over 2,400 programs — and match you to the ones you actually qualify for.',
+      'We help you explore down payment assistance programs matched to your profile — eligibility and funding vary by state and administrator. Verify each program before you apply.',
   },
   {
     n: 4,
@@ -42,7 +43,7 @@ const steps = [
     icon: '🏠',
     title: 'Close With Confidence',
     body:
-      'Our users close with an average of $5,593 more in their pocket than buyers who go it alone. That\'s money that stays with you — not with agents, lenders, or title companies.',
+      'Buyers who follow a structured plan often keep more cash at closing — through grants, fee negotiation, and clearer comparisons. Your results depend on location, eligibility, and deal details. See our methodology in Guides.',
   },
 ] as const
 
@@ -102,6 +103,13 @@ export default function HowItWorksPage() {
                   <p className="mt-4 text-lg leading-relaxed text-millennial-text-muted">
                     {step.body}
                   </p>
+                  {'methodology' in step && step.methodology ? (
+                    <p className="mt-3 text-sm text-millennial-text-muted">
+                      <Link href="/resources#phase-methodology" className="font-semibold text-millennial-cta-primary hover:underline">
+                        How we calculate savings →
+                      </Link>
+                    </p>
+                  ) : null}
                   {'cta' in step && step.cta ? (
                     <p className="mt-6">
                       <Link

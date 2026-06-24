@@ -23,32 +23,30 @@ export default function NextBestActionSticky({
   className = '',
 }: NextBestActionStickyProps) {
   return (
-    <div className={`sticky top-4 z-30 rounded-xl border border-slate-200 bg-white/95 backdrop-blur p-3 shadow-sm ${className}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className={`nq-hub-panel sticky top-4 z-30 p-4 ${className}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wide font-semibold text-slate-500">Next Best Action</p>
-          <p className="text-sm font-semibold text-slate-900">{title}</p>
-          <p className="text-xs text-slate-600">{description}</p>
+          <p className="nq-ed-eyebrow !px-2.5 !py-1.5 !text-[0.65rem]">Next best action</p>
+          <p className="mt-2 font-display text-base font-semibold tracking-tight text-[var(--nq-ed-text)] sm:text-lg">
+            {title}
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-[var(--nq-ed-muted)]">{description}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           {secondaryLabel && secondaryHref && (
-            <Link
-              href={secondaryHref}
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
+            <Link href={secondaryHref} className="nq-ed-btn-outline inline-flex !rounded-lg !px-3 !py-2 text-sm">
               {secondaryLabel}
             </Link>
           )}
           <Link
             href={ctaHref}
-            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-[rgb(var(--coral))] text-white text-sm font-semibold hover:bg-[rgb(var(--coral-hover))]"
+            className="nq-ed-btn-primary inline-flex items-center gap-1 !rounded-lg !px-3 !py-2 text-sm"
           >
             {ctaLabel}
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
     </div>
   )
 }
-

@@ -345,7 +345,7 @@ export function migrateNQGuidedLocalStorageIfNeeded(): void {
         if (typeof i !== 'number' || i < 0) continue
         nextDone.add(i >= 4 ? i - 1 : i)
       }
-      localStorage.setItem('nq_completed_steps', JSON.stringify([...nextDone]))
+      localStorage.setItem('nq_completed_steps', JSON.stringify(Array.from(nextDone)))
       v = 2
     }
 
@@ -361,7 +361,7 @@ export function migrateNQGuidedLocalStorageIfNeeded(): void {
         if (typeof i !== 'number' || i < 0 || i >= NQ_GUIDED_STEPS.length) continue
         nextDone.add(i)
       }
-      localStorage.setItem('nq_completed_steps', JSON.stringify([...nextDone]))
+      localStorage.setItem('nq_completed_steps', JSON.stringify(Array.from(nextDone)))
     }
 
     if (v < 4) {
@@ -375,7 +375,7 @@ export function migrateNQGuidedLocalStorageIfNeeded(): void {
         if (typeof i !== 'number' || i < 0 || i >= NQ_GUIDED_STEPS.length) continue
         nextDone.add(i)
       }
-      localStorage.setItem('nq_completed_steps', JSON.stringify([...nextDone]))
+      localStorage.setItem('nq_completed_steps', JSON.stringify(Array.from(nextDone)))
     }
 
     localStorage.setItem('nq_guided_schema_version', String(NQ_GUIDED_SCHEMA_VERSION))

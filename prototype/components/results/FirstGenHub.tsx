@@ -11,9 +11,9 @@ type FirstGenHubContext = 'results' | 'journey'
 /** Section 9 — First-Generation Buyer hub on results (cards + social proof). */
 export default function FirstGenHub({ context = 'results' }: { context?: FirstGenHubContext }) {
   const programsHref =
-    context === 'journey' ? journeyTabHref('assistance') : '/down-payment-optimizer'
+    context === 'journey' ? journeyTabHref('money') : '/down-payment-optimizer'
   const guidedHref =
-    context === 'journey' ? journeyTabHref('learn') : journeyTabHref('firstgen')
+    context === 'journey' ? journeyTabHref('learn') : journeyTabHref('learn')
   return (
     <div className="mt-6 rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/95 to-white p-5 sm:p-6 shadow-sm">
       <h3 className="text-lg font-bold text-brand-forest dark:text-white">
@@ -74,7 +74,7 @@ export default function FirstGenHub({ context = 'results' }: { context?: FirstGe
       </div>
 
       <p className="mt-5 text-center text-sm font-medium text-brand-forest dark:text-emerald-200/90">
-        Join 2,400 first-gen buyers who found hidden funds on this platform
+        Join first-gen buyers exploring down payment programs matched to their profile — always verify eligibility with each agency.
       </p>
     </div>
   )

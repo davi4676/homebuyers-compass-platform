@@ -1065,9 +1065,9 @@ export default function UpgradePage() {
                 ⏰ Every week without a plan costs you money.
               </p>
               <p className="text-amber-700 text-sm mt-1">
-                Buyers who start NestQuest before pre-approval save an average of $2,400 more than those who start
-                after. DPA programs in your state have limited funding — some close when their annual allocation runs
-                out.
+                Shopping lenders and assistance programs early gives you time to compare offers. Typical savings
+                opportunities often fall in the $8k–$15k range depending on your deal and eligibility — DPA funding
+                varies by state and can run out when annual allocations are used.
               </p>
             </div>
             {stripeReady ? (

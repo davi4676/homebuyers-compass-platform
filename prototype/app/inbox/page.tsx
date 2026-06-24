@@ -12,6 +12,17 @@ import { useExperiment } from '@/lib/hooks/useExperiment'
 import { usePlainEnglish } from '@/lib/hooks/usePlainEnglish'
 import { applyPlainEnglishCopy } from '@/lib/plain-english'
 import BackToMyJourneyLink from '@/components/BackToMyJourneyLink'
+import NqHubTabLayout from '@/components/hub/NqHubTabLayout'
+import NqHubSubnav from '@/components/hub/NqHubSubnav'
+import NqHubStatCard from '@/components/hub/NqHubStatCard'
+import {
+  dismissScheduledPhaseReminder,
+  formatReminderDueLabel,
+  listDuePhaseReminders,
+  listScheduledPhaseReminders,
+  markPhaseReminderNotified,
+  type ScheduledPhaseReminder,
+} from '@/lib/phase-reengagement'
 
 type PhaseStatus = 'not-started' | 'in-progress' | 'complete'
 
@@ -49,6 +60,22 @@ export default function InboxPage() {
     runNow,
   } = useLifecycleReminders()
   const webPush = useWebPush()
+  const [phaseReminders, setPhaseReminders] = useState<ScheduledPhaseReminder[]>([])
+  const [duePhaseReminders, setDuePhaseReminders] = useState<ScheduledPhaseReminder[]>([])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const refreshPhaseReminders = () => {
+      const scheduled = listScheduledPhaseReminders()
+      const due = listDuePhaseReminders()
+      due.forEach((r) => markPhaseReminderNotified(r.id))
+      setPhaseReminders(scheduled.filter((r) => !r.dismissed))
+      setDuePhaseReminders(due)
+    }
+    refreshPhaseReminders()
+    window.addEventListener('nq-journey-progress', refreshPhaseReminders)
+    return () => window.removeEventListener('nq-journey-progress', refreshPhaseReminders)
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -95,37 +122,38 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="app-page-shell">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4">
-        <div className="mb-4">
-          <BackToMyJourneyLink />
-        </div>
-        <div className="relative h-24 sm:h-28 overflow-hidden rounded-2xl mb-6">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage:
-                'linear-gradient(135deg, rgba(30,58,95,0.85) 0%, rgba(30,64,175,0.75) 50%, rgba(59,130,246,0.6) 100%), url(https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1400&q=80)',
-            }}
-          />
-          <div className="absolute inset-0 flex items-center px-6 sm:px-10">
-            <div>
-              <PlainEnglishText
-                as="p"
-                className="text-white text-lg sm:text-xl font-semibold"
-                text="Action Inbox"
-              />
-              <PlainEnglishText
-                as="p"
-                className="text-white/70 text-sm"
-                text="Your reminders, next best steps, and milestones"
-              />
-            </div>
+    <NqHubTabLayout
+      tab="inbox"
+      backLink={<BackToMyJourneyLink />}
+      maxWidth="5xl"
+      glassCard={
+        phaseHydrated ? (
+          <div className="nq-glass nq-savings-glass">
+            <p className="nq-savings-glass-label">Journey progress</p>
+            <p className="nq-savings-glass-amount tabular-nums">
+              {completion.done}/{completion.total}
+            </p>
+            <p className="mt-2 text-sm text-[var(--nq-ed-muted)]">
+              {completion.pct}% complete · Next: {nextPhase.label}
+            </p>
           </div>
-        </div>
-      </div>
+        ) : undefined
+      }
+    >
+        <NqHubSubnav
+          items={[
+            {
+              href: '/customized-journey?tab=today',
+              label: 'Overview',
+              active: pathname === '/customized-journey',
+            },
+            { label: 'Inbox', icon: <Bell className="h-4 w-4" />, active: true },
+            { href: '/customized-journey?tab=plan', label: 'Your phase' },
+            { href: '/customized-journey?tab=library', label: 'Library' },
+            { href: '/results', label: 'Edit snapshot' },
+          ]}
+        />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
         <div className="mb-4">
           <NextBestActionSticky
             title={applyPlainEnglishCopy('Complete one phase task this week', plainEnglish)}
@@ -134,126 +162,98 @@ export default function InboxPage() {
               plainEnglish
             )}
             ctaLabel={applyPlainEnglishCopy('Open roadmap', plainEnglish)}
-            ctaHref="/customized-journey?tab=phase"
+            ctaHref="/customized-journey?tab=today"
             secondaryLabel={applyPlainEnglishCopy('Overview & snapshot', plainEnglish)}
-            secondaryHref="/customized-journey?tab=overview"
+            secondaryHref="/customized-journey?tab=today"
           />
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl px-4 sm:px-6 py-3 mb-4 flex flex-wrap items-center gap-2">
-          <Link href="/customized-journey?tab=overview" className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 ${
-            pathname === '/customized-journey'
-              ? 'bg-[rgb(var(--navy))] text-white border-[rgb(var(--navy))] shadow-sm'
-              : 'bg-white border-slate-200 text-[#1e293b] hover:border-slate-300 hover:bg-slate-50'
-          }`}>
-            {pathname === '/customized-journey' && <span className="w-1.5 h-1.5 rounded-full bg-white/90" aria-hidden="true" />}
-            Overview
-          </Link>
-          <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-[rgb(var(--navy))] text-white border border-[rgb(var(--navy))] shadow-sm transition-all duration-200 ease-out">
-            <Bell className="w-4 h-4" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/90" aria-hidden="true" />
-            Inbox
-          </span>
-          <Link
-            href="/customized-journey?tab=phase"
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-[#1e293b] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 active:translate-y-0"
-          >
-            Your phase
-          </Link>
-          <Link
-            href="/customized-journey?tab=library"
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-[#1e293b] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 active:translate-y-0"
-          >
-            Library
-          </Link>
-          <Link href="/results" className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border border-slate-200 bg-white text-[#1e293b] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 active:translate-y-0">
-            Edit snapshot
-          </Link>
         </div>
 
         {!phaseHydrated ? (
-          <div className="grid md:grid-cols-3 gap-4 mb-6" aria-busy aria-label="Loading progress">
+          <div className="mb-6 grid gap-4 md:grid-cols-3" aria-busy aria-label="Loading progress">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-white p-4">
-                <div className="mb-2 h-3 w-20 rounded bg-slate-200" />
-                <div className="mb-2 h-8 w-24 rounded bg-slate-200" />
-                <div className="h-4 w-full rounded bg-slate-100" />
+              <div key={i} className="nq-hub-panel animate-pulse p-4">
+                <div className="mb-2 h-3 w-20 rounded bg-[var(--nq-ed-line-soft)]" />
+                <div className="mb-2 h-8 w-24 rounded bg-[var(--nq-ed-line)]" />
+                <div className="h-4 w-full rounded bg-[var(--nq-ed-line-soft)]" />
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white border border-slate-200 rounded-xl p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Progress</p>
-              <p className="text-2xl font-bold text-[#1e293b]">
-                {completion.done}/{completion.total}
-              </p>
-              <p className="text-sm text-slate-600">Phases complete ({completion.pct}%)</p>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-xl p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Current phase</p>
-              <p className="text-xl font-bold text-[#1e293b]">
-                {PHASES.find((p) => p.id === currentPhase)?.label || 'Preparation & Planning'}
-              </p>
-              <p className="text-sm text-slate-600">Stay focused on one step at a time</p>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-xl p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Next deadline</p>
-              <p className="text-xl font-bold text-[#1e293b]">{nextPhase.label}</p>
-              <p className="text-sm text-slate-600">Estimated time: {nextPhase.eta}</p>
-            </div>
+          <div className="mb-6 grid gap-4 md:grid-cols-3">
+            <NqHubStatCard
+              label="Progress"
+              value={`${completion.done}/${completion.total}`}
+              hint={`Phases complete (${completion.pct}%)`}
+            />
+            <NqHubStatCard
+              label="Current phase"
+              value={PHASES.find((p) => p.id === currentPhase)?.label || 'Preparation & Planning'}
+              hint="Stay focused on one step at a time"
+            />
+            <NqHubStatCard label="Next deadline" value={nextPhase.label} hint={`Estimated time: ${nextPhase.eta}`} />
           </div>
         )}
 
         {!phaseHydrated ? (
           <div
-            className="mb-6 animate-pulse rounded-2xl border border-slate-200 bg-white p-5"
+            className="nq-hub-panel mb-6 animate-pulse p-5"
             aria-busy
             aria-label="Loading next action"
           >
-            <div className="mb-3 h-6 w-56 max-w-full rounded-lg bg-slate-200" />
-            <div className="h-4 w-full rounded bg-slate-100" />
-            <div className="mt-2 h-4 max-w-[85%] rounded bg-slate-100" />
+            <div className="mb-3 h-6 w-56 max-w-full rounded-lg bg-[var(--nq-ed-line)]" />
+            <div className="h-4 w-full rounded bg-[var(--nq-ed-line-soft)]" />
+            <div className="mt-2 h-4 max-w-[85%] rounded bg-[var(--nq-ed-line-soft)]" />
           </div>
         ) : (
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Bell className="w-5 h-5 text-[rgb(var(--coral))]" />
-              <h2 className="text-lg font-bold text-[#1e293b]">Today&apos;s next best action</h2>
+          <div className="nq-hub-panel mb-6 p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <Bell className="h-5 w-5 text-[var(--nq-ed-accent)]" />
+              <h2 className="font-display text-lg font-bold tracking-tight text-[var(--nq-ed-text)]">
+                Today&apos;s next best action
+              </h2>
             </div>
-            <PlainEnglishText as="p" className="text-slate-700" text={NEXT_ACTION[nextPhase.id]} />
+            <PlainEnglishText as="p" className="text-[var(--nq-ed-muted)]" text={NEXT_ACTION[nextPhase.id]} />
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/customized-journey?tab=phase" className="inline-flex items-center gap-2 rounded-lg bg-[rgb(var(--coral))] px-4 py-2 text-sm font-semibold text-white">
-                Start next action <ArrowRight className="w-4 h-4" />
+              <Link
+                href="/customized-journey?tab=plan"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[var(--nq-ed-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--nq-ed-accent-hover)]"
+              >
+                Start next action <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/customized-journey?tab=library" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1e293b]">
+              <Link
+                href="/customized-journey?tab=library"
+                className="nq-ed-btn-outline inline-flex !rounded-lg !px-4 !py-2 text-sm"
+              >
                 {applyPlainEnglishCopy('Open Library', plainEnglish)}
               </Link>
             </div>
           </div>
         )}
 
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-slate-700">
+        <div className="nq-hub-panel mb-4 flex items-start gap-3 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <p className="text-sm leading-relaxed text-[var(--nq-ed-muted)]">
             Missing key phases can increase overpay risk. Complete one phase each week to maintain momentum and protect savings.
           </p>
         </div>
 
-        <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="nq-hub-panel mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-[#1e293b]">Weekly reminder</p>
-            <p className="text-xs text-slate-600">Get a weekly nudge to complete one phase and keep momentum.</p>
+            <p className="font-display text-sm font-semibold text-[var(--nq-ed-text)]">Weekly reminder</p>
+            <p className="mt-1 text-xs text-[var(--nq-ed-muted)]">
+              Get a weekly nudge to complete one phase and keep momentum.
+            </p>
             {preferences?.enabled && preferences?.nextReminderAt && (
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="mt-1 text-xs text-[var(--nq-ed-faint)]">
                 Next reminder: {new Date(preferences.nextReminderAt).toLocaleDateString()}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {preferences?.enabled && (
               <button
                 onClick={() => snoozeReminder(1)}
-                className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold border bg-white text-[#1e293b] border-slate-300 hover:border-slate-400 transition-colors"
+                className="nq-ed-btn-outline inline-flex !rounded-lg !px-4 !py-2 text-sm"
               >
                 Snooze 1 day
               </button>
@@ -267,34 +267,81 @@ export default function InboxPage() {
                   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 })
               }
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+              className={
                 preferences?.enabled
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-white text-[#1e293b] border-slate-300 hover:border-slate-400'
-              }`}
+                  ? 'nq-ed-btn-primary inline-flex !rounded-lg !px-4 !py-2 text-sm'
+                  : 'nq-ed-btn-outline inline-flex !rounded-lg !px-4 !py-2 text-sm'
+              }
             >
               {preferences?.enabled ? 'Reminders on' : 'Turn on reminders'}
             </button>
-            <button
-              onClick={runNow}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold border bg-white text-[#1e293b] border-slate-300 hover:border-slate-400 transition-colors"
-            >
+            <button onClick={runNow} className="nq-ed-btn-outline inline-flex !rounded-lg !px-4 !py-2 text-sm">
               Send test now
             </button>
           </div>
         </div>
 
-        <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-[#1e293b] mb-2">Reminder channels</p>
-          <div className="flex flex-wrap gap-2 mb-3">
+        {(duePhaseReminders.length > 0 || phaseReminders.some((r) => !r.notified)) && (
+          <div className="nq-hub-panel mb-4 p-4">
+            <p className="font-display text-sm font-semibold text-[var(--nq-ed-text)]">Scheduled come-back reminders</p>
+            <ul className="mt-3 space-y-3">
+              {duePhaseReminders.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex flex-col gap-2 rounded-xl border border-teal-200 bg-teal-50/50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--nq-ed-text)]">{r.title}</p>
+                    <p className="text-xs text-[var(--nq-ed-muted)]">{r.message}</p>
+                  </div>
+                  <Link
+                    href={r.actionUrl}
+                    className="inline-flex items-center gap-1 text-sm font-bold text-teal-700 hover:underline"
+                  >
+                    Open guide <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </li>
+              ))}
+              {phaseReminders
+                .filter((r) => !r.notified && !duePhaseReminders.some((d) => d.id === r.id))
+                .map((r) => (
+                  <li
+                    key={r.id}
+                    className="flex flex-col gap-2 rounded-xl border border-[var(--nq-ed-line)] bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--nq-ed-text)]">{r.title}</p>
+                      <p className="text-xs text-[var(--nq-ed-muted)]">
+                        Due {formatReminderDueLabel(r.dueAt)} — {r.message}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dismissScheduledPhaseReminder(r.id)
+                        setPhaseReminders((prev) => prev.filter((x) => x.id !== r.id))
+                      }}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                    >
+                      Cancel
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="nq-hub-panel mb-4 p-4">
+          <p className="font-display text-sm font-semibold text-[var(--nq-ed-text)]">Reminder channels</p>
+          <div className="mb-3 mt-3 flex flex-wrap gap-2">
             {(['in-app', 'email', 'push'] as const).map((channel) => (
               <button
                 key={channel}
                 onClick={() => toggleChannel(channel)}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold border ${
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
                   hasChannel(channel)
-                    ? 'bg-[rgb(var(--navy))] text-white border-[rgb(var(--navy))]'
-                    : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                    ? 'border-[var(--nq-ed-accent)] bg-[var(--nq-ed-accent)] text-white'
+                    : 'border-[var(--nq-ed-line)] bg-white/80 text-[var(--nq-ed-muted)] hover:border-[var(--nq-ed-accent)] hover:text-[var(--nq-ed-accent)]'
                 }`}
               >
                 {channel === 'in-app' ? 'In-app' : channel === 'email' ? 'Email' : 'Push'}
@@ -307,12 +354,14 @@ export default function InboxPage() {
                 const result = await webPush.subscribe()
                 if (result.ok) {
                   await updatePreferences({
-                    channels: Array.from(new Set([...(preferences?.channels || ['in-app']), 'push'])),
+                    channels: Array.from(
+                      new Set([...(preferences?.channels || ['in-app']), 'push'])
+                    ) as ('email' | 'push' | 'in-app')[],
                   })
                 }
               }}
               disabled={!webPush.supported || !webPush.configured || webPush.subscribed}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold border bg-white text-[#1e293b] border-slate-300 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="nq-ed-btn-outline inline-flex !rounded-lg !px-4 !py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {webPush.subscribed ? 'Push connected' : 'Enable browser push'}
             </button>
@@ -324,11 +373,11 @@ export default function InboxPage() {
                 })
               }}
               disabled={!webPush.subscribed}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold border bg-white text-[#1e293b] border-slate-300 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="nq-ed-btn-outline inline-flex !rounded-lg !px-4 !py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               Disable browser push
             </button>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[var(--nq-ed-faint)]">
               {webPush.supported
                 ? webPush.configured
                   ? `Permission: ${webPush.permission}`
@@ -338,48 +387,48 @@ export default function InboxPage() {
           </div>
         </div>
 
-        <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-[#1e293b] mb-3">Recent reminders</p>
+        <div className="nq-hub-panel p-4">
+          <p className="font-display text-sm font-semibold text-[var(--nq-ed-text)]">Recent reminders</p>
           {remindersLoading ? (
-            <div className="space-y-2" aria-busy aria-label="Loading reminders">
+            <div className="mt-3 space-y-2" aria-busy aria-label="Loading reminders">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-[4.25rem] animate-pulse rounded-lg border border-slate-100 bg-slate-50" />
+                <div
+                  key={i}
+                  className="h-[4.25rem] animate-pulse rounded-lg border border-[var(--nq-ed-line-soft)] bg-white/50"
+                />
               ))}
             </div>
           ) : notifications.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/90 px-4 py-8 text-center">
+            <div className="mt-3 rounded-xl border border-dashed border-[var(--nq-ed-line)] bg-white/40 px-4 py-8 text-center">
               <PlainEnglishText
                 as="p"
-                className="mb-4 text-sm text-slate-600"
+                className="mb-4 text-sm text-[var(--nq-ed-muted)]"
                 text="No reminders yet. Complete the quiz or open your roadmap to start seeing nudges here."
               />
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <Link
-                  href="/quiz"
-                  className="inline-flex items-center gap-2 rounded-lg bg-[rgb(var(--coral))] px-4 py-2 text-sm font-semibold text-white"
-                >
+                <Link href="/quiz" className="nq-ed-btn-primary inline-flex !rounded-lg !px-4 !py-2 text-sm">
                   {applyPlainEnglishCopy('Take the quiz', plainEnglish)}
                 </Link>
-                <Link
-                  href="/customized-journey?tab=overview"
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#1e293b]"
-                >
+                <Link href="/customized-journey?tab=today" className="nq-ed-btn-outline inline-flex !rounded-lg !px-4 !py-2 text-sm">
                   {applyPlainEnglishCopy('Open roadmap', plainEnglish)}
                 </Link>
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="mt-3 space-y-2">
               {notifications.slice(0, 5).map((n) => (
-                <div key={n.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
+                <div
+                  key={n.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-[var(--nq-ed-line-soft)] bg-white/50 p-3"
+                >
                   <div>
-                    <p className="text-sm font-medium text-slate-800">{n.title}</p>
-                    <p className="text-xs text-slate-500">{n.message}</p>
+                    <p className="text-sm font-semibold text-[var(--nq-ed-text)]">{n.title}</p>
+                    <p className="text-xs text-[var(--nq-ed-muted)]">{n.message}</p>
                   </div>
                   {!n.readAt && (
                     <button
                       onClick={() => markRead(n.id)}
-                      className="text-xs font-semibold text-[rgb(var(--navy))] hover:underline"
+                      className="text-xs font-semibold text-[var(--nq-ed-accent)] hover:underline"
                     >
                       {applyPlainEnglishCopy('Mark read', plainEnglish)}
                     </button>
@@ -390,14 +439,15 @@ export default function InboxPage() {
           )}
         </div>
 
-        <div className="mt-6 rounded-xl bg-slate-50 border border-slate-200 p-4 flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-600 leading-relaxed">
-            <strong className="text-slate-800">How we make money:</strong> We charge for optional premium plan features — never through commissions, referrals, or kickbacks from lenders, agents, or title companies.
+        <div className="nq-hub-panel mt-6 flex items-start gap-3 p-4">
+          <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+          <p className="text-xs leading-relaxed text-[var(--nq-ed-muted)]">
+            <strong className="font-semibold text-[var(--nq-ed-text)]">How we make money:</strong> We charge for
+            optional premium plan features — never through commissions, referrals, or kickbacks from lenders, agents,
+            or title companies.
           </p>
         </div>
-      </main>
-    </div>
+    </NqHubTabLayout>
   )
 }
 

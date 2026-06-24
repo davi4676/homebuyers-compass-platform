@@ -1,41 +1,62 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSafeSearchParams } from "@/lib/use-safe-search-params";
-import { House, MapTrifold, CurrencyDollar, BookOpen } from "@phosphor-icons/react";
+import {
+  House,
+  MapTrifold,
+  CurrencyDollar,
+  BookOpen,
+  Books,
+  Bell,
+  Sparkle,
+} from "@phosphor-icons/react";
 import {
   type JourneyTab,
   journeyTabHrefPreservingSearch,
   journeyTabLinkBasePath,
   JOURNEY_TAB_STORAGE_KEY,
+  JOURNEY_URL_TAB_IDS,
 } from "@/lib/journey-nav-tabs";
 import {
   NQ_UNREAD_ALERTS_KEY,
   NQ_UNREAD_ALERTS_CHANGED,
 } from "@/lib/nq-unread-alerts";
 
-/** Matches customized-journey hero / Phase 2 tokens — full tab rail, not a single card. */
-const TAB_ACTIVE_SURFACE =
-  "linear-gradient(135deg, rgba(45,106,79,0.14) 0%, rgba(82,183,136,0.1) 55%, rgba(244,162,97,0.07) 100%)";
-const TAB_MOBILE_ACTIVE_BAR =
-  "linear-gradient(90deg, #2D6A4F 0%, #52B788 60%, #F4A261 100%)";
+const TAB_MOBILE_ACTIVE_BAR = "var(--nq-ed-accent)";
 
-const TABS: {
+const RAIL_TABS: {
   id: JourneyTab;
   label: string;
+  shortLabel: string;
   icon: typeof House;
   hasNotification?: boolean;
-}[] = [
-  { id: "today", label: "Today", icon: House, hasNotification: true },
-  { id: "plan", label: "My Plan", icon: MapTrifold },
-  { id: "money", label: "Money", icon: CurrencyDollar },
-  { id: "learn", label: "Learn", icon: BookOpen },
-];
+}[] = JOURNEY_URL_TAB_IDS.map((id) => {
+  switch (id) {
+    case "today":
+      return { id, label: "Today", shortLabel: "Today", icon: House, hasNotification: true };
+    case "plan":
+      return { id, label: "My Plan", shortLabel: "Plan", icon: MapTrifold };
+    case "money":
+      return { id, label: "Money", shortLabel: "Money", icon: CurrencyDollar };
+    case "learn":
+      return { id, label: "Learn", shortLabel: "Learn", icon: BookOpen };
+    case "library":
+      return { id, label: "Library", shortLabel: "Lib", icon: Books };
+    case "inbox":
+      return { id, label: "Inbox", shortLabel: "Inbox", icon: Bell };
+    case "upgrades":
+      // Route id stays `upgrades` (don't rename — would break query-string routing
+      // and the LEGACY_TAB_MAP). Only the display label changes to `Options`.
+      return { id, label: "Options", shortLabel: "Options", icon: Sparkle };
+    default:
+      return { id, label: id, shortLabel: id, icon: House };
+  }
+});
 
 export default function JourneyNav({ activeTab }: { activeTab: JourneyTab }) {
-  const router = useRouter();
   const pathname = usePathname();
   const tabLinkBase = journeyTabLinkBasePath(pathname);
   const searchParams = useSafeSearchParams();
@@ -72,7 +93,7 @@ export default function JourneyNav({ activeTab }: { activeTab: JourneyTab }) {
     }
   }, []);
 
-  const tabIndexList = useMemo(() => TABS.map((t) => t.id), []);
+  const tabIndexList = useMemo(() => RAIL_TABS.map((t) => t.id), []);
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent, index: number) => {
@@ -95,21 +116,28 @@ export default function JourneyNav({ activeTab }: { activeTab: JourneyTab }) {
       }
       const t = tabIndexList[next];
       persistTab(t);
-      const href = journeyTabHrefPreservingSearch(tabLinkBase, searchKey, t);
-      startTransition(() => router.push(href, { scroll: false }));
+      tabRefs.current[next]?.click();
       requestAnimationFrame(() => tabRefs.current[next]?.focus());
     },
-    [persistTab, router, searchKey, tabLinkBase, tabIndexList]
+    [persistTab, tabIndexList]
   );
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[90] flex max-h-[50vh] flex-col overflow-x-hidden border-t border-[rgba(45,106,79,0.14)] bg-gradient-to-b from-[#fbfaf8] to-white pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_24px_rgba(45,106,79,0.07)] md:bottom-0 md:left-0 md:right-auto md:top-16 md:max-h-none md:w-52 md:overflow-x-visible md:border-r md:border-t-0 md:border-[rgba(45,106,79,0.12)] md:bg-gradient-to-b md:from-white md:to-[#f9f7f4] md:pb-0 md:shadow-[2px_0_16px_rgba(45,106,79,0.06)]"
+      className="nq-ed-journey-nav fixed bottom-0 left-0 right-0 z-[90] flex max-h-[50vh] flex-col overflow-x-hidden border-t border-[var(--nq-ed-line-soft)] pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_24px_rgba(29,23,17,0.06)] md:bottom-0 md:left-0 md:right-auto md:top-16 md:max-h-none md:w-[300px] md:overflow-x-visible md:border-r md:border-t-0 md:pb-0 md:shadow-[2px_0_24px_rgba(29,23,17,0.06)]"
       role="tablist"
       aria-label="Journey sections"
     >
-      <div className="flex min-h-0 w-full max-w-full flex-1 flex-row items-stretch justify-between gap-0 overflow-x-hidden overflow-y-auto md:flex-col md:gap-1 md:overflow-x-visible md:px-2 md:pt-4">
-        {TABS.map((t, i) => {
+      <div className="hidden border-b border-[var(--nq-ed-line-soft)] px-4 pb-3 pt-5 md:block">
+        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--nq-ed-muted)]">
+          Private index
+        </p>
+        <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--nq-ed-text)]">
+          NestQuest journey
+        </p>
+      </div>
+      <div className="flex min-h-0 w-full max-w-full flex-1 flex-row flex-nowrap items-stretch justify-start gap-0 overflow-x-auto overflow-y-hidden overscroll-x-contain px-1 pt-1 [-webkit-overflow-scrolling:touch] md:flex-col md:justify-start md:gap-1 md:overflow-x-visible md:overflow-y-auto md:overscroll-auto md:px-3 md:pb-4 md:pt-3">
+        {RAIL_TABS.map((t, i) => {
           const active = activeTab === t.id;
           const showDot = Boolean(t.hasNotification && unreadAlerts);
           const Icon = t.icon;
@@ -127,42 +155,32 @@ export default function JourneyNav({ activeTab }: { activeTab: JourneyTab }) {
               aria-selected={active}
               aria-controls={`journey-panel-${t.id}`}
               tabIndex={active ? 0 : -1}
-              onClick={(e) => {
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                e.preventDefault();
-                persistTab(t.id);
-                const href = journeyTabHrefPreservingSearch(tabLinkBase, searchKey, t.id);
-                startTransition(() => router.push(href, { scroll: false }));
-              }}
+              onClick={() => persistTab(t.id)}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`relative z-0 flex min-w-0 flex-1 basis-0 flex-col items-center gap-0.5 py-2 md:w-full md:min-w-0 md:flex-none md:basis-auto md:flex-row md:gap-3 md:rounded-xl md:px-3 md:py-2.5 md:text-left ${
+              className={`nq-ed-rail-tab relative z-0 flex min-w-[3.25rem] shrink-0 touch-manipulation flex-col items-center gap-0.5 rounded-xl py-2 no-underline sm:min-w-[3.5rem] md:w-full md:min-w-0 md:shrink md:flex-row md:items-center md:justify-start md:gap-3 md:py-0 ${
                 active
-                  ? "font-semibold text-[var(--primary)] md:shadow-sm md:ring-1 md:ring-[rgba(45,106,79,0.14)]"
-                  : "text-slate-500 md:text-slate-600 md:hover:bg-[rgba(45,106,79,0.06)] md:hover:text-[var(--primary)]"
+                  ? "font-semibold text-[var(--nq-ed-accent)] nq-ed-rail-tab-active md:font-semibold md:text-[var(--nq-ed-text)]"
+                  : "text-[var(--nq-ed-muted)] md:text-[var(--nq-ed-muted)] md:hover:text-[var(--nq-ed-text)]"
               }`}
             >
-              {active ? (
-                <span
-                  className="pointer-events-none absolute inset-0 z-0 hidden rounded-xl md:block"
-                  style={{ background: TAB_ACTIVE_SURFACE }}
-                  aria-hidden
-                />
-              ) : null}
-              <span className="relative z-10 flex flex-col items-center md:w-full md:flex-row md:gap-3">
-                <span className="relative shrink-0">
+              <span className="relative z-10 flex w-full flex-col items-center md:flex-row md:items-center md:gap-3">
+                <span className="relative flex shrink-0 flex-col items-center md:flex-row md:gap-3">
                   <Icon
                     weight="duotone"
                     size={20}
                     className="md:h-[18px] md:w-[18px]"
-                    color={active ? "var(--primary)" : "var(--muted)"}
+                    color={active ? "var(--nq-ed-accent)" : "var(--nq-ed-muted)"}
                     aria-hidden
                   />
                   {showDot ? (
-                    <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#fbfaf8]" />
+                    <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-[var(--nq-ed-accent)] ring-2 ring-[var(--nq-ed-surface)] md:left-[14px] md:top-[-2px]" />
                   ) : null}
-                </span>
-                <span className="max-w-full px-0.5 text-center text-[11px] font-semibold leading-tight sm:text-xs md:max-w-none md:flex-1 md:truncate md:px-0 md:text-sm md:leading-normal">
-                  {t.label}
+                  <span className="max-w-full px-0.5 text-center text-[10px] font-semibold leading-tight sm:text-[11px] md:hidden">
+                    {t.shortLabel}
+                  </span>
+                  <span className="hidden min-w-0 flex-1 truncate text-sm font-semibold leading-normal md:inline">
+                    {t.label}
+                  </span>
                 </span>
               </span>
               {active ? (

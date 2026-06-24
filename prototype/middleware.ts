@@ -18,7 +18,7 @@ function isTierReviewBrowsing(): boolean {
 const PUBLIC_PATHS = ['/', '/auth', '/quiz', '/results']
 
 /** Path prefixes that are always allowed (api, static, etc.). */
-const PUBLIC_PREFIXES = ['/api/', '/_next/', '/favicon', '/privacy']
+const PUBLIC_PREFIXES = ['/api/', '/_next/', '/favicon', '/privacy', '/terms', '/glossary', '/learn/', '/workbook', '/certificate/', '/share-your-story']
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true

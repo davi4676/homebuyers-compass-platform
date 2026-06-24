@@ -2,7 +2,8 @@
 
 import { useContext, useEffect, useMemo, useState } from 'react'
 import FirstGenHub from '@/components/results/FirstGenHub'
-import SoloAdvocateChecklist from '@/components/results/SoloAdvocateChecklist'
+import HudCounselorHandoffCard from '@/components/journey/HudCounselorHandoffCard'
+import QuizReadNextCard from '@/components/results/QuizReadNextCard'
 import { SavingsOpportunitiesHeadline } from '@/components/results/SavingsOpportunitiesHeadline'
 import ResultsReferralCard from '@/components/results/ResultsReferralCard'
 import GlossaryTooltip from '@/components/GlossaryTooltip'
@@ -154,6 +155,28 @@ function normalizeIcpKey(raw: string): keyof typeof ICP_RESULT_HEADLINES | '' {
   return ''
 }
 
+/** Defaults for first-time scenario inputs — shared by effects (hooks before context is ready) and main body. */
+function computeFirstTimeScenarioDefaults(results: Record<string, unknown>): {
+  loanAmount: number
+  downPayment: number
+} {
+  const affordability = results.affordability as Record<string, unknown> | undefined
+  const costBreakdown = results.costBreakdown as Record<string, unknown> | undefined
+  const quizData = results.quizData as Record<string, unknown> | undefined
+  const maxApproved = affordability?.maxApproved != null ? Number(affordability.maxApproved) : null
+  const realisticMax = affordability?.realisticMax != null ? Number(affordability.realisticMax) : null
+  const scenarioHomePrice = realisticMax ?? maxApproved
+  const defaultScenarioDownPayment = quizData?.downPayment != null ? Number(quizData.downPayment) : 0
+  const quizTargetHomePrice = quizData?.targetHomePrice != null ? Number(quizData.targetHomePrice) : null
+  const defaultScenarioLoanAmount =
+    quizTargetHomePrice != null
+      ? Math.max(0, quizTargetHomePrice - defaultScenarioDownPayment)
+      : scenarioHomePrice != null
+        ? Math.max(0, scenarioHomePrice - defaultScenarioDownPayment)
+        : 0
+  return { loanAmount: defaultScenarioLoanAmount, downPayment: defaultScenarioDownPayment }
+}
+
 export default function ResultsPageBody() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -216,6 +239,112 @@ export default function ResultsPageBody() {
     }
   }, [])
 
+  useEffect(() => {
+    if (resultsExperiment.isReady) {
+      resultsExperiment.track('results_body_viewed')
+    }
+  }, [resultsExperiment.isReady, resultsExperiment.variant])
+
+  const [latestAverageMortgageRatePct, setLatestAverageMortgageRatePct] = useState<number | null>(null)
+  const [latestAverageMortgageRateAsOf, setLatestAverageMortgageRateAsOf] = useState<string | null>(null)
+  const [latestAverageMortgageRateSource, setLatestAverageMortgageRateSource] = useState<
+    'freddie-mac-pmms' | 'fallback' | null
+  >(null)
+  useEffect(() => {
+    let active = true
+    getCachedFreddieMacRates()
+      .then((rates) => {
+        if (!active) return
+        setLatestAverageMortgageRatePct(rates.rate30Year * 100)
+        setLatestAverageMortgageRateAsOf(rates.date)
+        setLatestAverageMortgageRateSource(rates.source)
+      })
+      .catch(() => {
+        if (!active) return
+        setLatestAverageMortgageRatePct(null)
+        setLatestAverageMortgageRateAsOf(null)
+        setLatestAverageMortgageRateSource(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // Load / save educational quiz from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('hc_edu_quiz_v1')
+      if (saved) {
+        const parsed = JSON.parse(saved) as { step: number; answers: Record<number, boolean> }
+        if (parsed.step >= 6 && parsed.answers) {
+          setEduStep(parsed.step)
+          setEduAnswers(parsed.answers)
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+  useEffect(() => {
+    if (eduStep >= 6) {
+      try {
+        localStorage.setItem('hc_edu_quiz_v1', JSON.stringify({ step: eduStep, answers: eduAnswers }))
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [eduStep, eduAnswers])
+
+  const [phasesComplete, setPhasesComplete] = useState({ completed: 0, total: JOURNEY_PHASES_DATA.length })
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(
+        typeof window !== 'undefined' ? window.localStorage.getItem('phaseStatus') || '{}' : '{}'
+      ) as Record<string, string>
+      const completed = JOURNEY_PHASES_DATA.filter((p) => saved[p.id] === 'complete').length
+      setPhasesComplete({ completed, total: JOURNEY_PHASES_DATA.length })
+    } catch {
+      setPhasesComplete({ completed: 0, total: JOURNEY_PHASES_DATA.length })
+    }
+  }, [])
+
+  const [assumptionOverrides, setAssumptionOverrides] = useState<{
+    ratePct: number | null
+    taxPct: number | null
+    insuranceAnnual: number | null
+    hoaMonthly: number | null
+    pmiMonthly: number | null
+    maintenancePct: number | null
+  }>({
+    ratePct: null,
+    taxPct: null,
+    insuranceAnnual: null,
+    hoaMonthly: null,
+    pmiMonthly: null,
+    maintenancePct: null,
+  })
+
+  const [loanAmountInput, setLoanAmountInput] = useState<string>('')
+  const [hasEditedLoanAmount, setHasEditedLoanAmount] = useState(false)
+  const [downPaymentInput, setDownPaymentInput] = useState<string>('')
+  const [hasEditedDownPayment, setHasEditedDownPayment] = useState(false)
+
+  useEffect(() => {
+    if (!state?.results || typeof state.results !== 'object') return
+    const r = state.results as Record<string, unknown>
+    if (r.type !== 'first-time' || hasEditedLoanAmount) return
+    const { loanAmount } = computeFirstTimeScenarioDefaults(r)
+    setLoanAmountInput(String(Math.round(loanAmount)))
+  }, [state, hasEditedLoanAmount])
+
+  useEffect(() => {
+    if (!state?.results || typeof state.results !== 'object') return
+    const r = state.results as Record<string, unknown>
+    if (r.type !== 'first-time' || hasEditedDownPayment) return
+    const { downPayment } = computeFirstTimeScenarioDefaults(r)
+    setDownPaymentInput(String(Math.round(downPayment)))
+  }, [state, hasEditedDownPayment])
+
   const effectiveIcpKey = normalizeIcpKey(icpParam || quizIcpHint)
   if (!state) {
     return (
@@ -231,7 +360,9 @@ export default function ResultsPageBody() {
   const previewTier = ((state.previewTier as UserTier) || 'foundations') as UserTier
   const setPreviewTier = state.setPreviewTier as (t: UserTier) => void
 
-  const hasResults = results && typeof results === 'object' && results.type && (results.type as string) !== 'error'
+  const hasResults = Boolean(
+    results && typeof results === 'object' && results.type && (results.type as string) !== 'error'
+  )
   const resType = hasResults ? (results!.type as string) : null
   const resolvedJourneyType: 'first-time' | 'repeat-buyer' | 'refinance' =
     resType === 'repeat-buyer' || resType === 'refinance' ? resType : 'first-time'
@@ -280,59 +411,9 @@ export default function ResultsPageBody() {
   const hasSavingsDetailsAccess = visibleSavings.length > 0
   const lockedSavingsCount = Math.max(0, savingsList.length - visibleSavings.length)
 
-  useEffect(() => {
-    if (resultsExperiment.isReady) {
-      resultsExperiment.track('results_body_viewed')
-    }
-  }, [resultsExperiment.isReady, resultsExperiment.variant])
-
   const quizData = hasResults && resType === 'first-time' ? (results!.quizData as Record<string, unknown>) : null
   const assumedMortgageRatePct = affordability?.interestRate != null ? Number(affordability.interestRate) * 100 : null
-  const [latestAverageMortgageRatePct, setLatestAverageMortgageRatePct] = useState<number | null>(null)
-  const [latestAverageMortgageRateAsOf, setLatestAverageMortgageRateAsOf] = useState<string | null>(null)
-  const [latestAverageMortgageRateSource, setLatestAverageMortgageRateSource] = useState<'freddie-mac-pmms' | 'fallback' | null>(null)
   const creditScoreBand = quizData?.creditScore != null ? String(quizData.creditScore) : 'your profile'
-  useEffect(() => {
-    let active = true
-    getCachedFreddieMacRates()
-      .then((rates) => {
-        if (!active) return
-        setLatestAverageMortgageRatePct(rates.rate30Year * 100)
-        setLatestAverageMortgageRateAsOf(rates.date)
-        setLatestAverageMortgageRateSource(rates.source)
-      })
-      .catch(() => {
-        if (!active) return
-        setLatestAverageMortgageRatePct(null)
-        setLatestAverageMortgageRateAsOf(null)
-        setLatestAverageMortgageRateSource(null)
-      })
-    return () => {
-      active = false
-    }
-  }, [])
-
-  // Load / save educational quiz from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('hc_edu_quiz_v1')
-      if (saved) {
-        const parsed = JSON.parse(saved) as { step: number; answers: Record<number, boolean> }
-        if (parsed.step >= 6 && parsed.answers) {
-          setEduStep(parsed.step)
-          setEduAnswers(parsed.answers)
-        }
-      }
-    } catch { /* ignore */ }
-  }, [])
-  useEffect(() => {
-    if (eduStep >= 6) {
-      try {
-        localStorage.setItem('hc_edu_quiz_v1', JSON.stringify({ step: eduStep, answers: eduAnswers }))
-      } catch { /* ignore */ }
-    }
-  }, [eduStep, eduAnswers])
-
   const repeatBuyerAnalysis =
     hasResults && resType === 'repeat-buyer' ? (results!.analysis as Record<string, unknown>) : null
   const refinanceAnalysis =
@@ -422,18 +503,6 @@ export default function ResultsPageBody() {
     'refinance': 'Here is your refinance snapshot focused on monthly impact, break-even, and total payoff.',
   }
 
-  // Phase completion from customized-journey localStorage
-  const [phasesComplete, setPhasesComplete] = useState({ completed: 0, total: JOURNEY_PHASES_DATA.length })
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(typeof window !== 'undefined' ? (window.localStorage.getItem('phaseStatus') || '{}') : '{}') as Record<string, string>
-      const completed = JOURNEY_PHASES_DATA.filter((p) => saved[p.id] === 'complete').length
-      setPhasesComplete({ completed, total: JOURNEY_PHASES_DATA.length })
-    } catch {
-      setPhasesComplete({ completed: 0, total: JOURNEY_PHASES_DATA.length })
-    }
-  }, [])
-
   const assumptionDefaults = {
     ratePct: affordability?.interestRate != null ? Number(affordability.interestRate) * 100 : 6.75,
     taxPct: 1.2,
@@ -444,21 +513,6 @@ export default function ResultsPageBody() {
     pmiMonthly: monthlyPayment?.pmi != null ? Number(monthlyPayment.pmi) : 0,
     maintenancePct: 1.0,
   }
-  const [assumptionOverrides, setAssumptionOverrides] = useState<{
-    ratePct: number | null
-    taxPct: number | null
-    insuranceAnnual: number | null
-    hoaMonthly: number | null
-    pmiMonthly: number | null
-    maintenancePct: number | null
-  }>({
-    ratePct: null,
-    taxPct: null,
-    insuranceAnnual: null,
-    hoaMonthly: null,
-    pmiMonthly: null,
-    maintenancePct: null,
-  })
   const assumptionValues = {
     ratePct: assumptionOverrides.ratePct ?? assumptionDefaults.ratePct,
     taxPct: assumptionOverrides.taxPct ?? assumptionDefaults.taxPct,
@@ -478,21 +532,7 @@ export default function ResultsPageBody() {
     : scenarioHomePrice != null
       ? Math.max(0, scenarioHomePrice - defaultScenarioDownPayment)
       : 0
-  const [loanAmountInput, setLoanAmountInput] = useState<string>('')
-  const [hasEditedLoanAmount, setHasEditedLoanAmount] = useState(false)
-  const [downPaymentInput, setDownPaymentInput] = useState<string>('')
-  const [hasEditedDownPayment, setHasEditedDownPayment] = useState(false)
   const parseOrEmpty = (raw: string): string => (raw.trim() === '' ? '' : String(parseFormattedNumber(raw)))
-  useEffect(() => {
-    if (resType === 'first-time' && !hasEditedLoanAmount) {
-      setLoanAmountInput(String(Math.round(defaultScenarioLoanAmount)))
-    }
-  }, [resType, defaultScenarioLoanAmount, hasEditedLoanAmount])
-  useEffect(() => {
-    if (resType === 'first-time' && !hasEditedDownPayment) {
-      setDownPaymentInput(String(Math.round(defaultScenarioDownPayment)))
-    }
-  }, [resType, defaultScenarioDownPayment, hasEditedDownPayment])
   const scenarioLoanAmount = Math.max(0, Number(loanAmountInput) || 0)
   const scenarioDownPayment = Math.max(0, Number(downPaymentInput) || 0)
   const scenarioEstimatedHomePrice = scenarioLoanAmount + scenarioDownPayment
@@ -775,6 +815,22 @@ export default function ResultsPageBody() {
                 </div>
 
                 {effectiveIcpKey === 'first-gen' ? <FirstGenHub /> : null}
+                {readiness != null && readiness < 60 ? (
+                  <HudCounselorHandoffCard variant="results" className="mt-6" />
+                ) : null}
+                {resType === 'first-time' && readiness != null ? (
+                  <div className="mt-6">
+                    <QuizReadNextCard
+                      readiness={readiness}
+                      creditScoreBand={quizData?.creditScore != null ? String(quizData.creditScore) : null}
+                      hasDownPaymentGap={
+                        (scenarioHomePrice ?? 0) > 0 &&
+                        scenarioDownPayment < (scenarioHomePrice ?? 0) * 0.05
+                      }
+                      dtiHigh={dtiRatio > 0.36}
+                    />
+                  </div>
+                ) : null}
                 {effectiveIcpKey === 'solo' ? (
                   <SoloAdvocateChecklist
                     neighborhoodPriority={
@@ -1404,7 +1460,7 @@ export default function ResultsPageBody() {
           ) : null
         )}
 
-      {hasResults && resType === 'first-time' && affordability && (
+      {hasResults && resType === 'first-time' && affordability != null && (
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
           <h2 className="text-xl font-bold text-[#1e293b] mb-4">
             {plainEnglish ? 'Your numbers at a glance' : 'Snapshot metrics'}
@@ -1490,7 +1546,7 @@ export default function ResultsPageBody() {
         </motion.section>
       )}
 
-      {hasResults && resType === 'first-time' && costBreakdown && (
+      {hasResults && resType === 'first-time' && costBreakdown != null && (
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
           <h2 className="text-xl font-bold text-[#1e293b] mb-1">
             {plainEnglish ? 'What buying really costs' : 'Full cost breakdown'}
@@ -1533,7 +1589,13 @@ export default function ResultsPageBody() {
                   { label: 'Principal + interest', value: monthlyPayment?.principalAndInterest },
                   { label: 'Property taxes', value: monthlyPayment?.propertyTaxes },
                   { label: 'Home insurance', value: monthlyPayment?.homeownersInsurance },
-                  { label: 'PMI (drops at 20% equity)', value: monthlyPayment?.pmi && Number(monthlyPayment.pmi) > 0 ? monthlyPayment.pmi : null },
+                  {
+                    label: 'PMI (drops at 20% equity)',
+                    value:
+                      monthlyPayment?.pmi != null && Number(monthlyPayment.pmi) > 0
+                        ? Number(monthlyPayment.pmi)
+                        : null,
+                  },
                   { label: 'Lifetime interest (30 yr)', value: lifetimeCosts?.totalInterest, bold: true },
                 ].map(({ label, value, bold, note }) =>
                   value != null ? (

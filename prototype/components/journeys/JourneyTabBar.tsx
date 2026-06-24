@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * Legacy journey strip (subset of tabs via `JOURNEY_TAB_IDS`). Not mounted on `/customized-journey`;
+ * live navigation uses `JourneyNav` in TopNav with full `JOURNEY_URL_TAB_IDS`. Retained for experiments
+ * or alternate shells — prefer extending `JourneyNav` before wiring this back in.
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -9,6 +15,9 @@ import {
   Map,
   DollarSign,
   BookOpen,
+  Library,
+  Bell,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import { useJourneyNavChrome } from '@/components/JourneyNavChromeContext'
@@ -30,6 +39,9 @@ const TAB_ICONS: Record<JourneyTab, LucideIcon> = {
   plan: Map,
   money: DollarSign,
   learn: BookOpen,
+  library: Library,
+  inbox: Bell,
+  upgrades: Sparkles,
 }
 
 const TAB_LABELS: Record<JourneyTab, string> = {
@@ -37,6 +49,9 @@ const TAB_LABELS: Record<JourneyTab, string> = {
   plan: 'My Plan',
   money: 'Money',
   learn: 'Learn',
+  library: 'Library',
+  inbox: 'Inbox',
+  upgrades: 'Upgrades',
 }
 
 const TAB_SHORT_LABELS: Record<JourneyTab, string> = {
@@ -44,6 +59,9 @@ const TAB_SHORT_LABELS: Record<JourneyTab, string> = {
   plan: 'Plan',
   money: 'Money',
   learn: 'Learn',
+  library: 'Library',
+  inbox: 'Inbox',
+  upgrades: 'Up',
 }
 
 function readinessDotClass(score: number | null): string {
@@ -161,6 +179,7 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
       {visibleTabIds.map((id, index) => {
         const active = activeTab === id
         const Icon = TAB_ICONS[id]
+        const indexLabel = String(index + 1).padStart(2, '0')
         const tooltip = applyPlainEnglishCopy(JOURNEY_TAB_TOOLTIPS[id], plainEnglish)
         return (
           <Link
@@ -187,18 +206,21 @@ export default function JourneyTabBar({ activeTab }: { activeTab: JourneyTab }) 
               })
             }}
             onKeyDown={(e) => onKeyDown(e, index)}
-            className={`flex min-w-[4rem] shrink-0 cursor-pointer touch-manipulation snap-start flex-col items-center gap-1 rounded-xl border px-2 py-2 no-underline transition-[transform,box-shadow,background-color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] md:min-w-0 md:flex-row md:gap-2 md:rounded-xl md:border md:px-2.5 md:py-2 lg:px-3 ${
+            className={`nq-ed-rail-tab flex min-w-[4rem] shrink-0 cursor-pointer touch-manipulation snap-start flex-col items-center gap-1 rounded-xl border px-2 py-2 no-underline md:min-w-0 md:flex-row md:items-center md:justify-between md:gap-3 md:px-3 md:py-2 ${
               active
-                ? 'border-[rgba(45,106,79,0.35)] bg-white font-bold text-[var(--primary)] shadow-md ring-1 ring-[rgba(45,106,79,0.12)] md:bg-[linear-gradient(135deg,rgba(45,106,79,0.1)_0%,rgba(82,183,136,0.08)_55%,rgba(244,162,97,0.06)_100%)]'
-                : 'border-[rgba(45,106,79,0.1)] bg-white/80 font-medium text-slate-600 md:border-transparent md:bg-transparent md:shadow-none md:ring-0 md:hover:bg-[rgba(45,106,79,0.06)] md:hover:text-[var(--primary)]'
+                ? 'nq-ed-rail-tab-active border-[var(--nq-ed-line-soft)] font-semibold text-[var(--nq-ed-text)] shadow-[var(--nq-ed-shadow-sm)]'
+                : 'border-transparent font-medium text-[var(--nq-ed-muted)] hover:text-[var(--nq-ed-text)]'
             }`}
           >
-            <Icon className="h-5 w-5 shrink-0 opacity-90 md:h-4 md:w-4" aria-hidden />
-            <span className="max-w-[5rem] text-center text-[10px] font-semibold leading-tight md:hidden">
-              {TAB_SHORT_LABELS[id]}
+            <span className="flex items-center gap-2">
+              <Icon className="h-5 w-5 shrink-0 opacity-90 md:h-4 md:w-4" aria-hidden />
+              <span className="max-w-[5rem] text-center text-[10px] font-semibold leading-tight md:hidden">
+                {TAB_SHORT_LABELS[id]}
+              </span>
+              <span className="hidden max-w-[9rem] truncate md:inline">{TAB_LABELS[id]}</span>
+              <TabBadges id={id} chrome={chrome} />
             </span>
-            <span className="hidden max-w-[9rem] truncate md:inline">{TAB_LABELS[id]}</span>
-            <TabBadges id={id} chrome={chrome} />
+            <span className="nq-ed-rail-index hidden md:inline">{indexLabel}</span>
           </Link>
         )
       })}
